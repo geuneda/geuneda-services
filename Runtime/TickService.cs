@@ -15,7 +15,7 @@ namespace GameLovers.Services
 	/// through this service. It also keeps the update data on scene load/unload.
 	/// Call <see cref="Dispose"/> to clear the Tick Service correctly.
 	/// </summary>
-	public interface ITickService
+	public interface ITickService : IDisposable
 	{
 		/// <summary>
 		/// Subscribes the <paramref name="action"/> to the frame based update with a <paramref name="deltaTime"/> buffer
@@ -104,7 +104,7 @@ namespace GameLovers.Services
 	}
 
 	/// <inheritdoc cref="ITickService"/>
-	public class TickService : ITickService, IDisposable
+	public class TickService : ITickService
 	{
 		private readonly TickServiceMonoBehaviour _tickObject;
 
@@ -301,11 +301,16 @@ namespace GameLovers.Services
 				return;
 			}
 
-			var arrayCopy = _onFixedUpdateList.ToArray();
-
-			for (int i = 0; i < arrayCopy.Length; i++)
+			// Iterate backwards to allow safe mutation during iteration
+			for (int i = _onFixedUpdateList.Count - 1; i >= 0; i--)
 			{
-				arrayCopy[i].Action(Time.fixedTime);
+				// Skip if the item was removed by a previous action
+				if (i >= _onFixedUpdateList.Count)
+				{
+					continue;
+				}
+
+				_onFixedUpdateList[i].Action(Time.fixedTime);
 			}
 		}
 
@@ -326,11 +331,16 @@ namespace GameLovers.Services
 				return;
 			}
 
-			var arrayCopy = list.ToArray();
-
-			for (int i = 0; i < arrayCopy.Length; i++)
+			// Iterate backwards to allow safe mutation during iteration
+			for (int i = list.Count - 1; i >= 0; i--)
 			{
-				var tickData = arrayCopy[i];
+				// Skip if the item was removed by a previous action
+				if (i >= list.Count)
+				{
+					continue;
+				}
+
+				var tickData = list[i];
 				var time = tickData.RealTime ? Time.realtimeSinceStartup : Time.time;
 
 				if (time < tickData.LastTickTime + tickData.DeltaTime)
@@ -339,19 +349,15 @@ namespace GameLovers.Services
 				}
 
 				var deltaTime = time - tickData.LastTickTime;
-				var countBefore = list.Count;
 
 				tickData.Action(deltaTime);
 
-				// Check if the update was not unsubscribed in the call
-				var index = i - (arrayCopy.Length - countBefore);
-				if (list.Count > index && tickData == list[index])
+				// Check if the item still exists and wasn't unsubscribed
+				if (i < list.Count && list[i] == tickData)
 				{
 					var overFlow = tickData.DeltaTime == 0 ? 0 : deltaTime % tickData.DeltaTime;
-
 					tickData.LastTickTime = tickData.TimeOverflowToNextTick ? time - overFlow : time;
-
-					list[index] = tickData;
+					list[i] = tickData;
 				}
 			}
 		}

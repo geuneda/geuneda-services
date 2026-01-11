@@ -2,48 +2,60 @@
 
 [![Unity Version](https://img.shields.io/badge/Unity-6000.0%2B-blue.svg)](https://unity3d.com/get-unity/download)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
-[![Version](https://img.shields.io/badge/version-0.15.1-green.svg)](CHANGELOG.md)
+[![Version](https://img.shields.io/badge/version-1.0.0-green.svg)](CHANGELOG.md)
 
-A comprehensive collection of services designed to streamline Unity game development by providing a robust, modular architecture foundation. This package offers essential services for command execution, data persistence, object pooling, messaging, and more.
+> **Quick Links**: [Installation](#installation) | [Quick Start](#quick-start) | [Services](#services-documentation) | [Contributing](#contributing)
 
-## Table of Contents
+## Why Use This Package?
 
-- [Key Features](#key-features)
-- [System Requirements](#system-requirements)
-- [Installation](#installation)
-- [Quick Start](#quick-start)
-- [Services Documentation](#services-documentation)
-  - [Command Service](#command-service)
-  - [Coroutine Service](#coroutine-service)
-  - [Data Service](#data-service)
-  - [Main Installer](#main-installer)
-  - [Message Broker Service](#message-broker-service)
-  - [Network Service](#network-service)
-  - [Pool Service](#pool-service)
-  - [Tick Service](#tick-service)
-  - [Time Service](#time-service)
-- [Package Structure](#package-structure)
-- [Dependencies](#dependencies)
-- [Contributing](#contributing)
-- [Support](#support)
-- [License](#license)
+Building robust game architecture in Unity often leads to tightly coupled systems, scattered initialization logic, and memory management headaches. This **Services** package solves these pain points:
 
-## Key Features
+| Problem | Solution |
+|---------|----------|
+| **Scattered dependencies** | Lightweight service locator (`MainInstaller`) for centralized dependency management |
+| **Tightly coupled systems** | Message broker enables decoupled pub/sub communication |
+| **Manual update management** | Tick service centralizes Update/FixedUpdate/LateUpdate callbacks |
+| **Coroutines in pure C#** | Coroutine service runs Unity coroutines without MonoBehaviour |
+| **Memory churn from instantiation** | Object pooling with lifecycle hooks for efficient reuse |
+| **Inconsistent save/load** | Cross-platform data persistence with automatic serialization |
+| **Non-deterministic gameplay** | Deterministic RNG service with state save/restore |
+| **Version tracking complexity** | Build version service with git commit/branch metadata |
 
-- **🏗️ Dependency Injection** - Simple DI framework with MainInstaller
-- **📨 Message Broker** - Decoupled communication system
-- **🎮 Command Pattern** - Seamless command execution layer
-- **🔄 Object Pooling** - Efficient memory management
-- **💾 Data Persistence** - Cross-platform save/load system
-- **⏱️ Time Management** - Precise game time control
-- **🔄 Coroutine Management** - Enhanced coroutine control
-- **🌐 Network Abstraction** - Extensible network service base
-- **⚡ Tick Service** - Centralized Unity update cycle management
+**Built for production:** Zero external dependencies beyond Unity. Minimal per-frame allocations. Used in real games.
+
+### Key Features
+
+- **🏗️ Service Locator** - Simple DI-lite pattern with `MainInstaller`
+- **📨 Message Broker** - Type-safe decoupled pub/sub communication
+- **⏱️ Tick Service** - Centralized Unity update cycle management
+- **🔄 Coroutine Host** - Run coroutines from pure C# classes
+- **🎯 Object Pooling** - Efficient GameObject and object reuse
+- **💾 Data Persistence** - Cross-platform save/load with JSON serialization
+- **🎲 Deterministic RNG** - Reproducible random number generation
+- **📋 Version Services** - Runtime access to build/git metadata
+- **🎮 Command Pattern** - Decoupled command execution layer
+- **⏰ Time Service** - Unified access to Unity/Unix/DateTime
+
+---
 
 ## System Requirements
 
-- **Unity** 2022.3 or higher
-- **Git** (for installation via Package Manager)
+- **[Unity](https://unity.com/download)** 6000.0+ (Unity 6)
+- **[GameLovers DataExtensions](https://github.com/CoderGamester/com.gamelovers.dataextensions)** (v0.6.2) - Automatically resolved
+
+### Compatibility Matrix
+
+| Unity Version | Status | Notes |
+|---------------|--------|-------|
+| 6000.0+ (Unity 6) | ✅ Fully Tested | Primary development target |
+| 2022.3 LTS | ⚠️ Untested | May require minor adaptations |
+
+| Platform | Status | Notes |
+|----------|--------|-------|
+| Standalone (Windows/Mac/Linux) | ✅ Supported | Full feature support |
+| WebGL | ✅ Supported | Full feature support |
+| Mobile (iOS/Android) | ✅ Supported | Full feature support |
+| Console | ⚠️ Untested | Should work without modifications |
 
 ## Installation
 
@@ -68,556 +80,449 @@ Add the following line to your project's `Packages/manifest.json`:
 }
 ```
 
+---
+
+## Package Structure
+
+```
+Runtime/
+├── Installer.cs              # Core DI container
+├── MainInstaller.cs          # Static global service locator
+├── MessageBrokerService.cs   # Pub/sub messaging
+├── TickService.cs            # Update cycle management
+├── CoroutineService.cs       # MonoBehaviour-free coroutines
+├── PoolService.cs            # Pool registry
+├── ObjectPool.cs             # Pool implementations
+├── DataService.cs            # Persistence layer
+├── TimeService.cs            # Time abstraction
+├── RngService.cs             # Deterministic RNG
+├── VersionServices.cs        # Build/git metadata
+└── CommandService.cs         # Command pattern
+
+Editor/
+├── VersionEditorUtils.cs     # Version data generation
+└── GitEditorProcess.cs       # Git CLI integration
+
+Tests/
+├── EditMode/                 # Unit tests
+└── PlayMode/                 # Integration tests
+```
+
+### Key Files
+
+| Component | Responsibility |
+|-----------|----------------|
+| **MainInstaller** | Static service locator for global scope bindings |
+| **Installer** | Instance-based DI container (for scoped installations) |
+| **IMessageBrokerService** | Type-safe pub/sub messaging interface |
+| **ITickService** | Centralized Update/FixedUpdate/LateUpdate callbacks |
+| **ICoroutineService** | Run coroutines without MonoBehaviour |
+| **IPoolService** | Object pool registry and management |
+| **IDataService** | Cross-platform data persistence |
+| **ITimeService** | Unified time access (Unity/Unix/DateTime) |
+| **IRngService** | Deterministic random number generation |
+| **VersionServices** | Runtime build/git metadata |
+
+---
+
 ## Quick Start
 
-Here's a simple example showing how to set up and use the core services:
+### 1. Initialize Services
 
 ```csharp
 using UnityEngine;
 using GameLovers.Services;
 
-public class GameManager : MonoBehaviour
+public class GameBootstrap : MonoBehaviour
 {
-    private IMessageBrokerService _messageBroker;
-    private ITickService _tickService;
-    
-    void Start()
+    void Awake()
     {
-        // Initialize services using MainInstaller
-        var installer = MainInstaller.Instance;
-        installer.Bind<IMessageBrokerService>().ToSingle<MessageBrokerService>();
-        installer.Bind<ITickService>().ToSingle<TickService>();
+        // Create service instances
+        var messageBroker = new MessageBrokerService();
+        var tickService = new TickService();
+        var dataService = new DataService();
         
-        // Resolve services
-        _messageBroker = installer.Resolve<IMessageBrokerService>();
-        _tickService = installer.Resolve<ITickService>();
-        
-        // Subscribe to game events
-        _messageBroker.Subscribe<PlayerSpawnMessage>(OnPlayerSpawn);
-        
-        // Start tick service
-        _tickService.Add(this);
+        // Bind to MainInstaller (interfaces only)
+        MainInstaller.Bind<IMessageBrokerService>(messageBroker);
+        MainInstaller.Bind<ITickService>(tickService);
+        MainInstaller.Bind<IDataService>(dataService);
     }
     
-    void OnPlayerSpawn(PlayerSpawnMessage message)
+    void OnDestroy()
     {
-        Debug.Log($"Player spawned at position: {message.Position}");
+        // Clean up on shutdown
+        MainInstaller.CleanDispose<ITickService>();
+        MainInstaller.Clean();
+    }
+}
+```
+
+### 2. Use Services Anywhere
+
+```csharp
+using GameLovers.Services;
+
+public class PlayerController
+{
+    public PlayerController()
+    {
+        // Resolve services
+        var messageBroker = MainInstaller.Resolve<IMessageBrokerService>();
+        
+        // Subscribe to events
+        messageBroker.Subscribe<PlayerDamagedMessage>(OnPlayerDamaged);
+    }
+    
+    private void OnPlayerDamaged(PlayerDamagedMessage message)
+    {
+        // Handle event
+    }
+}
+
+// Define messages as structs implementing IMessage
+public struct PlayerDamagedMessage : IMessage
+{
+    public int PlayerId;
+    public float Damage;
+}
+```
+
+---
+
+## Services Documentation
+
+### Main Installer
+
+Lightweight service locator for managing dependencies globally.
+
+**Key Points:**
+- Only **interfaces** can be bound (throws if you try to bind a concrete type)
+- Binding is **instance-based** - you provide the instance, not the type
+- `MainInstaller` is a static class wrapping a single `Installer`
+
+```csharp
+// Bind services (interfaces only)
+MainInstaller.Bind<IMessageBrokerService>(new MessageBrokerService());
+MainInstaller.Bind<IDataService>(new DataService());
+
+// Resolve services
+var messageBroker = MainInstaller.Resolve<IMessageBrokerService>();
+
+// Safe resolve (doesn't throw)
+if (MainInstaller.TryResolve<IDataService>(out var dataService))
+{
+    dataService.SaveData();
+}
+
+// Clean up
+MainInstaller.Clean<IMessageBrokerService>(); // Remove single binding
+MainInstaller.CleanDispose<ITickService>();   // Dispose + remove
+MainInstaller.Clean();                         // Clear all bindings
+```
+
+---
+
+### Message Broker Service
+
+Decoupled pub/sub communication between game systems.
+
+**Key Points:**
+- Static method subscriptions are **not supported** (uses `action.Target`)
+- Use `PublishSafe` when subscribers might subscribe/unsubscribe during handling
+
+```csharp
+// Define messages
+public struct EnemyDefeatedMessage : IMessage
+{
+    public int EnemyId;
+    public Vector3 Position;
+}
+
+var broker = new MessageBrokerService();
+
+// Subscribe (instance methods only)
+broker.Subscribe<EnemyDefeatedMessage>(OnEnemyDefeated);
+
+// Publish
+broker.Publish(new EnemyDefeatedMessage { EnemyId = 42, Position = Vector3.zero });
+
+// Use PublishSafe for chain subscriptions
+broker.PublishSafe(new EnemyDefeatedMessage { EnemyId = 42 });
+
+// Unsubscribe
+broker.Unsubscribe<EnemyDefeatedMessage>(this);    // This subscriber only
+broker.Unsubscribe<EnemyDefeatedMessage>();        // All subscribers
+broker.UnsubscribeAll(this);                        // All messages for this subscriber
+```
+
+---
+
+### Tick Service
+
+Centralized control over Unity's update cycle.
+
+**Key Points:**
+- Creates a `DontDestroyOnLoad` GameObject to drive callbacks
+- Call `Dispose()` to tear down (tests, game reset)
+- Supports buffered ticking with overflow carry for reduced drift
+
+```csharp
+public class GameController : ITickable, IDisposable
+{
+    private readonly ITickService _tickService;
+    
+    public GameController()
+    {
+        _tickService = new TickService();
+        _tickService.Add(this);              // Update callback
+        _tickService.AddFixed(this);         // FixedUpdate callback
+        _tickService.Add(this, 0.1f);        // Buffered: every 0.1 seconds
     }
     
     public void OnTick(float deltaTime, double time)
     {
-        // Game logic updated via tick service
+        // Called every frame (or at specified interval)
+    }
+    
+    public void Dispose()
+    {
+        _tickService.Remove(this);
+        _tickService.Dispose();
     }
 }
-
-// Example message
-public struct PlayerSpawnMessage : IMessage
-{
-    public Vector3 Position;
-    public int PlayerId;
-}
 ```
 
-## Services Documentation
+---
 
-<a name="command-service"></a>
-### Command Service
-
-Creates a seamless abstraction layer of execution between game logic and other code parts by invoking commands.
-
-**Key Features:**
-- Type-safe command execution
-- Async command support
-- Built-in message broker integration
-- Command queuing and batching
-
-**Basic Usage:**
-
-```csharp
-// Define a command
-public struct MovePlayerCommand : ICommand
-{
-    public int PlayerId;
-    public Vector3 Direction;
-    public float Speed;
-}
-
-// Create command service
-var commandService = new CommandService(messageBrokerService);
-
-// Execute command
-await commandService.ExecuteCommand(new MovePlayerCommand 
-{
-    PlayerId = 1,
-    Direction = Vector3.forward,
-    Speed = 5f
-});
-
-// Execute command without awaiting
-commandService.ExecuteCommand(new MovePlayerCommand 
-{
-    PlayerId = 2,
-    Direction = Vector3.right,
-    Speed = 3f
-});
-```
-
-**Advanced Usage:**
-
-```csharp
-// Command with return value
-public struct GetPlayerHealthCommand : ICommand<int>
-{
-    public int PlayerId;
-}
-
-// Execute and get result
-int health = await commandService.ExecuteCommand<GetPlayerHealthCommand, int>(
-    new GetPlayerHealthCommand { PlayerId = 1 });
-```
-
-<a name="coroutine-service"></a>
 ### Coroutine Service
 
-Controls all coroutines in a non-destroyable object with callback support and state management.
-
-**Key Features:**
-- Centralized coroutine management
-- End callbacks
-- Coroutine state tracking
-- Delayed execution support
-
-**Basic Usage:**
+Run Unity coroutines from pure C# classes without MonoBehaviour.
 
 ```csharp
 var coroutineService = new CoroutineService();
 
-// Start a coroutine with callback
-coroutineService.StartCoroutine(MyCoroutine(), () => 
-{
-    Debug.Log("Coroutine completed!");
-});
+// Start coroutine with completion callback
+coroutineService.StartCoroutine(MyRoutine(), () => Debug.Log("Done!"));
 
-// Start delayed execution
-coroutineService.StartDelayCall(2f, () => 
-{
-    Debug.Log("Executed after 2 seconds");
-});
+// Delayed execution
+coroutineService.StartDelayCall(2f, () => Debug.Log("2 seconds later"));
 
-IEnumerator MyCoroutine()
-{
-    yield return new WaitForSeconds(1f);
-    Debug.Log("Coroutine step completed");
-}
-```
-
-**Advanced Usage:**
-
-```csharp
-// Get coroutine reference for state checking
-var asyncCoroutine = coroutineService.StartCoroutine(LongRunningTask());
-
-// Check state
+// Get coroutine reference
+var asyncCoroutine = coroutineService.StartCoroutine(LongTask());
 if (asyncCoroutine.IsRunning)
 {
-    // Stop if needed
     coroutineService.StopCoroutine(asyncCoroutine);
 }
+
+IEnumerator MyRoutine()
+{
+    yield return new WaitForSeconds(1f);
+    Debug.Log("Coroutine step");
+}
 ```
 
-<a name="data-service"></a>
-### Data Service
+---
 
-Provides cross-platform persistent data storage with automatic serialization support.
-
-**Key Features:**
-- Cross-platform data persistence
-- Automatic JSON serialization
-- Type-safe data operations
-- Async loading/saving
-
-**Basic Usage:**
-
-```csharp
-// Define data structure
-[Serializable]
-public class PlayerData
-{
-    public string Name;
-    public int Level;
-    public float Experience;
-}
-
-var dataService = new DataService();
-
-// Save data
-var playerData = new PlayerData 
-{ 
-    Name = "Hero", 
-    Level = 10, 
-    Experience = 1500f 
-};
-dataService.AddOrReplaceData("player", playerData);
-await dataService.SaveData();
-
-// Load data
-await dataService.LoadData();
-var loadedData = dataService.GetData<PlayerData>("player");
-Debug.Log($"Loaded player: {loadedData.Name}, Level: {loadedData.Level}");
-```
-
-<a name="main-installer"></a>
-### Main Installer
-
-Provides a simple dependency injection framework for managing object instances and dependencies.
-
-**Key Features:**
-- Singleton and transient bindings
-- Interface to implementation binding
-- Multiple interface binding
-- Compile-time relationship checking
-
-**Basic Usage:**
-
-```csharp
-// Bind services
-var installer = MainInstaller.Instance;
-installer.Bind<IMessageBrokerService>().ToSingle<MessageBrokerService>();
-installer.Bind<IDataService>().ToSingle<DataService>();
-
-// Bind with multiple interfaces
-installer.Bind<ITickService, IUpdatable>().ToSingle<TickService>();
-
-// Resolve dependencies
-var messageBroker = installer.Resolve<IMessageBrokerService>();
-var dataService = installer.Resolve<IDataService>();
-```
-
-<a name="message-broker-service"></a>
-### Message Broker Service
-
-Enables decoupled communication between game systems using the Message Broker pattern.
-
-**Key Features:**
-- Type-safe messaging
-- No direct references required
-- Safe chain subscription handling
-- High-performance publishing
-
-**Basic Usage:**
-
-```csharp
-var messageBroker = new MessageBrokerService();
-
-// Define messages
-public struct GameStartMessage : IMessage
-{
-    public GameMode Mode;
-    public int PlayerCount;
-}
-
-public struct PlayerDeathMessage : IMessage
-{
-    public int PlayerId;
-    public Vector3 DeathPosition;
-}
-
-// Subscribe to messages
-messageBroker.Subscribe<GameStartMessage>(OnGameStart);
-messageBroker.Subscribe<PlayerDeathMessage>(OnPlayerDeath);
-
-// Publish messages
-messageBroker.Publish(new GameStartMessage 
-{ 
-    Mode = GameMode.Multiplayer, 
-    PlayerCount = 4 
-});
-
-void OnGameStart(GameStartMessage message)
-{
-    Debug.Log($"Game started with {message.PlayerCount} players");
-}
-
-void OnPlayerDeath(PlayerDeathMessage message)
-{
-    Debug.Log($"Player {message.PlayerId} died at {message.DeathPosition}");
-}
-
-// Clean up
-messageBroker.Unsubscribe<GameStartMessage>(OnGameStart);
-```
-
-**Safe Publishing for Chain Subscriptions:**
-
-```csharp
-// Use PublishSafe when subscribers might subscribe/unsubscribe during publishing
-messageBroker.PublishSafe(new GameStartMessage 
-{ 
-    Mode = GameMode.SinglePlayer, 
-    PlayerCount = 1 
-});
-```
-
-<a name="network-service"></a>
-### Network Service
-
-Provides an extensible base for network operations and backend communication.
-
-**Key Features:**
-- Abstract network layer
-- Backend communication support
-- Extensible for custom implementations
-- Integration with command service
-
-**Basic Usage:**
-
-```csharp
-// Extend NetworkService for your needs
-public class GameNetworkService : NetworkService
-{
-    protected override void ProcessNetworkLogic()
-    {
-        // Custom network processing
-    }
-    
-    public async Task<PlayerData> GetPlayerData(int playerId)
-    {
-        // Custom backend call implementation
-        return await FetchPlayerFromServer(playerId);
-    }
-}
-
-// Usage
-var networkService = new GameNetworkService();
-var playerData = await networkService.GetPlayerData(123);
-```
-
-<a name="pool-service"></a>
 ### Pool Service
 
-Manages object pools by type, providing efficient memory management and reuse.
-
-**Key Features:**
-- Type-based pool management
-- GameObject and object pooling
-- Automatic pool creation
-- Spawn data support
-- Independent pool access
-
-**Basic Usage:**
+Efficient object pooling with lifecycle hooks.
 
 ```csharp
 var poolService = new PoolService();
 
 // Create pools
-poolService.CreatePool<Bullet>(prefab: bulletPrefab, initialSize: 50);
-poolService.CreatePool<Enemy>(prefab: enemyPrefab, initialSize: 20);
+var bulletPool = new GameObjectPool<Bullet>(bulletPrefab, initialSize: 50);
+poolService.AddPool(bulletPool);
 
-// Spawn objects
+// Spawn/Despawn
 var bullet = poolService.Spawn<Bullet>();
-var enemy = poolService.Spawn<Enemy>();
-
-// Spawn with data
-var powerfulBullet = poolService.Spawn<Bullet>(new BulletData 
-{ 
-    Damage = 100, 
-    Speed = 20f 
-});
-
-// Despawn when done
 poolService.Despawn(bullet);
-poolService.Despawn(enemy);
+
+// Spawn with data (implement IPoolEntitySpawn<T>)
+var bullet = poolService.Spawn<Bullet, BulletData>(new BulletData { Damage = 100 });
+
+// Direct pool access
+var pool = poolService.GetPool<Bullet>();
+pool.DespawnAll();
 ```
 
-**Advanced Pool Management:**
+**Lifecycle Hooks:**
+- `IPoolEntitySpawn` - Called on spawn
+- `IPoolEntitySpawn<TData>` - Called on spawn with data
+- `IPoolEntityDespawn` - Called on despawn
+
+---
+
+### Data Service
+
+Cross-platform persistent data storage with JSON serialization.
+
+**Key Points:**
+- Uses `PlayerPrefs` + `Newtonsoft.Json`
+- Keys are `typeof(T).Name` (watch for name collisions)
+- `LoadData<T>` requires parameterless constructor if no data exists
 
 ```csharp
-// Get direct pool access
-var bulletPool = poolService.GetPool<Bullet>();
-var isSpawned = bulletPool.IsSpawned(bulletInstance);
-
-// Reset pool to initial state
-bulletPool.Reset();
-
-// Clear all objects from pool
-poolService.DespawnAll<Bullet>();
-```
-
-<a name="tick-service"></a>
-### Tick Service
-
-Provides centralized control over Unity's update cycle for better performance and organization.
-
-**Key Features:**
-- Centralized update management
-- Multiple update frequencies
-- Automatic overflow handling
-- Performance optimization
-
-**Basic Usage:**
-
-```csharp
-public class GameController : MonoBehaviour, ITickable
+[Serializable]
+public class PlayerData
 {
-    private ITickService _tickService;
-    
-    void Start()
-    {
-        _tickService = new TickService();
-        _tickService.Add(this);
-    }
-    
-    public void OnTick(float deltaTime, double time)
-    {
-        // Your game logic here - called every frame
-        UpdatePlayerMovement(deltaTime);
-        UpdateEnemyAI(deltaTime);
-    }
-    
-    void OnDestroy()
-    {
-        _tickService?.Remove(this);
-    }
+    public string Name;
+    public int Level;
 }
+
+var dataService = new DataService();
+
+// Save
+var player = new PlayerData { Name = "Hero", Level = 10 };
+dataService.AddOrReplaceData("player", player);
+await dataService.SaveData();
+
+// Load
+await dataService.LoadData();
+var loaded = dataService.GetData<PlayerData>("player");
 ```
 
-**Different Update Frequencies:**
+---
+
+### RNG Service
+
+Deterministic random number generation with state management.
+
+**Key Points:**
+- State can be saved/restored for replay or rollback
+- Uses `floatP` from DataExtensions for deterministic float math
+- Peek methods return next value without advancing state
 
 ```csharp
-// Add with custom frequency (every 0.1 seconds)
-_tickService.Add(this, 0.1f);
+// Create with seed
+var rngData = RngService.CreateRngData(seed: 12345);
+var rng = new RngService(rngData);
 
-// Add for fixed update frequency
-_tickService.AddFixed(this);
+// Generate values
+int randomInt = rng.Next;                    // 0 to int.MaxValue
+floatP randomFloat = rng.Nextfloat;          // 0 to floatP.MaxValue
+int ranged = rng.Range(1, 100);              // 1-99 (exclusive max)
+floatP rangedFloat = rng.Range(0f, 1f);      // 0-1 (inclusive max)
+
+// Peek without advancing
+int peeked = rng.Peek;                       // Same value on repeated calls
+
+// Save/restore state for determinism
+int savedCount = rng.Counter;
+// ... generate some values ...
+rng.Restore(savedCount);                     // Restore to saved state
 ```
 
-<a name="time-service"></a>
+---
+
+### Version Services
+
+Runtime access to build version and git metadata.
+
+**Key Points:**
+- Requires `version-data.txt` in Resources (generated by Editor tools)
+- Call `LoadVersionDataAsync()` early in app startup
+
+```csharp
+using GameLovers.Services;
+
+// Load version data (call once at startup)
+await VersionServices.LoadVersionDataAsync();
+
+// Access version info
+string externalVersion = VersionServices.VersionExternal;  // "1.0.0"
+string internalVersion = VersionServices.VersionInternal;  // "1.0.0-42.main.abc123"
+string branch = VersionServices.Branch;                     // "main"
+string commit = VersionServices.Commit;                     // "abc123"
+string buildNumber = VersionServices.BuildNumber;           // "42"
+
+// Check if app is outdated
+bool outdated = VersionServices.IsOutdatedVersion("1.1.0");
+```
+
+---
+
 ### Time Service
 
-Provides precise control over game time with support for Unix timestamps, Unity time, and DateTime.
-
-**Key Features:**
-- Multiple time formats
-- Precise time control
-- Unix timestamp support
-- DateTime integration
-
-**Basic Usage:**
+Unified time access with manipulation support.
 
 ```csharp
 var timeService = new TimeService();
 
 // Get current times
-var unityTime = timeService.UnityTime;
-var unixTime = timeService.UnixTime;
-var dateTime = timeService.DateTime;
+float unityTime = timeService.UnityTime;        // Time.time equivalent
+long unixTime = timeService.UnixTime;           // Unix timestamp
+DateTime dateTime = timeService.DateTime;       // DateTime.UtcNow
 
-// Time calculations
-var futureTime = timeService.AddSeconds(300); // 5 minutes from now
-var timeDifference = timeService.TimeDifference(futureTime, unityTime);
-
-// Convert between formats
-var unixFromDateTime = timeService.DateTimeToUnix(DateTime.Now);
-var dateTimeFromUnix = timeService.UnixToDateTime(unixFromDateTime);
+// Conversions
+long unix = timeService.DateTimeToUnix(DateTime.UtcNow);
+DateTime dt = timeService.UnixToDateTime(unix);
 ```
 
-## Package Structure
+---
 
-```
-<root>
-  ├── package.json
-  ├── README.md
-  ├── CHANGELOG.md
-  ├── LICENSE.md
-  ├── Runtime
-  │   ├── GameLovers.Services.asmdef
-  │   ├── CommandService.cs
-  │   ├── CoroutineService.cs
-  │   ├── DataService.cs
-  │   ├── MainInstaller.cs
-  │   ├── MessageBrokerService.cs
-  │   ├── NetworkService.cs
-  │   ├── PoolService.cs
-  │   ├── TickService.cs
-  │   └── TimeService.cs
-  └── Tests
-      ├── Editor
-      │   ├── GameLovers.Services.Editor.Tests.asmdef
-      │   ├── CommandServiceTest.cs
-      │   ├── DataServiceTest.cs
-      │   ├── IntegrationTest.cs
-      │   ├── MainInstallerTest.cs
-      │   ├── MessageBrokerServiceTest.cs
-      │   ├── NetworkServiceTest.cs
-      │   ├── PoolServiceTest.cs
-      │   ├── TickServiceTest.cs
-      │   └── TimeServiceTest.cs
-      └── Runtime
-          ├── GameLovers.Services.Tests.asmdef
-          └── CoroutineServiceTest.cs
+### Command Service
+
+Decoupled command execution layer with message broker integration.
+
+```csharp
+// Define commands
+public struct MovePlayerCommand : ICommand
+{
+    public int PlayerId;
+    public Vector3 Direction;
+}
+
+var commandService = new CommandService(messageBroker);
+
+// Execute commands
+await commandService.ExecuteCommand(new MovePlayerCommand 
+{
+    PlayerId = 1,
+    Direction = Vector3.forward
+});
+
+// Fire and forget
+commandService.ExecuteCommand(new MovePlayerCommand { PlayerId = 2 });
 ```
 
-## Dependencies
-
-This package depends on:
-
-- **[GameLovers Data Extensions](https://github.com/CoderGamester/com.gamelovers.dataextensions)** (v0.6.2) - Provides essential data structure extensions and utilities
-
-All dependencies are automatically resolved when installing via Unity Package Manager.
+---
 
 ## Contributing
 
-We welcome contributions from the community! Here's how you can help:
+We welcome contributions! Here's how you can help:
 
 ### Reporting Issues
 
 - Use the [GitHub Issues](https://github.com/CoderGamester/com.gamelovers.services/issues) page
-- Include your Unity version, package version, and reproduction steps
+- Include Unity version, package version, and reproduction steps
 - Attach relevant code samples, error logs, or screenshots
 
 ### Development Setup
 
 1. Fork the repository on GitHub
-2. Clone your fork locally
+2. Clone your fork: `git clone https://github.com/yourusername/com.gamelovers.services.git`
 3. Create a feature branch: `git checkout -b feature/amazing-feature`
-4. Make your changes and add tests if applicable
-5. Commit your changes: `git commit -m 'Add amazing feature'`
-6. Push to your branch: `git push origin feature/amazing-feature`
-7. Submit a Pull Request
+4. Make your changes with tests
+5. Commit: `git commit -m 'Add amazing feature'`
+6. Push: `git push origin feature/amazing-feature`
+7. Create a Pull Request
 
 ### Code Guidelines
 
-- Follow C# naming conventions
-- Add XML documentation for public APIs
+- Follow C# 9.0 syntax with explicit namespaces (no global usings)
+- Add XML documentation to all public APIs
 - Include unit tests for new features
-- Ensure backward compatibility when possible
+- Runtime code must not reference `UnityEditor`
 - Update CHANGELOG.md for notable changes
 
-### Pull Request Process
-
-1. Ensure all tests pass
-2. Update documentation if needed
-3. Add changelog entry if applicable
-4. Request review from maintainers
+---
 
 ## Support
 
-### Documentation
-
-- **API Documentation**: See inline XML documentation
-- **Examples**: Check the `Samples` folder for usage examples
+- **Issues**: [Report bugs or request features](https://github.com/CoderGamester/com.gamelovers.services/issues)
+- **Discussions**: [Ask questions and share ideas](https://github.com/CoderGamester/com.gamelovers.services/discussions)
 - **Changelog**: See [CHANGELOG.md](CHANGELOG.md) for version history
-
-### Getting Help
-
-- **GitHub Issues**: [Report bugs or request features](https://github.com/CoderGamester/com.gamelovers.services/issues)
-- **GitHub Discussions**: [Ask questions and share ideas](https://github.com/CoderGamester/com.gamelovers.services/discussions)
-
-### Community
-
-- Follow [@CoderGamester](https://github.com/CoderGamester) for updates
-- Star the repository if you find it useful
-- Share your projects using this package
 
 ## License
 
@@ -627,4 +532,4 @@ This project is licensed under the MIT License - see the [LICENSE.md](LICENSE.md
 
 **Made with ❤️ for the Unity community**
 
-*If this package helps your project, consider giving it a star ⭐ on GitHub!*
+*If this package helps your project, please consider giving it a ⭐ on GitHub!*

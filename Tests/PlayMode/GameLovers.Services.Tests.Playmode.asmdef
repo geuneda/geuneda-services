@@ -1,23 +1,21 @@
 {
-    "name": "GameLovers.Services.Editor.Tests",
+    "name": "GameLovers.Services.Tests.Playmode",
     "rootNamespace": "",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
         "GameLovers.Services",
-        "GameLovers.DataExtensions"
+        "GameLovers.DataExtensions",
+        "Unity.PerformanceTesting"
     ],
-    "includePlatforms": [
-        "Editor"
-    ],
+    "includePlatforms": [],
     "excludePlatforms": [],
     "allowUnsafeCode": false,
     "overrideReferences": true,
     "precompiledReferences": [
-        "nunit.framework.dll",
-        "NSubstitute.dll"
+        "nunit.framework.dll"
     ],
-    "autoReferenced": false,
+    "autoReferenced": true,
     "defineConstraints": [
         "UNITY_INCLUDE_TESTS"
     ],

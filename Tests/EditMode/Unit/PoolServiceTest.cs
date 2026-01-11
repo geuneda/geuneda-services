@@ -1,6 +1,4 @@
 using System;
-using System.Collections.Generic;
-using System.Threading;
 using GameLovers.Services;
 using NSubstitute;
 using NUnit.Framework;
@@ -9,19 +7,24 @@ using NUnit.Framework;
 
 namespace GameLoversEditor.Services.Tests
 {
-	/* TODO: Fix this test. Somehow the mock objectpool breaks the service
+	[TestFixture]
 	public class PoolServiceTest
 	{
 		private PoolService _poolService;
 		private IObjectPool<IMockPoolableEntity> _pool;
 
 		public interface IMockPoolableEntity : IPoolEntitySpawn, IPoolEntityDespawn { }
+		public class MockPoolableEntity : IMockPoolableEntity
+		{
+			public void OnSpawn() {}
+			public void OnDespawn() {}
+		}
 
 		[SetUp]
 		public void Init()
 		{
 			_poolService = new PoolService();
-			_pool = Substitute.For<IObjectPool<IMockPoolableEntity>>();
+			_pool = new ObjectPool<IMockPoolableEntity>(0, () => new MockPoolableEntity());
 			
 			_poolService.AddPool(_pool);
 		}
@@ -54,13 +57,10 @@ namespace GameLoversEditor.Services.Tests
 		[Test]
 		public void Spawn_Successfully()
 		{
-			var entity = Substitute.For<IMockPoolableEntity>();
-
-			_pool.Spawn().Returns(entity);
+			var entity = _poolService.Spawn<IMockPoolableEntity>();
 			
-			Assert.AreEqual(entity,_poolService.Spawn<IMockPoolableEntity>());
-
-			_pool.Received().Spawn();
+			Assert.IsNotNull(entity);
+			Assert.IsInstanceOf<MockPoolableEntity>(entity);
 		}
 
 		[Test]
@@ -74,17 +74,15 @@ namespace GameLoversEditor.Services.Tests
 		[Test]
 		public void Despawn_Successfully()
 		{
-			var entity = Substitute.For<IMockPoolableEntity>();
+			var entity = _poolService.Spawn<IMockPoolableEntity>();
 			
-			_poolService.Despawn(entity);
-			
-			_pool.Received().Despawn(entity);
+			Assert.DoesNotThrow(() => _poolService.Despawn(entity));
 		}
 
 		[Test]
 		public void Despawn_NotAddedPool_ThrowsException()
 		{
-			var entity = Substitute.For<IMockPoolableEntity>();
+			var entity = new MockPoolableEntity();
 			
 			_poolService = new PoolService();
 			
@@ -94,9 +92,10 @@ namespace GameLoversEditor.Services.Tests
 		[Test]
 		public void DespawnAll_Successfully()
 		{
+			_poolService.Spawn<IMockPoolableEntity>();
 			_poolService.DespawnAll<IMockPoolableEntity>();
-
-			_pool.Received().DespawnAll();
+			
+			Assert.DoesNotThrow(() => _poolService.DespawnAll<IMockPoolableEntity>());
 		}
 
 		[Test]
@@ -114,5 +113,5 @@ namespace GameLoversEditor.Services.Tests
 			
 			Assert.DoesNotThrow(() => _poolService.RemovePool<IMockPoolableEntity>());
 		}
-	}*/
+	}
 }

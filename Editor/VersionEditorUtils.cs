@@ -2,6 +2,7 @@
 using System.IO;
 using UnityEditor;
 using UnityEngine;
+using GameLovers.Services;
 
 namespace GameLovers.Services.Editor
 {
@@ -89,7 +90,7 @@ namespace GameLovers.Services.Editor
 						}
 						else
 						{
-							data.Commit = commitHash.Substring(0, ShortenedCommitLength);
+							data.CommitHash = commitHash.Substring(0, ShortenedCommitLength);
 						}
 					}
 				}

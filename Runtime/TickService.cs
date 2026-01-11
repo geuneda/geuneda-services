@@ -15,7 +15,7 @@ namespace GameLovers.Services
 	/// through this service. It also keeps the update data on scene load/unload.
 	/// Call <see cref="Dispose"/> to clear the Tick Service correctly.
 	/// </summary>
-	public interface ITickService
+	public interface ITickService : IDisposable
 	{
 		/// <summary>
 		/// Subscribes the <paramref name="action"/> to the frame based update with a <paramref name="deltaTime"/> buffer
@@ -104,7 +104,7 @@ namespace GameLovers.Services
 	}
 
 	/// <inheritdoc cref="ITickService"/>
-	public class TickService : ITickService, IDisposable
+	public class TickService : ITickService
 	{
 		private readonly TickServiceMonoBehaviour _tickObject;
 

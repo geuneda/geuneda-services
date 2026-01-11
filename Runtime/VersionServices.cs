@@ -4,7 +4,7 @@ using UnityEngine;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers
+namespace GameLovers.Services
 {
 	/// <summary>
 	/// Service to manage the version of the application
@@ -19,7 +19,7 @@ namespace GameLovers
 		[Serializable]
 		public struct VersionData
 		{
-			public string Commit;
+			public string CommitHash;
 			public string BranchName;
 			public string BuildType;
 			public string BuildNumber;
@@ -45,7 +45,7 @@ namespace GameLovers
 		/// <summary>
 		/// Short hash of the commit this app was built from.
 		/// </summary>
-		public static string Commit => IsLoaded() ? _versionData.Commit : string.Empty;
+		public static string Commit => IsLoaded() ? _versionData.CommitHash : string.Empty;
 
 		/// <summary>
 		/// Build number for this build of the app.
@@ -53,7 +53,7 @@ namespace GameLovers
 		public static string BuildNumber => IsLoaded() ? _versionData.BuildNumber : string.Empty;
 
 		private static VersionData _versionData;
-		private static bool _loaded = false;
+		private static bool _loaded;
 
 		/// <summary>
 		/// Load the internal version string from resources async. Should be called once when the
@@ -66,7 +66,7 @@ namespace GameLovers
 				var source = new TaskCompletionSource<TextAsset>();
 				var request = Resources.LoadAsync<TextAsset>(VersionDataFilename);
 
-				request.completed += operation => source.SetResult(request.asset as TextAsset);
+				request.completed += _ => source.SetResult(request.asset as TextAsset);
 
 				var textAsset = await source.Task;
 
@@ -124,7 +124,7 @@ namespace GameLovers
 		/// </summary>
 		public static string FormatInternalVersion(VersionData data)
 		{
-			string version = $"{Application.version}-{data.BuildNumber}.{data.BranchName}.{data.Commit}";
+			var version = $"{Application.version}-{data.BuildNumber}.{data.BranchName}.{data.CommitHash}";
 
 			if (!string.IsNullOrEmpty(data.BuildType))
 			{

@@ -339,21 +339,21 @@ namespace GameLovers.Services
 			return entity;
 		}
 
-		protected void CallOnSpawned(T entity)
+		protected virtual void CallOnSpawned(T entity)
 		{
 			var poolEntity = entity as IPoolEntitySpawn;
 
 			poolEntity?.OnSpawn();
 		}
 
-		protected void CallOnSpawned<TData>(T entity, TData data)
+		protected virtual void CallOnSpawned<TData>(T entity, TData data)
 		{
 			var poolEntity = entity as IPoolEntitySpawn<TData>;
 
 			poolEntity?.OnSpawn(data);
 		}
 
-		protected void CallOnDespawned(T entity)
+		protected virtual void CallOnDespawned(T entity)
 		{
 			var poolEntity = entity as IPoolEntityDespawn;
 
@@ -431,6 +431,30 @@ namespace GameLovers.Services
 			entity.SetActive(true);
 
 			return entity;
+		}
+
+		/// <inheritdoc />
+		protected override void CallOnSpawned(GameObject entity)
+		{
+			var poolEntity = entity.GetComponent<IPoolEntitySpawn>();
+
+			poolEntity?.OnSpawn();
+		}
+
+		/// <inheritdoc />
+		protected override void CallOnSpawned<TData>(GameObject entity, TData data)
+		{
+			var poolEntity = entity.GetComponent<IPoolEntitySpawn<TData>>();
+
+			poolEntity?.OnSpawn(data);
+		}
+
+		/// <inheritdoc />
+		protected override void CallOnDespawned(GameObject entity)
+		{
+			var poolEntity = entity.GetComponent<IPoolEntityDespawn>();
+
+			poolEntity?.OnDespawn();
 		}
 
 		protected override void PostDespawnEntity(GameObject entity)
@@ -516,6 +540,30 @@ namespace GameLovers.Services
 			entity.gameObject.SetActive(true);
 
 			return entity;
+		}
+
+		/// <inheritdoc />
+		protected override void CallOnSpawned(T entity)
+		{
+			var poolEntity = entity.GetComponent<IPoolEntitySpawn>();
+
+			poolEntity?.OnSpawn();
+		}
+
+		/// <inheritdoc />
+		protected override void CallOnSpawned<TData>(T entity, TData data)
+		{
+			var poolEntity = entity.GetComponent<IPoolEntitySpawn<TData>>();
+
+			poolEntity?.OnSpawn(data);
+		}
+
+		/// <inheritdoc />
+		protected override void CallOnDespawned(T entity)
+		{
+			var poolEntity = entity.GetComponent<IPoolEntityDespawn>();
+
+			poolEntity?.OnDespawn();
 		}
 
 		protected override void PostDespawnEntity(T entity)

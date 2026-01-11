@@ -4,6 +4,21 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.0] - 2026-01-11
+
+**New**:
+- Added *AGENTS.md* document to help guide AI coding assistants to understand and work with this package library
+- Added an entire test suit of unit/integration/performance/smoke tests to cover all the code for all services in this package
+
+**Changed**:
+- Changed *VersionServices* namespace from *GameLovers* to *GameLovers.Services* to maintain consistency with other services in the package.
+- Made *CallOnSpawned*, *CallOnSpawned\<TData\>*, and *CallOnDespawned* methods virtual in *ObjectPoolBase\<T\>* to allow derived pool classes to customize lifecycle callback behavior.
+
+**Fixed**:
+- Fixed the *README.md* file to now follow best practices in OSS standards for Unity's package library projects
+- Fixed linter warnings in *VersionServices.cs* (redundant field initialization, unused lambda parameter, member shadowing)
+- Fixed *GameObjectPool* not invoking *IPoolEntitySpawn.OnSpawn()* and *IPoolEntityDespawn.OnDespawn()* on components attached to spawned GameObjects. 
+
 ## [0.15.1] - 2025-09-24
 
 **New**:

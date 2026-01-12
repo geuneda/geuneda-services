@@ -5,7 +5,7 @@ using UnityEngine;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.Services
+namespace Geuneda.Services
 {
 	/// <summary>
 	/// This interface provides the access to the player's save persistent data 

@@ -1,6 +1,6 @@
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.Services
+namespace Geuneda.Services
 {
 	/// <summary>
 	/// Tags the interface as a <see cref="IGameCommand{TGameLogic}"/>

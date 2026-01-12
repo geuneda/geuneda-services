@@ -4,7 +4,7 @@ using UnityEngine;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.Services
+namespace Geuneda.Services
 {
 	/// <summary>
 	/// Service to manage the version of the application

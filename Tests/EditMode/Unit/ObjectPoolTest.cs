@@ -1,13 +1,13 @@
 using System;
 using System.Collections.Generic;
 using System.Xml.Linq;
-using GameLovers.Services;
+using Geuneda.Services;
 using NSubstitute;
 using NUnit.Framework;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLoversEditor.Services.Tests
+namespace GeunedaEditor.Services.Tests
 {
 	public class ObjectPoolTest
 	{

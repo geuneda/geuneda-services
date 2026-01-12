@@ -4,7 +4,7 @@ using System.Collections.Generic;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.Services
+namespace Geuneda.Services
 {
 	/// <summary>
 	/// The message contract that must be used for all messages being published via the <see cref="IMessageBrokerService"/>

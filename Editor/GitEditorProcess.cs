@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 
-namespace GameLovers.Services.Editor
+namespace Geuneda.Services.Editor
 {
 	/// <summary>
 	/// Run git commands processes that would otherwise be used in the terminal.

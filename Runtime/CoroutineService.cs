@@ -6,7 +6,7 @@ using Object = UnityEngine.Object;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.Services
+namespace Geuneda.Services
 {
 	/// <summary>
 	/// This interface acts as a wait for the completion of the coroutine.

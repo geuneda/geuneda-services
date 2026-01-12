@@ -12,7 +12,7 @@ using System.Text.RegularExpressions;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLoversEditor.Services.Tests
+namespace GeunedaEditor.Services.Tests
 {
 	/// <summary>
 	/// Prebuild setup for performance tests.

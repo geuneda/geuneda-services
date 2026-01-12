@@ -1,10 +1,10 @@
-using GameLovers.Services;
+using Geuneda.Services;
 using System;
 using System.Collections.Generic;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.Services
+namespace Geuneda.Services
 {
 	/// <summary>
 	/// This marks the defined object to me a container of binding installers.

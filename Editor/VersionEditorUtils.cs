@@ -2,9 +2,9 @@
 using System.IO;
 using UnityEditor;
 using UnityEngine;
-using GameLovers.Services;
+using Geuneda.Services;
 
-namespace GameLovers.Services.Editor
+namespace Geuneda.Services.Editor
 {
 	/// <summary>
 	/// Set the internal version in any VersionService instances in the project before building

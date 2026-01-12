@@ -1,11 +1,11 @@
 {
-    "name": "GameLovers.Services.Editor.Tests",
+    "name": "Geuneda.Services.Editor.Tests",
     "rootNamespace": "",
     "references": [
         "UnityEngine.TestRunner",
         "UnityEditor.TestRunner",
-        "GameLovers.Services",
-        "GameLovers.DataExtensions",
+        "Geuneda.Services",
+        "Geuneda.DataExtensions",
         "Unity.PerformanceTesting"
     ],
     "includePlatforms": [

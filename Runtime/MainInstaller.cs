@@ -2,7 +2,7 @@
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.Services
+namespace Geuneda.Services
 {
 	/// <inheritdoc cref="IInstaller"/>
 	/// <remarks>

@@ -1,14 +1,14 @@
 {
-  "name": "com.gamelovers.services",
-  "displayName": "Services",
-  "author": "Miguel Tomas",
+  "name": "com.geuneda.services",
+  "displayName": "Geuneda Services",
+  "author": "geuneda",
   "version": "1.0.0",
   "unity": "6000.0",
   "license": "MIT",
-  "description": "The purpose of this package is to provide a set of services to ease the development of a basic game architecture",
+  "description": "게임 아키텍처 개발을 위한 서비스 패키지입니다. DI 컨테이너, 메시지 브로커, 풀링, 코루틴 등 핵심 서비스를 제공합니다.",
   "type": "library",
   "hideInEditor": false,
   "dependencies": {
-    "com.gamelovers.dataextensions": "0.6.2"
+    "com.geuneda.dataextensions": "1.0.0"
   }
 }

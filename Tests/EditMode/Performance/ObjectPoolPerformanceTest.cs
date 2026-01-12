@@ -1,11 +1,11 @@
-using GameLovers.Services;
+using Geuneda.Services;
 using NUnit.Framework;
 using Unity.PerformanceTesting;
 using UnityEngine.TestTools;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLoversEditor.Services.Tests
+namespace GeunedaEditor.Services.Tests
 {
 	/// <summary>
 	/// Performance tests for ObjectPool.

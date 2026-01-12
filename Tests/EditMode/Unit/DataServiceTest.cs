@@ -1,12 +1,12 @@
 using System.Collections.Generic;
-using GameLovers.Services;
+using Geuneda.Services;
 using NSubstitute;
 using NUnit.Framework;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLoversEditor.Services.Tests
+namespace GeunedaEditor.Services.Tests
 {
 	[TestFixture]
 	public class DataServiceTest

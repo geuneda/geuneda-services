@@ -1,10 +1,10 @@
 ﻿using System;
-using GameLovers.Services;
+using Geuneda.Services;
 using NUnit.Framework;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLoversEditor.Services.Tests
+namespace GeunedaEditor.Services.Tests
 {
 	[TestFixture]
 	public class TimeServiceTest

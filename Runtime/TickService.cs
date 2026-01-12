@@ -5,7 +5,7 @@ using Object = UnityEngine.Object;
 
 // ReSharper disable once CheckNamespace
 
-namespace GameLovers.Services
+namespace Geuneda.Services
 {
 	/// <summary>
 	/// The Tick service provides updatable calls to other objects. It process the OnUpdate, OnLateUpdate & OnFixedUpdate calls.

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using Geuneda.GameData;
 
 namespace Geuneda.Services
 {
@@ -220,12 +221,12 @@ namespace Geuneda.Services
 		/// </remarks>
 		public static floatP Range(floatP min, floatP max, int[] rndState, bool maxInclusive)
 		{
-			if (min > max || (!maxInclusive && Math.Abs(min - max) < floatP.Epsilon))
+			if (min > max || (!maxInclusive && MathfloatP.Abs(min - max) < floatP.Epsilon))
 			{
 				throw new IndexOutOfRangeException("The min range value must be less the max range value");
 			}
 
-			if (Math.Abs(min - max) < floatP.Epsilon)
+			if (MathfloatP.Abs(min - max) < floatP.Epsilon)
 			{
 				return min;
 			}
@@ -281,7 +282,7 @@ namespace Geuneda.Services
 		/// </summary>
 		public static int[] GenerateRngState(int seed)
 		{
-			var value = _basicSeed - (seed == int.MinValue ? int.MaxValue : Math.Abs(seed));
+			var value = _basicSeed - (seed == int.MinValue ? int.MaxValue : System.Math.Abs(seed));
 			var state = new int[_stateLength];
 
 			state[_stateLength - 1] = value;

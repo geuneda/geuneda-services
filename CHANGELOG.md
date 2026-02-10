@@ -4,6 +4,13 @@ All notable changes to this package will be documented in this file.
 The format is based on [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)
 and this project adheres to [Semantic Versioning](http://semver.org/spec/v2.0.0.html).
 
+## [1.0.1] - 2026-01-14
+
+**Changed**:
+- 의존성 `com.geuneda.dataextensions`를 `com.geuneda.gamedata`로 변경
+- 어셈블리 정의에서 `Geuneda.GameData` 참조로 업데이트
+- `RngService`에서 결정론적 연산을 위해 `MathfloatP` 사용
+
 ## [1.0.0] - 2026-01-11
 
 **New**:

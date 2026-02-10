@@ -2,13 +2,13 @@
   "name": "com.geuneda.services",
   "displayName": "Geuneda Services",
   "author": "geuneda",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "unity": "6000.0",
   "license": "MIT",
   "description": "게임 아키텍처 개발을 위한 서비스 패키지입니다. DI 컨테이너, 메시지 브로커, 풀링, 코루틴 등 핵심 서비스를 제공합니다.",
   "type": "library",
   "hideInEditor": false,
   "dependencies": {
-    "com.geuneda.dataextensions": "1.0.0"
+    "com.geuneda.gamedata": "1.0.0"
   }
 }

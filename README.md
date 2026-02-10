@@ -32,8 +32,8 @@ https://github.com/geuneda/geuneda-services.git
 ```json
 {
   "dependencies": {
-    "com.geuneda.dataextensions": "https://github.com/geuneda/geuneda-dataextensions.git#v1.0.0",
-    "com.geuneda.services": "https://github.com/geuneda/geuneda-services.git#v1.0.0"
+    "com.geuneda.gamedata": "https://github.com/geuneda/geuneda-gamedata.git#v1.0.0",
+    "com.geuneda.services": "https://github.com/geuneda/geuneda-services.git#v1.0.1"
   }
 }
 ```
@@ -41,7 +41,7 @@ https://github.com/geuneda/geuneda-services.git
 ## 요구 사항
 
 - Unity 6000.0 이상
-- [Geuneda DataExtensions](https://github.com/geuneda/geuneda-dataextensions) (v1.0.0)
+- [Geuneda GameData](https://github.com/geuneda/geuneda-gamedata) (v1.0.0)
 
 ## 주요 서비스
 

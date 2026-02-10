@@ -1,10 +1,10 @@
-# GameLovers.Services - AI Agent Guide
+# Geuneda.Services - AI Agent Guide
 
 ## 1. Package Overview
-- **Package**: `com.gamelovers.services`
+- **Package**: `com.geuneda.services`
 - **Unity**: 6000.0+
 - **Dependencies** (see `package.json`)
-  - `com.gamelovers.dataextensions` (**0.6.2**) (contains `floatP`, used by `RngService`)
+  - `com.geuneda.gamedata` (**1.0.0**) (contains `floatP`, used by `RngService`)
 
 This package provides a set of small, modular “foundation services” for Unity projects (service locator/DI-lite, messaging, ticking, coroutines, pooling, persistence, RNG, time, and build version helpers).
 
@@ -40,7 +40,7 @@ For user-facing docs, treat `README.md` as the primary entry point. This file is
   - `ITimeService` + `ITimeManipulator` for querying time (Unity / Unix / DateTime UTC) and applying offsets.
 - **Deterministic RNG**: `Runtime/RngService.cs`
   - Deterministic RNG state stored in `RngData` and exposed via `IRngData`.
-  - Float API uses `floatP` (from `com.gamelovers.dataextensions`) for deterministic float math.
+  - Float API uses `floatP` (from `com.geuneda.gamedata`) for deterministic float math.
 - **Build/version info**: `Runtime/VersionServices.cs`
   - Runtime access to version strings and git/build metadata loaded from a Resources TextAsset.
 
@@ -90,7 +90,7 @@ For user-facing docs, treat `README.md` as the primary entry point. This file is
 
 ## 6. External Package Sources (for API lookups)
 Prefer local UPM cache / local packages when needed:
-- DataExtensions: `Packages/com.gamelovers.dataextensions/` (e.g., `floatP`)
+- GameData: `Packages/com.geuneda.gamedata/` (e.g., `floatP`)
 - Unity Newtonsoft JSON (Unity package): check `Library/PackageCache/` if you need source details
 
 ## 7. Dev Workflows (common changes)

@@ -6,7 +6,7 @@ namespace Geuneda.Services
 {
 	/// <inheritdoc cref="IInstaller"/>
 	/// <remarks>
-	/// Use this installer for generic Binding interfaces that are available in the entire scope of the game
+	/// 게임 전체 범위에서 사용 가능한 범용 바인딩 인터페이스에 이 인스톨러를 사용하세요
 	/// </remarks>
 	public static class MainInstaller
 	{

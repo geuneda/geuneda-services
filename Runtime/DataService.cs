@@ -8,44 +8,44 @@ using UnityEngine;
 namespace Geuneda.Services
 {
 	/// <summary>
-	/// This interface provides the access to the player's save persistent data 
+	/// 플레이어의 저장된 영구 데이터에 접근하기 위한 인터페이스
 	/// </summary>
 	public interface IDataProvider
 	{
 		/// <summary>
-		/// Requests the player's data of <typeparamref name="T"/> type
+		/// <typeparamref name="T"/> 타입의 플레이어 데이터를 요청합니다
 		/// </summary>
 		T GetData<T>() where T : class;
 
 		/// <summary>
-		/// Requests if the service has the given player's data of <typeparamref name="T"/> type
+		/// 서비스가 <typeparamref name="T"/> 타입의 플레이어 데이터를 보유하고 있는지 확인합니다
 		/// </summary>
 		bool HasData<T>() where T : class;
 	}
 
 	/// <summary>
-	/// This service allows to manage all the persistent data in the game.
-	/// Data are strictly reference types to guarantee that there is no boxing/unboxing and lost of referencing when changing it's data. 
+	/// 게임의 모든 영구 데이터를 관리하는 서비스입니다.
+	/// 데이터 변경 시 박싱/언박싱 및 참조 손실이 발생하지 않도록 참조 타입만 사용합니다.
 	/// </summary>
 	public interface IDataService : IDataProvider
 	{
 		/// <summary>
-		/// Saves the game's given <typeparamref name="T"/> data to disk
+		/// 게임의 <typeparamref name="T"/> 데이터를 디스크에 저장합니다
 		/// </summary>
 		void SaveData<T>() where T : class;
 
 		/// <summary>
-		/// Saves all game's data to disk
+		/// 모든 게임 데이터를 디스크에 저장합니다
 		/// </summary>
 		void SaveAllData();
 
 		/// <summary>
-		/// Loads the game's given <typeparamref name="T"/> data from disk and returns it
+		/// 디스크에서 게임의 <typeparamref name="T"/> 데이터를 로드하여 반환합니다
 		/// </summary>
 		T LoadData<T>() where T : class;
 
 		/// <summary>
-		/// Adds or replaces the given <paramref name="data"/> to be maintained in memory.
+		/// 주어진 <paramref name="data"/>를 메모리에 추가하거나 교체합니다.
 		/// </summary>
 		void AddOrReplaceData<T>(T data) where T : class;
 	}

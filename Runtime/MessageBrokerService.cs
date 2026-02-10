@@ -7,54 +7,54 @@ using System.Collections.Generic;
 namespace Geuneda.Services
 {
 	/// <summary>
-	/// The message contract that must be used for all messages being published via the <see cref="IMessageBrokerService"/>
+	/// <see cref="IMessageBrokerService"/>를 통해 발행되는 모든 메시지에 사용해야 하는 메시지 계약
 	/// </summary>
 	public interface IMessage { }
 
 	/// <summary>
-	/// This services provides the execution of the Message Broker.
-	/// It provides a easy way to decouple objects across the system with an independent channel of communication, by dispatching
-	/// message events to be caught by all it's observer subscribers.
+	/// 메시지 브로커 실행을 제공하는 서비스입니다.
+	/// 메시지 이벤트를 발송하여 모든 옵저버 구독자가 수신할 수 있도록 함으로써,
+	/// 독립적인 통신 채널을 통해 시스템 전반의 객체를 쉽게 분리할 수 있게 합니다.
 	/// </summary>
 	/// <remarks>
-	/// Follows the "Message Broker Pattern" <see cref="https://en.wikipedia.org/wiki/Message_broker"/>
+	/// "메시지 브로커 패턴"을 따릅니다 <see cref="https://en.wikipedia.org/wiki/Message_broker"/>
 	/// </remarks>
 	public interface IMessageBrokerService
 	{
 		/// <summary>
-		/// Publish a message in the message broker.
-		/// If there is no object subscribing the message type, nothing will happen
+		/// 메시지 브로커에 메시지를 발행합니다.
+		/// 해당 메시지 타입을 구독하는 객체가 없으면 아무 일도 일어나지 않습니다.
 		/// </summary>
 		/// <remarks>
-		/// Use <see cref="PublishSafe{T}(T)"/> it there are a chain subscriptions during publishing
+		/// 발행 중 체인 구독이 있는 경우 <see cref="PublishSafe{T}(T)"/>를 사용하세요
 		/// </remarks>
 		void Publish<T>(T message) where T : IMessage;
 
 		/// <summary>
-		/// Publish a message in the message broker.
-		/// If there is no object subscribing the message type, nothing will happen
+		/// 메시지 브로커에 메시지를 발행합니다.
+		/// 해당 메시지 타입을 구독하는 객체가 없으면 아무 일도 일어나지 않습니다.
 		/// </summary>
 		/// <remarks>
-		/// This method can be slow and allocated extra memory if there are a lot of subscribers to the <typeparamref name="T"/>.
-		/// Use <see cref="Publish{T}(T)"/> instead for faster iteration speed IF and ONLY IF there aren't chain subscriptions during publishing
+		/// <typeparamref name="T"/>의 구독자가 많으면 이 메서드는 느리고 추가 메모리를 할당할 수 있습니다.
+		/// 발행 중 체인 구독이 없는 경우에만 더 빠른 반복 속도를 위해 <see cref="Publish{T}(T)"/>를 사용하세요.
 		/// </remarks>
 		void PublishSafe<T>(T message) where T : IMessage;
 
 		/// <summary>
-		/// Subscribes to the message type.
-		/// Will invoke the <paramref name="action"/> every time the message of the subscribed type is published.
+		/// 메시지 타입을 구독합니다.
+		/// 구독된 타입의 메시지가 발행될 때마다 <paramref name="action"/>을 호출합니다.
 		/// </summary>
 		void Subscribe<T>(Action<T> action) where T : IMessage;
 
 		/// <summary>
-		/// Unsubscribe the action of <typeparamref name="T"/> from the <paramref name="subscriber"/> in the message broker.
-		/// If <paramref name="subscriber"/> is null then will unsubscribe from ALL subscribers currently subscribed to <typeparamref name="T"/>
+		/// 메시지 브로커에서 <paramref name="subscriber"/>의 <typeparamref name="T"/> 액션 구독을 해제합니다.
+		/// <paramref name="subscriber"/>가 null이면 현재 <typeparamref name="T"/>를 구독 중인 모든 구독자를 해제합니다.
 		/// </summary>
 		void Unsubscribe<T>(object subscriber = null) where T : IMessage;
 		
 		/// <summary>
-		/// Unsubscribe from all messages.
-		/// If <paramref name="subscriber"/> is null then will unsubscribe from EVERYTHING, other wise only from the given subscriber
+		/// 모든 메시지 구독을 해제합니다.
+		/// <paramref name="subscriber"/>가 null이면 모든 구독을 해제하고, 그렇지 않으면 해당 구독자의 구독만 해제합니다.
 		/// </summary>
 		void UnsubscribeAll(object subscriber = null);
 	}

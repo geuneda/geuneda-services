@@ -15,9 +15,9 @@ using System.Text.RegularExpressions;
 namespace GeunedaEditor.Services.Tests
 {
 	/// <summary>
-	/// Prebuild setup for performance tests.
-	/// This ensures the Unity Performance Testing Package has the required metadata
-	/// before tests run in EditMode.
+	/// 성능 테스트를 위한 사전 빌드 설정입니다.
+	/// EditMode에서 테스트가 실행되기 전에 Unity Performance Testing Package에
+	/// 필요한 메타데이터가 있는지 확인합니다.
 	/// </summary>
 	public class PerformanceTestSetup : IPrebuildSetup
 	{
@@ -26,9 +26,9 @@ namespace GeunedaEditor.Services.Tests
 		public void Setup()
 		{
 #if UNITY_EDITOR
-			// Create and save run info to PlayerPrefs (required by Performance Testing Package in EditMode)
-			// Note: RunSettings is internal to the package, but only Run metadata is required to prevent
-			// the NullReferenceException in Metadata.SetRuntimeSettings()
+			// PlayerPrefs에 실행 정보를 생성하고 저장합니다 (EditMode에서 Performance Testing Package에 필요)
+			// 참고: RunSettings는 패키지 내부이지만, Metadata.SetRuntimeSettings()에서
+			// NullReferenceException을 방지하기 위해 Run 메타데이터만 필요합니다
 			var run = CreateRunInfo();
 			SaveToPrefs(run, PlayerPrefKeyRunJSON);
 

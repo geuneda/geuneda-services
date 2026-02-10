@@ -7,10 +7,10 @@ using UnityEngine;
 namespace Geuneda.Services
 {
 	/// <summary>
-	/// Service to manage the version of the application
+	/// 애플리케이션 버전을 관리하는 서비스
 	/// </summary>
 	/// <remarks>
-	/// Potencial use cases is for version comparison & version check
+	/// 버전 비교 및 버전 확인에 활용할 수 있습니다
 	/// </remarks>
 	public static class VersionServices
 	{
@@ -26,29 +26,29 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// Official application version only (M.m.p)
+		/// 공식 애플리케이션 버전 (M.m.p)
 		/// </summary>
 		public static string VersionExternal => Application.version;
 
 		/// <summary>
-		/// Internal version (M.m.p-b.branch.commit)
+		/// 내부 버전 (M.m.p-b.branch.commit)
 		/// </summary>
 		public static string VersionInternal => IsLoaded()
 			? FormatInternalVersion(_versionData)
 			: Application.version;
 
 		/// <summary>
-		/// Name of the git branch that this app was built from.
+		/// 이 앱이 빌드된 git 브랜치 이름
 		/// </summary>
 		public static string Branch => IsLoaded() ? _versionData.BranchName : string.Empty;
 
 		/// <summary>
-		/// Short hash of the commit this app was built from.
+		/// 이 앱이 빌드된 커밋의 짧은 해시
 		/// </summary>
 		public static string Commit => IsLoaded() ? _versionData.CommitHash : string.Empty;
 
 		/// <summary>
-		/// Build number for this build of the app.
+		/// 이 앱 빌드의 빌드 번호
 		/// </summary>
 		public static string BuildNumber => IsLoaded() ? _versionData.BuildNumber : string.Empty;
 
@@ -56,8 +56,8 @@ namespace Geuneda.Services
 		private static bool _loaded;
 
 		/// <summary>
-		/// Load the internal version string from resources async. Should be called once when the
-		/// app is started.
+		/// 리소스에서 내부 버전 문자열을 비동기로 로드합니다.
+		/// 앱 시작 시 한 번 호출해야 합니다.
 		/// </summary>
 		public static async Task LoadVersionDataAsync()
 		{
@@ -90,7 +90,7 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// Requests to check if the provided version is newer compared to the local app version
+		/// 제공된 버전이 로컬 앱 버전보다 최신인지 확인합니다
 		/// </summary>
 		public static bool IsOutdatedVersion(string version)
 		{
@@ -120,7 +120,7 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// Formats VersionData into the long internal version string for the app.
+		/// VersionData를 앱의 전체 내부 버전 문자열로 포맷합니다.
 		/// </summary>
 		public static string FormatInternalVersion(VersionData data)
 		{

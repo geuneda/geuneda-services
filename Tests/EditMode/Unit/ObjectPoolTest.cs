@@ -77,7 +77,7 @@ namespace GeunedaEditor.Services.Tests
 			_mockEntity.Received().OnDespawn();
 		}
 
-		/* Uncomment when finding someone that can help fix this interface
+		/* 이 인터페이스 수정을 도와줄 사람을 찾으면 주석 해제
 		[Test]
 		public void EntityDespawn_Successfully()
 		{

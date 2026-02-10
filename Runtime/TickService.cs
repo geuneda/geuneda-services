@@ -8,97 +8,96 @@ using Object = UnityEngine.Object;
 namespace Geuneda.Services
 {
 	/// <summary>
-	/// The Tick service provides updatable calls to other objects. It process the OnUpdate, OnLateUpdate & OnFixedUpdate calls.
-	/// It allows pure C# objects to have updatable calls and also removes the overhead of using the MonoBehaviour update methods
-	/// over multiple GameObjects.
-	/// The Tick Service creates a game object in the scene that will be the true container of all update calls to be executed
-	/// through this service. It also keeps the update data on scene load/unload.
-	/// Call <see cref="Dispose"/> to clear the Tick Service correctly.
+	/// Tick 서비스는 다른 객체에 업데이트 호출을 제공합니다. OnUpdate, OnLateUpdate, OnFixedUpdate 호출을 처리합니다.
+	/// 순수 C# 객체에서도 업데이트 호출을 사용할 수 있으며, 여러 GameObject에 걸친 MonoBehaviour 업데이트 메서드 사용의 오버헤드를 제거합니다.
+	/// Tick 서비스는 씬에 게임 오브젝트를 생성하여 이 서비스를 통해 실행될 모든 업데이트 호출의 실제 컨테이너 역할을 합니다.
+	/// 또한 씬 로드/언로드 시에도 업데이트 데이터를 유지합니다.
+	/// Tick 서비스를 올바르게 정리하려면 <see cref="Dispose"/>를 호출하세요.
 	/// </summary>
 	public interface ITickService : IDisposable
 	{
 		/// <summary>
-		/// Subscribes the <paramref name="action"/> to the frame based update with a <paramref name="deltaTime"/> buffer
-		/// between each call, with the option to use <paramref name="realTime"/> or game time (Game time can be manipulated to
-		/// run faster or slower).
-		/// It has the option to set <paramref name="timeOverflowToNextTick"/> in order to invoke each <paramref name="action"/> close to
-		/// the <paramref name="deltaTime"/> defined. This is because the updates don't run always in the same exact delta time
-		/// and if the last frame took longer to be processed it will be taken into consideration.
+		/// <paramref name="action"/>을 프레임 기반 업데이트에 구독합니다.
+		/// 각 호출 사이에 <paramref name="deltaTime"/> 버퍼를 두며, <paramref name="realTime"/> 또는 게임 시간을 사용할 수 있습니다
+		/// (게임 시간은 더 빠르거나 느리게 조작할 수 있음).
+		/// <paramref name="timeOverflowToNextTick"/>을 설정하면 각 <paramref name="action"/>을 정의된 <paramref name="deltaTime"/>에
+		/// 가깝게 호출할 수 있습니다. 이는 업데이트가 항상 동일한 델타 타임으로 실행되지 않으며,
+		/// 마지막 프레임 처리가 더 오래 걸렸을 경우 이를 고려하기 때문입니다.
 		/// </summary>
 		void SubscribeOnUpdate(Action<float> action, float deltaTime = 0f, bool timeOverflowToNextTick = false, bool realTime = false);
 		
 		/// <summary>
-		/// Subscribes the <paramref name="action"/> to the frame based after the main update with a <paramref name="deltaTime"/> buffer
-		/// between each call, with the option to use <paramref name="realTime"/> or game time (Game time can be manipulated to
-		/// run faster or slower).
-		/// It has the option to set <paramref name="timeOverflowToNextTick"/> in order to invoke each <paramref name="action"/> close to
-		/// the <paramref name="deltaTime"/> defined. This is because the updates don't run always in the same exact delta time
-		/// and if the last frame took longer to be processed it will be taken into consideration.
+		/// <paramref name="action"/>을 메인 업데이트 이후의 프레임 기반 업데이트에 구독합니다.
+		/// 각 호출 사이에 <paramref name="deltaTime"/> 버퍼를 두며, <paramref name="realTime"/> 또는 게임 시간을 사용할 수 있습니다
+		/// (게임 시간은 더 빠르거나 느리게 조작할 수 있음).
+		/// <paramref name="timeOverflowToNextTick"/>을 설정하면 각 <paramref name="action"/>을 정의된 <paramref name="deltaTime"/>에
+		/// 가깝게 호출할 수 있습니다. 이는 업데이트가 항상 동일한 델타 타임으로 실행되지 않으며,
+		/// 마지막 프레임 처리가 더 오래 걸렸을 경우 이를 고려하기 때문입니다.
 		/// </summary>
 		void SubscribeOnLateUpdate(Action<float> action, float deltaTime = 0f, bool timeOverflowToNextTick = false, bool realTime = false);
 		
 		/// <summary>
-		/// Subscribes the <paramref name="action"/> to the fixed update
+		/// <paramref name="action"/>을 고정 업데이트에 구독합니다
 		/// </summary>
 		void SubscribeOnFixedUpdate(Action<float> action);
 		
 		/// <summary>
-		/// Unsubscribes the <paramref name="action"/> from any of the update
+		/// <paramref name="action"/>을 모든 업데이트에서 구독 해제합니다
 		/// </summary>
 		void Unsubscribe(Action<float> action);
 		
 		/// <summary>
-		/// Unsubscribes the <paramref name="action"/> from on update
+		/// <paramref name="action"/>을 업데이트에서 구독 해제합니다
 		/// </summary>
 		void UnsubscribeOnUpdate(Action<float> action);
 		
 		/// <summary>
-		/// Unsubscribes the <paramref name="action"/> from on fixed update call
+		/// <paramref name="action"/>을 고정 업데이트 호출에서 구독 해제합니다
 		/// </summary>
 		void UnsubscribeOnFixedUpdate(Action<float> action);
 		
 		/// <summary>
-		/// Unsubscribes the <paramref name="action"/> from on late update call
+		/// <paramref name="action"/>을 후기 업데이트 호출에서 구독 해제합니다
 		/// </summary>
 		void UnsubscribeOnLateUpdate(Action<float> action);
 		
 		/// <summary>
-		/// Unsubscribes from all on updates
+		/// 모든 업데이트 구독을 해제합니다
 		/// </summary>
 		void UnsubscribeAllOnUpdate();
-		
+
 		/// <summary>
-		/// Unsubscribes from all on updates from the given <paramref name="subscriber"/>
+		/// 주어진 <paramref name="subscriber"/>의 모든 업데이트 구독을 해제합니다
 		/// </summary>
 		void UnsubscribeAllOnUpdate(object subscriber);
-		
+
 		/// <summary>
-		/// Unsubscribes from all on fixed updates
+		/// 모든 고정 업데이트 구독을 해제합니다
 		/// </summary>
 		void UnsubscribeAllOnFixedUpdate();
-		
+
 		/// <summary>
-		/// Unsubscribes from all on fixed updates from the given <paramref name="subscriber"/>
+		/// 주어진 <paramref name="subscriber"/>의 모든 고정 업데이트 구독을 해제합니다
 		/// </summary>
 		void UnsubscribeAllOnFixedUpdate(object subscriber);
-		
+
 		/// <summary>
-		/// Unsubscribes from all on fixed updates
+		/// 모든 후기 업데이트 구독을 해제합니다
 		/// </summary>
 		void UnsubscribeAllOnLateUpdate();
-		
+
 		/// <summary>
-		/// Unsubscribes from all on fixed updates from the given <paramref name="subscriber"/>
+		/// 주어진 <paramref name="subscriber"/>의 모든 후기 업데이트 구독을 해제합니다
 		/// </summary>
 		void UnsubscribeAllOnLateUpdate(object subscriber);
-		
+
 		/// <summary>
-		/// Unsubscribes from all updates
+		/// 모든 업데이트 구독을 해제합니다
 		/// </summary>
 		void UnsubscribeAll();
-		
+
 		/// <summary>
-		/// Unsubscribes from all updates from the given <paramref name="subscriber"/>
+		/// 주어진 <paramref name="subscriber"/>의 모든 업데이트 구독을 해제합니다
 		/// </summary>
 		void UnsubscribeAll(object subscriber);
 	}
@@ -132,8 +131,8 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// Cleans the tick service and deletes the tick game object that contains all the update calls in the game.
-		/// This will also stop all currently running updates.
+		/// Tick 서비스를 정리하고 게임의 모든 업데이트 호출을 포함하는 틱 게임 오브젝트를 삭제합니다.
+		/// 현재 실행 중인 모든 업데이트도 중지됩니다.
 		/// </summary>
 		public void Dispose()
 		{
@@ -301,10 +300,10 @@ namespace Geuneda.Services
 				return;
 			}
 
-			// Iterate backwards to allow safe mutation during iteration
+			// 반복 중 안전한 변경을 위해 역순으로 순회
 			for (int i = _onFixedUpdateList.Count - 1; i >= 0; i--)
 			{
-				// Skip if the item was removed by a previous action
+				// 이전 액션에 의해 항목이 제거된 경우 건너뜀
 				if (i >= _onFixedUpdateList.Count)
 				{
 					continue;
@@ -331,10 +330,10 @@ namespace Geuneda.Services
 				return;
 			}
 
-			// Iterate backwards to allow safe mutation during iteration
+			// 반복 중 안전한 변경을 위해 역순으로 순회
 			for (int i = list.Count - 1; i >= 0; i--)
 			{
-				// Skip if the item was removed by a previous action
+				// 이전 액션에 의해 항목이 제거된 경우 건너뜀
 				if (i >= list.Count)
 				{
 					continue;
@@ -352,7 +351,7 @@ namespace Geuneda.Services
 
 				tickData.Action(deltaTime);
 
-				// Check if the item still exists and wasn't unsubscribed
+				// 항목이 여전히 존재하고 구독 해제되지 않았는지 확인
 				if (i < list.Count && list[i] == tickData)
 				{
 					var overFlow = tickData.DeltaTime == 0 ? 0 : deltaTime % tickData.DeltaTime;
@@ -400,8 +399,8 @@ namespace Geuneda.Services
 	}
 
 	/// <summary>
-	/// The MonoBehaviour class to be attached to the game object being processed in the <see cref="ITickService"/>
-	/// This object will be the main invoker of all updates
+	/// <see cref="ITickService"/>에서 처리되는 게임 오브젝트에 부착될 MonoBehaviour 클래스입니다.
+	/// 이 객체가 모든 업데이트의 주요 호출자 역할을 합니다.
 	/// </summary>
 	public class TickServiceMonoBehaviour : MonoBehaviour
 	{

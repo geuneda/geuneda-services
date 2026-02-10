@@ -9,34 +9,34 @@ using Object = UnityEngine.Object;
 namespace Geuneda.Services
 {
 	/// <summary>
-	/// This interface acts as a wait for the completion of the coroutine.
-	/// It allows to passive wait for the completion of a coroutine to invoke a callback when finished.
+	/// 코루틴 완료 대기를 위한 인터페이스입니다.
+	/// 코루틴 완료를 수동적으로 대기하고, 완료 시 콜백을 호출할 수 있습니다.
 	/// </summary>
 	public interface IAsyncCoroutine
 	{
 		/// <summary>
-		/// Get the execution status of the coroutine
+		/// 코루틴의 실행 상태를 가져옵니다
 		/// </summary>
 		bool IsRunning { get; }
 		/// <summary>
-		/// Get the complete operation status of the coroutine
+		/// 코루틴의 완료 상태를 가져옵니다
 		/// </summary>
 		bool IsCompleted { get; }
 		/// <summary>
-		/// Get the current coroutine being executed
+		/// 현재 실행 중인 코루틴을 가져옵니다
 		/// </summary>
 		Coroutine Coroutine { get; }
 		/// <summary>
-		/// The Unity time the coroutine started
+		/// 코루틴이 시작된 Unity 시간
 		/// </summary>
 		float StartTime { get; }
 		
 		/// <summary>
-		/// Sets the action <paramref name="onComplete"/> callback to be invoked when the coroutine is completed
+		/// 코루틴 완료 시 호출될 <paramref name="onComplete"/> 콜백 액션을 설정합니다
 		/// </summary>
 		void OnComplete(Action onComplete);
 		/// <summary>
-		/// Stops the execution of this coroutine
+		/// 이 코루틴의 실행을 중지합니다
 		/// </summary>
 		void StopCoroutine(bool triggerOnComplete = false);
 	}
@@ -45,52 +45,49 @@ namespace Geuneda.Services
 	public interface IAsyncCoroutine<T> : IAsyncCoroutine
 	{
 		/// <summary>
-		/// The data to be returned on the coroutine completion
+		/// 코루틴 완료 시 반환될 데이터
 		/// </summary>
 		T Data { get; set; }
 		
 		/// <summary>
-		/// Sets the action <paramref name="onComplete"/> callback to be invoked when the coroutine is completed with the
-		/// <seealso cref="Data"/> reference in the callback
+		/// 코루틴 완료 시 <seealso cref="Data"/> 참조와 함께 호출될 <paramref name="onComplete"/> 콜백 액션을 설정합니다
 		/// </summary>
 		void OnComplete(Action<T> onComplete);
 	}
 	
 	/// <summary>
-	/// The coroutine service allows the use of coroutines outside of the scope of Unity's game objects.
-	/// This allows to get the power of coroutines in pure C# classes.
-	/// It also extends the functionality of coroutines by providing the use of <see cref="IAsyncCoroutine"/> to
-	/// have a callback on complete of the coroutine.
-	/// The Coroutine Service creates a game object in the scene that will be the true container of all coroutines
-	/// to be created in through this service.
-	/// The coroutine service will keep the coroutines on scene load/unload.
+	/// 코루틴 서비스는 Unity 게임 오브젝트의 범위 밖에서도 코루틴을 사용할 수 있게 합니다.
+	/// 순수 C# 클래스에서 코루틴의 기능을 활용할 수 있습니다.
+	/// 또한 <see cref="IAsyncCoroutine"/>을 제공하여 코루틴 완료 시 콜백 기능으로 코루틴의 기능을 확장합니다.
+	/// 코루틴 서비스는 씬에 게임 오브젝트를 생성하여 이 서비스를 통해 생성될 모든 코루틴의 실제 컨테이너 역할을 합니다.
+	/// 코루틴 서비스는 씬 로드/언로드 시에도 코루틴을 유지합니다.
 	/// </summary>
 	public interface ICoroutineService : IDisposable
 	{
 		/// <summary>
-		/// Follows the same principle and execution of <see cref="MonoBehaviour.StartCoroutine(IEnumerator)"/> but returns
-		/// and can be used in pure C# classes. It can be helpful also to enable coroutines to execute when an object is disabled
+		/// <see cref="MonoBehaviour.StartCoroutine(IEnumerator)"/>와 동일한 원리로 실행되지만,
+		/// 순수 C# 클래스에서 사용할 수 있습니다. 오브젝트가 비활성화된 상태에서도 코루틴을 실행할 수 있어 유용합니다.
 		/// </summary>
 		Coroutine StartCoroutine(IEnumerator routine);
 		/// <summary>
-		/// Follows the same principle and execution of <see cref="MonoBehaviour.StartCoroutine(IEnumerator)"/> but returns
-		/// a <see cref="IAsyncCoroutine"/> to provide a callback on complete of the coroutine
+		/// <see cref="MonoBehaviour.StartCoroutine(IEnumerator)"/>와 동일한 원리로 실행되지만,
+		/// 코루틴 완료 시 콜백을 제공하는 <see cref="IAsyncCoroutine"/>을 반환합니다
 		/// </summary>
 		IAsyncCoroutine StartAsyncCoroutine(IEnumerator routine);
 		/// <summary>
-		/// Follows the same principle and execution of <see cref="MonoBehaviour.StartCoroutine(IEnumerator)"/> but returns
-		/// a <see cref="IAsyncCoroutine{T}"/> to provide a callback on complete of the coroutine with given <paramref name="data"/>
+		/// <see cref="MonoBehaviour.StartCoroutine(IEnumerator)"/>와 동일한 원리로 실행되지만,
+		/// 주어진 <paramref name="data"/>와 함께 코루틴 완료 시 콜백을 제공하는 <see cref="IAsyncCoroutine{T}"/>을 반환합니다
 		/// </summary>
 		IAsyncCoroutine<T> StartAsyncCoroutine<T>(IEnumerator routine, T data);
 		/// <summary>
-		/// Executes <paramref name="call"/> in a <see cref="StartAsyncCoroutine"/> with the given <paramref name="delay"/>.
-		/// Useful for delay callbacks 
+		/// 주어진 <paramref name="delay"/> 후에 <see cref="StartAsyncCoroutine"/>에서 <paramref name="call"/>을 실행합니다.
+		/// 지연 콜백에 유용합니다.
 		/// </summary>
 		IAsyncCoroutine StartDelayCall(Action call, float delay);
 		/// <summary>
-		/// Executes <paramref name="call"/> in a <see cref="StartAsyncCoroutine"/> with the given <paramref name="delay"/>
-		/// and <paramref name="data"/> data type.
-		/// Useful for delay callbacks 
+		/// 주어진 <paramref name="delay"/> 및 <paramref name="data"/> 데이터 타입과 함께
+		/// <see cref="StartAsyncCoroutine"/>에서 <paramref name="call"/>을 실행합니다.
+		/// 지연 콜백에 유용합니다.
 		/// </summary>
 		IAsyncCoroutine<T> StartDelayCall<T>(Action<T> call, T data,float delay);
 		/// <inheritdoc cref="MonoBehaviour.StopCoroutine(Coroutine)"/>
@@ -114,8 +111,8 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// Cleans the coroutine service and deletes the coroutine game object that contains all the coroutines in the game.
-		/// This will also stop all currently running coroutines.
+		/// 코루틴 서비스를 정리하고 게임의 모든 코루틴을 포함하는 코루틴 게임 오브젝트를 삭제합니다.
+		/// 현재 실행 중인 모든 코루틴도 중지됩니다.
 		/// </summary>
 		public void Dispose()
 		{
@@ -215,7 +212,7 @@ namespace Geuneda.Services
 			completed.Completed();
 		}
 		
-		#region Private Interfaces
+		#region 비공개 인터페이스
 		
 		private interface ICompleteCoroutine
 		{
@@ -303,8 +300,8 @@ namespace Geuneda.Services
 	}
 
 	/// <summary>
-	/// MonoBehaviour to be attached to the game object in the scene being created in the <see cref="ICoroutineService"/>.
-	/// This will be the container of all the coroutines created by the coroutine service.
+	/// <see cref="ICoroutineService"/>에서 생성되는 씬의 게임 오브젝트에 부착될 MonoBehaviour입니다.
+	/// 코루틴 서비스에 의해 생성된 모든 코루틴의 컨테이너 역할을 합니다.
 	/// </summary>
 	public class CoroutineServiceMonoBehaviour : MonoBehaviour
 	{

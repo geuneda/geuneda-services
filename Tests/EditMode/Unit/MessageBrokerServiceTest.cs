@@ -78,9 +78,9 @@ namespace GeunedaEditor.Services.Tests
 		[Test]
 		public void Subscribe_StaticMethod_ThrowsException()
 		{
-			// The current implementation uses action.Target as the key. 
-			// For static methods, action.Target is null, which is explicitly checked
-			// and throws ArgumentException with a descriptive message.
+			// 현재 구현은 action.Target을 키로 사용합니다.
+			// 정적 메서드의 경우 action.Target이 null이며, 이는 명시적으로 검사되어
+			// 설명 메시지와 함께 ArgumentException을 발생시킵니다.
 			
 			Assert.Throws<ArgumentException>(() => _messageBroker.Subscribe<MessageType1>(StaticMockCall));
 		}

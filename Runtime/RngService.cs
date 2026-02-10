@@ -5,44 +5,44 @@ using Geuneda.GameData;
 namespace Geuneda.Services
 {
 	/// <summary>
-	/// Implement this interface if you use a data structure in a class to pass the values by reference
-	/// and thus updating directly your internal data container.
+	/// 클래스에서 데이터 구조를 사용하여 참조로 값을 전달하고
+	/// 내부 데이터 컨테이너를 직접 업데이트하려면 이 인터페이스를 구현하세요.
 	/// </summary>
 	public interface IRngData
 	{
 		/// <summary>
-		/// Gets the seed used to initialize the RNG.
+		/// RNG 초기화에 사용된 시드를 가져옵니다.
 		/// </summary>
 		int Seed { get; }
 
 		/// <summary>
-		/// Gets the number of random numbers generated so far.
+		/// 지금까지 생성된 난수의 개수를 가져옵니다.
 		/// </summary>
 		int Count { get; }
 
 		/// <summary>
-		/// Gets the current state of the RNG.
+		/// RNG의 현재 상태를 가져옵니다.
 		/// </summary>
 		IReadOnlyList<int> State { get; }
 	}
 
 	/// <summary>
-	/// Represents a data structure for storing random number generation (RNG) state.
+	/// 난수 생성(RNG) 상태를 저장하기 위한 데이터 구조를 나타냅니다.
 	/// </summary>
 	public class RngData : IRngData
 	{
 		/// <summary>
-		/// The seed used to initialize the RNG.
+		/// RNG 초기화에 사용된 시드
 		/// </summary>
 		public int Seed;
 
 		/// <summary>
-		/// The number of random numbers generated so far.
+		/// 지금까지 생성된 난수의 개수
 		/// </summary>
 		public int Count;
 
 		/// <summary>
-		/// The current state of the RNG.
+		/// RNG의 현재 상태
 		/// </summary>
 		public int[] State;
 
@@ -54,52 +54,52 @@ namespace Geuneda.Services
 		IReadOnlyList<int> IRngData.State => Array.AsReadOnly(State);
 	}
 	/// <summary>
-	/// This Service provides the necessary behaviour to manage the random generated values with always a deterministic result
-	/// Based on the .Net library Random class <see cref="https://referencesource.microsoft.com/#mscorlib/system/random.cs"/>
+	/// 항상 결정론적 결과를 갖는 난수 생성 값을 관리하는 데 필요한 동작을 제공하는 서비스입니다.
+	/// .Net 라이브러리 Random 클래스를 기반으로 합니다 <see cref="https://referencesource.microsoft.com/#mscorlib/system/random.cs"/>
 	/// </summary>
 	public interface IRngService
 	{
 		/// <summary>
-		/// The <see cref="IRngData"/> that this service is manipulating
+		/// 이 서비스가 조작하는 <see cref="IRngData"/>
 		/// </summary>
 		public IRngData Data { get; }
 
 		/// <summary>
-		/// Returns the number of times the Rng has been counted;
+		/// RNG가 카운트된 횟수를 반환합니다
 		/// </summary>
 		int Counter { get; }
 
 		/// <summary>
-		/// Requests the next <see cref="int"/> generated value without changing the state.
-		/// Calling this multiple times in sequence gives always the same result.
+		/// 상태를 변경하지 않고 다음 <see cref="int"/> 생성 값을 요청합니다.
+		/// 연속으로 여러 번 호출해도 항상 동일한 결과를 반환합니다.
 		/// </summary>
 		int Peek { get; }
 
 		/// <summary>
-		/// Requests the next <see cref="float"/> generated value without changing the state.
-		/// Calling this multiple times in sequence gives always the same result.
+		/// 상태를 변경하지 않고 다음 <see cref="float"/> 생성 값을 요청합니다.
+		/// 연속으로 여러 번 호출해도 항상 동일한 결과를 반환합니다.
 		/// </summary>
 		floatP Peekfloat { get; }
 
 		/// <summary>
-		/// Requests the next <see cref="int"/> generated value
+		/// 다음 <see cref="int"/> 생성 값을 요청합니다
 		/// </summary>
 		int Next { get; }
 
 		/// <summary>
-		/// Requests the next <see cref="floatP"/> generated value
+		/// 다음 <see cref="floatP"/> 생성 값을 요청합니다
 		/// </summary>
 		floatP Nextfloat { get; }
 
 		/// <inheritdoc cref="Range(int,int,int[],bool)"/>
 		/// <remarks>
-		/// Calling this multiple times with the same parameters in sequence gives always the same result.
+		/// 동일한 매개변수로 연속 호출해도 항상 동일한 결과를 반환합니다.
 		/// </remarks>
 		int PeekRange(int min, int max, bool maxInclusive = false);
 
 		/// <inheritdoc cref="Range(floatP,floatP,int[],bool)"/>
 		/// <remarks>
-		/// Calling this multiple times with the same parameters in sequence gives always the same result.
+		/// 동일한 매개변수로 연속 호출해도 항상 동일한 결과를 반환합니다.
 		/// </remarks>
 		floatP PeekRange(floatP min, floatP max, bool maxInclusive = true);
 
@@ -110,8 +110,8 @@ namespace Geuneda.Services
 		floatP Range(floatP min, floatP max, bool maxInclusive = true);
 
 		/// <summary>
-		/// Restores the current RNG state to the given <paramref name="count"/>.
-		/// The value can be defined for a state in the past or a state in the future.
+		/// 현재 RNG 상태를 주어진 <paramref name="count"/>로 복원합니다.
+		/// 과거 상태 또는 미래 상태의 값을 정의할 수 있습니다.
 		/// </summary>
 		void Restore(int count);
 	}
@@ -185,8 +185,8 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// Restores the current RNG state to the given <paramref name="count"/> based on the given <paramref name="seed"/>.
-		/// The <paramref name="count "/> value can be defined for a state in the past or a state in the future.
+		/// 주어진 <paramref name="seed"/>를 기반으로 현재 RNG 상태를 주어진 <paramref name="count"/>로 복원합니다.
+		/// <paramref name="count "/> 값은 과거 상태 또는 미래 상태로 정의할 수 있습니다.
 		/// </summary>
 		public static int[] Restore(int count, int seed)
 		{
@@ -201,8 +201,8 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// Requests a random generated <see cref="int"/> value between the given <paramref name="min"/> and <paramref name="max"/>,
-		/// without changing the state with  the max value inclusive depending on the given <paramref name="maxInclusive"/>
+		/// 주어진 <paramref name="min"/>과 <paramref name="max"/> 사이의 난수 <see cref="int"/> 값을 요청합니다.
+		/// <paramref name="maxInclusive"/>에 따라 최대값 포함 여부가 결정되며 상태를 변경하지 않습니다.
 		/// </summary>
 		public static int Range(int min, int max, int[] rndState, bool maxInclusive)
 		{
@@ -213,11 +213,11 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// Requests a random generated <see cref="int"/> value between the given <paramref name="min"/> and <paramref name="max"/>,
-		/// without changing the state with  the max value inclusive depending on the given <paramref name="maxInclusive"/>
+		/// 주어진 <paramref name="min"/>과 <paramref name="max"/> 사이의 난수 값을 요청합니다.
+		/// <paramref name="maxInclusive"/>에 따라 최대값 포함 여부가 결정되며 상태를 변경하지 않습니다.
 		/// </summary>
 		/// <remarks>
-		/// This is not a deterministic result on the range request due to the flaoting point precision
+		/// 부동소수점 정밀도로 인해 범위 요청의 결정론적 결과가 보장되지 않습니다.
 		/// </remarks>
 		public static floatP Range(floatP min, floatP max, int[] rndState, bool maxInclusive)
 		{
@@ -240,11 +240,11 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// Creates a new state as an exact copy of the given <paramref name="state"/>.
-		/// Use this method if you want to generate a new random number without changing the RNG current state.
+		/// 주어진 <paramref name="state"/>의 정확한 복사본으로 새 상태를 생성합니다.
+		/// RNG의 현재 상태를 변경하지 않고 새로운 난수를 생성하려면 이 메서드를 사용하세요.
 		/// </summary>
 		/// <exception cref="IndexOutOfRangeException">
-		/// Thrown if the given <paramref name="state"/> does not have the length equal to <seealso cref="_stateLength"/>
+		/// 주어진 <paramref name="state"/>의 길이가 <seealso cref="_stateLength"/>와 같지 않으면 발생합니다.
 		/// </exception>
 		public static int[] CopyRngState(int[] state)
 		{
@@ -262,10 +262,10 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// Creates a new instance of <see cref="RngData"/> with the given <paramref name="seed"/>.
+		/// 주어진 <paramref name="seed"/>로 <see cref="RngData"/>의 새 인스턴스를 생성합니다.
 		/// </summary>
-		/// <param name="seed">The seed value for the RNG.</param>
-		/// <returns>A new instance of <see cref="RngData"/> with the given <paramref name="seed"/> and an initial count of 0.</returns>
+		/// <param name="seed">RNG의 시드 값입니다.</param>
+		/// <returns>주어진 <paramref name="seed"/>와 초기 카운트 0을 가진 <see cref="RngData"/>의 새 인스턴스입니다.</returns>
 		public static RngData CreateRngData(int seed)
 		{
 			return new RngData
@@ -277,8 +277,8 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// Generates a completely new state rng state based on the given <paramref name="seed"/>.
-		/// Based on the publish work of D.E. Knuth <see cref="https://www.informit.com/articles/article.aspx?p=2221790"/>
+		/// 주어진 <paramref name="seed"/>를 기반으로 완전히 새로운 RNG 상태를 생성합니다.
+		/// D.E. Knuth의 연구를 기반으로 합니다 <see cref="https://www.informit.com/articles/article.aspx?p=2221790"/>
 		/// </summary>
 		public static int[] GenerateRngState(int seed)
 		{
@@ -288,7 +288,7 @@ namespace Geuneda.Services
 			state[_stateLength - 1] = value;
 			state[_valueIndex] = 0;
 
-			//Apparently the range [1..55] is special (Knuth)
+			// [1..55] 범위는 특별합니다 (Knuth)
 			for (int i = 1, j = 1; i < _stateLength - 1; i++)
 			{
 				var index = (_helperInc * i) % (_stateLength - 1);
@@ -322,7 +322,7 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// Generates the next random number between [0...int.MaxValue] based on the given <paramref name="rndState"/>
+		/// 주어진 <paramref name="rndState"/>를 기반으로 [0...int.MaxValue] 사이의 다음 난수를 생성합니다
 		/// </summary>
 		private static int NextNumber(int[] rndState)
 		{

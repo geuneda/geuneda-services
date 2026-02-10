@@ -7,8 +7,7 @@ using Geuneda.Services;
 namespace Geuneda.Services.Editor
 {
 	/// <summary>
-	/// Set the internal version in any VersionService instances in the project before building
-	/// and whenever the project loads.
+	/// 빌드 전 및 프로젝트 로드 시 프로젝트의 VersionService 인스턴스에 내부 버전을 설정합니다.
 	/// </summary>
 	public static class VersionEditorUtils
 	{
@@ -17,7 +16,7 @@ namespace Geuneda.Services.Editor
 		private const string FilePath = "Configs/Resources";
 
 		/// <summary>
-		/// Set the internal version before building the app.
+		/// 앱 빌드 전에 내부 버전을 설정합니다.
 		/// </summary>
 		public static void SetAndSaveInternalVersion(bool isStoreBuild)
 		{
@@ -34,7 +33,7 @@ namespace Geuneda.Services.Editor
 		}
 
 		/// <summary>
-		/// Loads the game version saved in disk into string format
+		/// 디스크에 저장된 게임 버전을 문자열 형식으로 로드합니다
 		/// </summary>
 		public static string LoadVersionDataSerializedSync()
 		{
@@ -51,7 +50,7 @@ namespace Geuneda.Services.Editor
 		}
 
 		/// <summary>
-		/// Set the internal version for when the app plays in editor.
+		/// 에디터에서 앱 실행 시 내부 버전을 설정합니다.
 		/// </summary>
 		[InitializeOnLoadMethod]
 		private static void OnEditorLoad()
@@ -108,8 +107,8 @@ namespace Geuneda.Services.Editor
 		}
 
 		/// <summary>
-		/// Set the internal version of this application and save it in resources. This should be
-		/// called at edit/build time.
+		/// 이 애플리케이션의 내부 버전을 설정하고 리소스에 저장합니다.
+		/// 편집/빌드 시에 호출해야 합니다.
 		/// </summary>
 		private static void SaveVersionData(string serializedData)
 		{
@@ -119,7 +118,7 @@ namespace Geuneda.Services.Editor
 				Directory.CreateDirectory(absDirPath);
 			}
 
-			// delete old file with incorrect extension
+			// 잘못된 확장자의 이전 파일 삭제
 			const string assetExtension = ".asset";
 			var absFilePath = Path.Combine(absDirPath, VersionServices.VersionDataFilename);
 			if (File.Exists(Path.ChangeExtension(absFilePath, assetExtension)))
@@ -129,7 +128,7 @@ namespace Geuneda.Services.Editor
 						Path.ChangeExtension(VersionServices.VersionDataFilename, assetExtension)));
 			}
 
-			// create new text file
+			// 새 텍스트 파일 생성
 			const string textExtension = ".txt";
 			File.WriteAllText(Path.ChangeExtension(absFilePath, textExtension), serializedData);
 

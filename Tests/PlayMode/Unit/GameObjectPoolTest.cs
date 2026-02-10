@@ -81,7 +81,7 @@ namespace GeunedaEditor.Services.Tests
 			var instance = _pool.Spawn();
 			_pool.Dispose();
 			
-			// Note: Object destruction is delayed until end of frame or next frame
+			// 참고: 오브젝트 파괴는 프레임 끝 또는 다음 프레임까지 지연됩니다
 			yield return null;
 			
 			Assert.IsTrue(instance == null);

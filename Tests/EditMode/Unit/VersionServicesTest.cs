@@ -9,9 +9,9 @@ namespace GeunedaEditor.Services.Tests
 	public class VersionServicesTest
 	{
 		/// <summary>
-		/// Testable version comparison logic extracted from VersionServices.IsOutdatedVersion.
-		/// Since IsOutdatedVersion uses Application.version (read-only in EditMode),
-		/// we extract the comparison logic here to enable unit testing.
+		/// VersionServices.IsOutdatedVersion에서 추출한 테스트 가능한 버전 비교 로직입니다.
+		/// IsOutdatedVersion은 Application.version(EditMode에서 읽기 전용)을 사용하므로,
+		/// 유닛 테스트를 가능하게 하기 위해 비교 로직을 여기에 추출했습니다.
 		/// </summary>
 		private static bool IsOutdatedVersionTestable(string appVersion, string otherVersion)
 		{

@@ -70,16 +70,16 @@ namespace GeunedaEditor.Services.Tests
 		[Test]
 		public void SetInitialTime_ResetsTimeBase()
 		{
-			// SetInitialTime acts as a "reset" by synchronizing the time base
+			// SetInitialTime은 시간 기준을 동기화하여 "리셋" 역할을 합니다
 			var customInitialTime = new DateTime(2025, 1, 1, 12, 0, 0, DateTimeKind.Utc);
 			
 			_timeService.SetInitialTime(customInitialTime);
 			
-			// After setting initial time, DateTimeUtcNow should be close to the custom time
-			// (plus any time that has passed since realtimeSinceStartup was captured)
+			// 초기 시간 설정 후, DateTimeUtcNow는 사용자 지정 시간에 가까워야 합니다
+			// (realtimeSinceStartup이 캡처된 이후 경과한 시간 포함)
 			var now = _timeService.DateTimeUtcNow;
 			
-			// The difference should be very small (just the time since SetInitialTime was called)
+			// 차이는 매우 작아야 합니다 (SetInitialTime 호출 이후 경과한 시간만큼)
 			Assert.That((now - customInitialTime).TotalSeconds, Is.LessThan(1.0));
 		}
 	}

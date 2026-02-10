@@ -7,34 +7,34 @@ using System.Collections.Generic;
 namespace Geuneda.Services
 {
 	/// <summary>
-	/// This marks the defined object to me a container of binding installers.
-	/// It acts as a locator for all the binded interfaces.
-	/// It only allows to bind interfaces.
+	/// 바인딩 인스톨러의 컨테이너로 정의된 객체를 표시합니다.
+	/// 모든 바인딩된 인터페이스의 로케이터 역할을 합니다.
+	/// 인터페이스만 바인딩할 수 있습니다.
 	/// </summary>
 	/// <remarks>
-	/// Follows the "Inversion of Control" principle <see cref="https://en.wikipedia.org/wiki/Inversion_of_control"/>
+	/// "제어의 역전" 원칙을 따릅니다 <see cref="https://en.wikipedia.org/wiki/Inversion_of_control"/>
 	/// </remarks>
 	public interface IInstaller
 	{
 		/// <summary>
-		/// Binds the interface <typeparamref name="T"/> to the given <paramref name="instance"/>
+		/// 인터페이스 <typeparamref name="T"/>를 주어진 <paramref name="instance"/>에 바인딩합니다
 		/// </summary>
 		/// <exception cref="ArgumentException">
-		/// Thrown if the given <paramref name="instance"/> doesn't implement <typeparamref name="T"/> interface
+		/// 주어진 <paramref name="instance"/>가 <typeparamref name="T"/> 인터페이스를 구현하지 않으면 발생합니다
 		/// </exception>
 		/// <returns>
-		/// This installer reference to allow chain calls if necessayr
+		/// 체인 호출을 위한 이 인스톨러 참조
 		/// </returns>
 		IInstaller Bind<T>(T instance) where T : class;
 
 		/// <summary>
-		/// Binds the interface multiple type interefaces to the given <paramref name="instance"/>
+		/// 여러 타입의 인터페이스를 주어진 <paramref name="instance"/>에 바인딩합니다
 		/// </summary>
 		/// <exception cref="ArgumentException">
-		/// Thrown if the given <paramref name="instance"/> doesn't implement all type interface
+		/// 주어진 <paramref name="instance"/>가 모든 타입 인터페이스를 구현하지 않으면 발생합니다
 		/// </exception>
 		/// <returns>
-		/// This installer reference to allow chain calls if necessayr
+		/// 체인 호출을 위한 이 인스톨러 참조
 		/// </returns>
 		IInstaller Bind<T, T1, T2>(T instance)
 			where T : class, T1, T2
@@ -42,13 +42,13 @@ namespace Geuneda.Services
 			where T2 : class;
 
 		/// <summary>
-		/// Binds the interface multiple type interefaces to the given <paramref name="instance"/>
+		/// 여러 타입의 인터페이스를 주어진 <paramref name="instance"/>에 바인딩합니다
 		/// </summary>
 		/// <exception cref="ArgumentException">
-		/// Thrown if the given <paramref name="instance"/> doesn't implement all type interface
+		/// 주어진 <paramref name="instance"/>가 모든 타입 인터페이스를 구현하지 않으면 발생합니다
 		/// </exception>
 		/// <returns>
-		/// This installer reference to allow chain calls if necessayr
+		/// 체인 호출을 위한 이 인스톨러 참조
 		/// </returns>
 		IInstaller Bind<T, T1, T2, T3>(T instance) 
 			where T : class, T1, T2, T3
@@ -57,29 +57,29 @@ namespace Geuneda.Services
 			where T3 : class;
 
 		/// <summary>
-		/// Tries requesting the instance binded to the type <typeparamref name="T"/>
-		/// Returns true if the instance is not binded yet 
+		/// <typeparamref name="T"/> 타입에 바인딩된 인스턴스를 요청합니다.
+		/// 인스턴스가 바인딩되어 있으면 true를 반환합니다.
 		/// </summary>
 		bool TryResolve<T>(out T instance);
 
 		/// <summary>
-		/// Requests the instance binded to the type <typeparamref name="T"/>
+		/// <typeparamref name="T"/> 타입에 바인딩된 인스턴스를 요청합니다
 		/// </summary>
 		/// <exception cref="ArgumentException">
-		/// Thrown if the given <typeparamref name="T"/> type was not yet binded
+		/// 주어진 <typeparamref name="T"/> 타입이 아직 바인딩되지 않았으면 발생합니다
 		/// </exception>
 		T Resolve<T>();
 
 		/// <summary>
-		/// Cleans the binding of the given type <typeparamref name="T"/> from the installer
-		/// Useful in case of resetting the game state.
-		/// Returns TRUE if successfully cleaned the given type <typeparamref name="T"/>, FALSE otherwise
+		/// 인스톨러에서 주어진 <typeparamref name="T"/> 타입의 바인딩을 정리합니다.
+		/// 게임 상태를 초기화할 때 유용합니다.
+		/// 주어진 <typeparamref name="T"/> 타입을 성공적으로 정리하면 TRUE, 그렇지 않으면 FALSE를 반환합니다.
 		/// </summary>
 		bool Clean<T>() where T : class;
 
 		/// <summary>
-		/// Cleans all the bindings of the installer
-		/// Useful in case of resetting the game state
+		/// 인스톨러의 모든 바인딩을 정리합니다.
+		/// 게임 상태를 초기화할 때 유용합니다.
 		/// </summary>
 		void Clean();
 	}

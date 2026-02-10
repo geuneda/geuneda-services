@@ -91,8 +91,8 @@ namespace GeunedaEditor.Services.Tests
 			var stateCopy = RngService.CopyRngState(_rngData.State);
 			_ = _rngService.Next;
 			
-			// Manually advance the copy
-			// Note: NextNumber is private, so we'll just check that the copy remains the same
+			// 복사본을 수동으로 진행
+			// 참고: NextNumber는 private이므로, 복사본이 동일한지만 확인합니다
 			Assert.AreNotEqual(_rngData.State, stateCopy); 
 		}
 

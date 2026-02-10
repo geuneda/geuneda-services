@@ -8,8 +8,8 @@ using UnityEngine.TestTools;
 namespace GeunedaEditor.Services.Tests
 {
 	/// <summary>
-	/// Performance tests for ObjectPool.
-	/// Uses PrebuildSetup to ensure performance test metadata is initialized before tests run.
+	/// ObjectPool 성능 테스트입니다.
+	/// 테스트 실행 전 성능 테스트 메타데이터가 초기화되도록 PrebuildSetup을 사용합니다.
 	/// </summary>
 	[TestFixture]
 	[Category("Performance")]

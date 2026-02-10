@@ -30,8 +30,8 @@ namespace GeunedaEditor.Services.Tests
 			float receivedDelta = -1f;
 			_tickService.SubscribeOnUpdate(dt => receivedDelta = dt);
 
-			yield return null; // Wait for next frame
-			yield return null; // Wait one more to be sure
+			yield return null; // 다음 프레임 대기
+			yield return null; // 확인을 위해 한 프레임 더 대기
 
 			Assert.GreaterOrEqual(receivedDelta, 0f);
 		}
@@ -59,7 +59,7 @@ namespace GeunedaEditor.Services.Tests
 
 			yield return new WaitForSeconds(interval * 2.5f);
 			
-			// If overflow is carried, it should have triggered at least twice
+			// 오버플로우가 전달되면 최소 두 번 트리거되어야 합니다
 			Assert.GreaterOrEqual(callCount, 2);
 		}
 
@@ -105,11 +105,11 @@ namespace GeunedaEditor.Services.Tests
 			int callCount2 = 0;
 			object subscriber1 = new object();
 			
-			_tickService.SubscribeOnUpdate(dt => callCount1++); // subscriber is action.Target, which is this test class
-			_tickService.SubscribeOnUpdate(dt => callCount2++); // same here
-			
-			// To test targeted unsubscribe, we need different targets
-			// But since we can't easily mock action.Target, we'll just test UnsubscribeAll()
+			_tickService.SubscribeOnUpdate(dt => callCount1++); // 구독자는 action.Target, 즉 이 테스트 클래스
+			_tickService.SubscribeOnUpdate(dt => callCount2++); // 위와 동일
+
+			// 대상 지정 구독 해제를 테스트하려면 다른 타겟이 필요합니다
+			// action.Target을 쉽게 모킹할 수 없으므로 UnsubscribeAll()을 테스트합니다
 			
 			_tickService.UnsubscribeAll();
 			
@@ -128,7 +128,7 @@ namespace GeunedaEditor.Services.Tests
 			Assert.AreEqual(initialCount + 1, Object.FindObjectsByType<TickServiceMonoBehaviour>(FindObjectsSortMode.None).Length);
 			
 			tickService.Dispose();
-			yield return null; // Allow Destroy to complete
+			yield return null; // Destroy 완료 대기
 			
 			Assert.AreEqual(initialCount, Object.FindObjectsByType<TickServiceMonoBehaviour>(FindObjectsSortMode.None).Length);
 		}
@@ -136,9 +136,9 @@ namespace GeunedaEditor.Services.Tests
 		[Test]
 		public void MultipleInstances_CreateMultipleGameObjects()
 		{
-			// Note: The service doesn't enforce singleton, but it throws if _tickObject is already set
-			// However, _tickObject is an instance field in the current implementation.
-			// Wait, I saw a check in the constructor:
+			// 참고: 서비스가 싱글톤을 강제하지 않지만, _tickObject가 이미 설정된 경우 예외를 발생시킵니다
+			// 그러나 _tickObject는 현재 구현에서 인스턴스 필드입니다.
+			// 생성자에 다음 검사가 있습니다:
 			/*
 			public TickService()
 			{
@@ -149,8 +149,8 @@ namespace GeunedaEditor.Services.Tests
 				...
 			}
 			*/
-			// But _tickObject is private readonly TickServiceMonoBehaviour _tickObject;
-			// So it's always null for a new instance. The check seems to be intended for a static field but isn't.
+			// 하지만 _tickObject는 private readonly TickServiceMonoBehaviour _tickObject;
+			// 따라서 새 인스턴스에서는 항상 null입니다. 이 검사는 정적 필드를 위한 것으로 보이지만 그렇지 않습니다.
 			
 			var service1 = new TickService();
 			var service2 = new TickService();

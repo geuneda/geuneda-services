@@ -4,7 +4,7 @@ using System.Diagnostics;
 namespace Geuneda.Services.Editor
 {
 	/// <summary>
-	/// Run git commands processes that would otherwise be used in the terminal.
+	/// 터미널에서 사용되는 git 커맨드 프로세스를 실행합니다.
 	/// </summary>
 	/// <author>
 	/// https://blog.somewhatabstract.com/2015/06/22/getting-information-about-your-git-repository-with-c/
@@ -35,7 +35,7 @@ namespace Geuneda.Services.Editor
 		}
 
 		/// <summary>
-		/// Is this unity project a git repo?
+		/// 이 Unity 프로젝트가 git 저장소인지 확인합니다
 		/// </summary>
 		public bool IsValidRepo()
 		{
@@ -43,7 +43,7 @@ namespace Geuneda.Services.Editor
 		}
 
 		/// <summary>
-		/// Get the git branch name of the unity project.
+		/// Unity 프로젝트의 git 브랜치 이름을 가져옵니다.
 		/// </summary>
 		public string GetBranch()
 		{
@@ -51,7 +51,7 @@ namespace Geuneda.Services.Editor
 		}
 
 		/// <summary>
-		/// Get the git commit hash of the unity project.
+		/// Unity 프로젝트의 git 커밋 해시를 가져옵니다.
 		/// </summary>
 		public string GetCommitHash()
 		{
@@ -59,8 +59,7 @@ namespace Geuneda.Services.Editor
 		}
 
 		/// <summary>
-		/// Get the diff of the working directory in its current state from the state it was at at
-		/// a given commit.
+		/// 주어진 커밋 시점의 상태와 현재 작업 디렉토리의 차이를 가져옵니다.
 		/// </summary>
 		public string GetDiffFromCommit(string commitHash)
 		{
@@ -74,7 +73,7 @@ namespace Geuneda.Services.Editor
 		}
 		
 		/// <summary>
-		/// Execute a command eg. "status --verbose"
+		/// 커맨드를 실행합니다. 예: "status --verbose"
 		/// </summary>
 		private string ExecuteCommand(string args)
 		{

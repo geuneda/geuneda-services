@@ -13,7 +13,7 @@ namespace Geuneda.Services.Editor
 	{
 		private const int ShortenedCommitLength = 8;
 		private const string AssetsPath = "Assets";
-		private const string FilePath = "Configs/Resources";
+		private const string DefaultFilePath = "Configs/Resources";
 
 		/// <summary>
 		/// 앱 빌드 전에 내부 버전을 설정합니다.
@@ -107,12 +107,43 @@ namespace Geuneda.Services.Editor
 		}
 
 		/// <summary>
+		/// 프로젝트 내 기존 version-data 파일의 Resources 폴더 경로를 찾습니다.
+		/// 없으면 기본 경로를 반환합니다.
+		/// </summary>
+		private static string ResolveFilePath()
+		{
+			const string textExtension = ".txt";
+			var targetFilename = VersionServices.VersionDataFilename + textExtension;
+
+			var guids = AssetDatabase.FindAssets(VersionServices.VersionDataFilename);
+			foreach (var guid in guids)
+			{
+				var assetPath = AssetDatabase.GUIDToAssetPath(guid).Replace('\\', '/');
+				if (!assetPath.EndsWith(targetFilename, StringComparison.OrdinalIgnoreCase))
+					continue;
+
+				if (!assetPath.Contains("/Resources/"))
+					continue;
+
+				var dir = assetPath.Substring(0, assetPath.LastIndexOf('/'));
+				if (dir.StartsWith(AssetsPath + "/", StringComparison.Ordinal))
+				{
+					return dir.Substring(AssetsPath.Length + 1);
+				}
+			}
+
+			return DefaultFilePath;
+		}
+
+		/// <summary>
 		/// 이 애플리케이션의 내부 버전을 설정하고 리소스에 저장합니다.
 		/// 편집/빌드 시에 호출해야 합니다.
 		/// </summary>
 		private static void SaveVersionData(string serializedData)
 		{
-			var absDirPath = Path.Combine(Application.dataPath, FilePath);
+			var filePath = ResolveFilePath();
+
+			var absDirPath = Path.Combine(Application.dataPath, filePath);
 			if (!Directory.Exists(absDirPath))
 			{
 				Directory.CreateDirectory(absDirPath);
@@ -124,7 +155,7 @@ namespace Geuneda.Services.Editor
 			if (File.Exists(Path.ChangeExtension(absFilePath, assetExtension)))
 			{
 				AssetDatabase.DeleteAsset(
-					Path.Combine(AssetsPath, FilePath,
+					Path.Combine(AssetsPath, filePath,
 						Path.ChangeExtension(VersionServices.VersionDataFilename, assetExtension)));
 			}
 
@@ -133,7 +164,7 @@ namespace Geuneda.Services.Editor
 			File.WriteAllText(Path.ChangeExtension(absFilePath, textExtension), serializedData);
 
 			AssetDatabase.ImportAsset(
-				Path.Combine(AssetsPath, FilePath,
+				Path.Combine(AssetsPath, filePath,
 					Path.ChangeExtension(VersionServices.VersionDataFilename, textExtension)));
 		}
 	}

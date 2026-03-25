@@ -89,7 +89,9 @@ namespace Geuneda.Services.Editor
 						}
 						else
 						{
-							data.CommitHash = commitHash.Substring(0, ShortenedCommitLength);
+							data.CommitHash = commitHash.Length >= ShortenedCommitLength
+								? commitHash.Substring(0, ShortenedCommitLength)
+								: commitHash;
 						}
 					}
 				}

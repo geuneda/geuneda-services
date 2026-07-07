@@ -140,7 +140,10 @@ namespace Geuneda.Services
 		/// </summary>
 		public void Dispose()
 		{
-			Object.Destroy(_tickObject.gameObject);
+			if (_tickObject != null)
+			{
+				Object.Destroy(_tickObject.gameObject);
+			}
 
 			_onUpdateList.Clear();
 			_onFixedUpdateList.Clear();

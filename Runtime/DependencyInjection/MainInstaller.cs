@@ -41,7 +41,10 @@ namespace Geuneda.Services
 		/// <inheritdoc cref="IInstaller.Clean"/>
 		public static bool CleanDispose<T>() where T : class, IDisposable
 		{
-			_installer.Resolve<T>().Dispose();
+			if (_installer.TryResolve<T>(out var instance) && instance != null)
+			{
+				instance.Dispose();
+			}
 
 			return _installer.Clean<T>();
 		}

@@ -1,0 +1,8 @@
+using Geuneda.Services;
+
+namespace $NAMESPACE$
+{
+	public struct $NAME$ : IMessage
+	{
+	}
+}

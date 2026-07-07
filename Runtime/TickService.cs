@@ -112,6 +112,10 @@ namespace Geuneda.Services
 		private readonly List<TickData> _onLateUpdateList = new List<TickData>();
 
 		private int _tickDataIdRef;
+
+		internal IReadOnlyList<TickData> OnUpdateList => _onUpdateList;
+		internal IReadOnlyList<TickData> OnFixedUpdateList => _onFixedUpdateList;
+		internal IReadOnlyList<TickData> OnLateUpdateList => _onLateUpdateList;
 		
 		public TickService()
 		{
@@ -361,7 +365,7 @@ namespace Geuneda.Services
 			}
 		}
 
-		private struct TickData
+		internal struct TickData
 		{
 			public int Id;
 			public Action<float> Action;

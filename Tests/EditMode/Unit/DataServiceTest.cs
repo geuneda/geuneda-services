@@ -11,16 +11,32 @@ namespace GeunedaEditor.Services.Tests
 	[TestFixture]
 	public class DataServiceTest
 	{
-		private DataService _dataService;
-
 		// ReSharper disable once MemberCanBePrivate.Global
 		public interface IDataMockup {}
-		
+
 		public class PersistentData
 		{
 			public string Name;
 			public int Value;
 		}
+
+		private class TestableDataService : DataService
+		{
+			public int SaveCount;
+			public string LastKey;
+			public object LastInstance;
+			public System.Type LastType;
+
+			protected override void OnDataSaved(string key, object data, System.Type type)
+			{
+				SaveCount++;
+				LastKey = key;
+				LastInstance = data;
+				LastType = type;
+			}
+		}
+
+		private DataService _dataService;
 
 		[SetUp]
 		public void Init()
@@ -96,6 +112,40 @@ namespace GeunedaEditor.Services.Tests
 		public void HasData_NotFound_ReturnsFalse()
 		{
 			Assert.IsFalse(_dataService.HasData<PersistentData>());
+		}
+
+		[Test]
+		public void SaveAllData_Successfully()
+		{
+			var data1 = new PersistentData { Name = "Hero", Value = 10 };
+			var data2 = new PersistentData { Name = "Alt", Value = 20 };
+
+			_dataService.AddOrReplaceData(data1);
+			_dataService.SaveData<PersistentData>();
+			_dataService.AddOrReplaceData(data2);
+
+			_dataService.SaveAllData();
+
+			var dataService2 = new DataService();
+			var loaded = dataService2.LoadData<PersistentData>();
+
+			Assert.AreEqual(data2.Name, loaded.Name);
+			Assert.AreEqual(data2.Value, loaded.Value);
+		}
+
+		[Test]
+		public void OnDataSaved_SubclassHook_FiresAfterSave()
+		{
+			var subclass = new TestableDataService();
+			var data = new PersistentData { Name = "Hook", Value = 42 };
+			subclass.AddOrReplaceData(data);
+
+			subclass.SaveData<PersistentData>();
+
+			Assert.AreEqual(1, subclass.SaveCount);
+			Assert.AreEqual(typeof(PersistentData).Name, subclass.LastKey);
+			Assert.AreSame(data, subclass.LastInstance);
+			Assert.AreEqual(typeof(PersistentData), subclass.LastType);
 		}
 	}
 }

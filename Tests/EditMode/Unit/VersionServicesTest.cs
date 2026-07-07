@@ -1,5 +1,6 @@
 using Geuneda.Services;
 using NUnit.Framework;
+using UnityEngine;
 
 // ReSharper disable once CheckNamespace
 
@@ -104,6 +105,19 @@ namespace GeunedaEditor.Services.Tests
 			
 			Assert.That(result.EndsWith("."), Is.False);
 			Assert.That(result.Contains("abc"), Is.True);
+		}
+
+		[Test]
+		public void IsOutdatedVersion_DirectInvocation_AgreesWithLocalVersion()
+		{
+			var current = Application.version;
+
+			if (string.IsNullOrEmpty(current) || current.Split('.').Length < 3)
+			{
+				Assert.Inconclusive($"Application.version='{current}' is not a 3-part Major.Minor.Patch string; the production parser requires three parts.");
+			}
+
+			Assert.IsFalse(VersionServices.IsOutdatedVersion(current));
 		}
 	}
 }

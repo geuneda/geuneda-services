@@ -157,5 +157,27 @@ namespace GeunedaEditor.Services.Tests
 			Assert.DoesNotThrow(() => _messageBroker.Unsubscribe<MessageType1>());
 			Assert.DoesNotThrow(() => _messageBroker.UnsubscribeAll());
 		}
+
+		[Test]
+		public void UnsubscribeAll_NonNullSubscriber_RemovesOnlyMatching()
+		{
+			var subA = Substitute.For<IMockSubscriber>();
+			var subB = Substitute.For<IMockSubscriber>();
+
+			_messageBroker.Subscribe<MessageType1>(subA.MockMessageCall);
+			_messageBroker.Subscribe<MessageType2>(subA.MockMessageAlternativeCall);
+			_messageBroker.Subscribe<MessageType1>(subB.MockMessageCall);
+			_messageBroker.Subscribe<MessageType2>(subB.MockMessageAlternativeCall);
+
+			_messageBroker.UnsubscribeAll(subA);
+
+			_messageBroker.Publish(_messageType1);
+			_messageBroker.Publish(_messageType2);
+
+			subA.DidNotReceive().MockMessageCall(_messageType1);
+			subA.DidNotReceive().MockMessageAlternativeCall(_messageType2);
+			subB.Received(1).MockMessageCall(_messageType1);
+			subB.Received(1).MockMessageAlternativeCall(_messageType2);
+		}
 	}
 }

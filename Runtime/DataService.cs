@@ -55,6 +55,8 @@ namespace Geuneda.Services
 	{
 		private readonly IDictionary<Type, object> _data = new Dictionary<Type, object>();
 
+		internal IReadOnlyDictionary<Type, object> DataEntries => (IReadOnlyDictionary<Type, object>)_data;
+
 		/// <inheritdoc />
 		public bool HasData<T>() where T : class
 		{

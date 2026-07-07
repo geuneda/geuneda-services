@@ -1,4 +1,5 @@
 using Geuneda.Services;
+using Geuneda.Services.Pooling;
 using NUnit.Framework;
 using Unity.PerformanceTesting;
 using UnityEngine.TestTools;
@@ -9,7 +10,7 @@ namespace GeunedaEditor.Services.Tests
 {
 	/// <summary>
 	/// ObjectPool 성능 테스트입니다.
-	/// 테스트 실행 전 성능 테스트 메타데이터가 초기화되도록 PrebuildSetup을 사용합니다.
+	/// 테스트 실행 전 성능 테스트 메타데이터가 초기화되도록 PrebuildSetup과 OneTimeSetUp을 사용합니다.
 	/// </summary>
 	[TestFixture]
 	[Category("Performance")]
@@ -18,6 +19,12 @@ namespace GeunedaEditor.Services.Tests
 	{
 		public class MockEntity
 		{
+		}
+
+		[OneTimeSetUp]
+		public void OneTimeSetUp()
+		{
+			PerformanceTestSetup.InitializePerformanceTestMetadata();
 		}
 
 		[Test, Performance]

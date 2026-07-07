@@ -2,13 +2,15 @@
   "name": "com.geuneda.services",
   "displayName": "Geuneda Services",
   "author": "geuneda",
-  "version": "1.0.1",
-  "unity": "6000.0",
+  "version": "2.1.0",
+  "unity": "6000.3",
   "license": "MIT",
-  "description": "게임 아키텍처 개발을 위한 서비스 패키지입니다. DI 컨테이너, 메시지 브로커, 풀링, 코루틴 등 핵심 서비스를 제공합니다.",
+  "description": "Unity 게임 아키텍처를 위한 기반 서비스 패키지입니다. DI 컨테이너, 메시지 브로커, 틱, 코루틴, 풀링, 데이터 영속성, RNG, 시간, 커맨드, 버전 관리에 더해 Addressables 기반 에셋 로딩/임포트 툴링을 제공합니다.",
   "type": "library",
   "hideInEditor": false,
   "dependencies": {
-    "com.geuneda.gamedata": "1.0.0"
+    "com.geuneda.gamedata": "1.0.0",
+    "com.unity.addressables": "1.21.20",
+    "com.cysharp.unitask": "2.5.10"
   }
 }

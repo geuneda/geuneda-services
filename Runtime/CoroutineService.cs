@@ -1,5 +1,6 @@
 using System;
 using System.Collections;
+using System.Collections.Generic;
 using UnityEngine;
 using Action = System.Action;
 using Object = UnityEngine.Object;
@@ -36,7 +37,11 @@ namespace Geuneda.Services
 		/// </summary>
 		void OnComplete(Action onComplete);
 		/// <summary>
-		/// 이 코루틴의 실행을 중지합니다
+		/// 이 코루틴의 실행을 중지합니다. 호출 후 <see cref="IsCompleted"/>는 <c>true</c>가 되고
+		/// <see cref="IsRunning"/>은 <c>false</c>가 됩니다.
+		/// <paramref name="triggerOnComplete"/>이 <c>true</c>이면 <see cref="OnComplete(System.Action)"/>을
+		/// 통해 등록된 콜백이 호출되고, <c>false</c>이면 콜백은 호출되지 않습니다.
+		/// 코루틴이 이미 완료된 경우에는 아무 동작도 하지 않습니다.
 		/// </summary>
 		void StopCoroutine(bool triggerOnComplete = false);
 	}
@@ -101,6 +106,11 @@ namespace Geuneda.Services
 	{
 		private CoroutineServiceMonoBehaviour _serviceObject;
 
+#if UNITY_EDITOR
+		private readonly List<IAsyncCoroutine> _activeAsyncCoroutines = new List<IAsyncCoroutine>();
+		internal IReadOnlyList<IAsyncCoroutine> ActiveAsyncCoroutines => _activeAsyncCoroutines;
+#endif
+
 		public CoroutineService()
 		{
 			var gameObject = new GameObject(nameof(CoroutineServiceMonoBehaviour));
@@ -141,6 +151,10 @@ namespace Geuneda.Services
 
 			asyncCoroutine.SetCoroutine(_serviceObject.ExternalStartCoroutine(InternalCoroutine(routine, asyncCoroutine)));
 
+#if UNITY_EDITOR
+			TrackForEditor(asyncCoroutine);
+#endif
+
 			return asyncCoroutine;
 		}
 
@@ -150,6 +164,10 @@ namespace Geuneda.Services
 			var asyncCoroutine = new AsyncCoroutine<T>(this, data);
 
 			asyncCoroutine.SetCoroutine(_serviceObject.ExternalStartCoroutine(InternalCoroutine(routine, asyncCoroutine)));
+
+#if UNITY_EDITOR
+			TrackForEditor(asyncCoroutine);
+#endif
 
 			return asyncCoroutine;
 		}
@@ -162,6 +180,10 @@ namespace Geuneda.Services
 			asyncCoroutine.OnComplete(call);
 			asyncCoroutine.SetCoroutine(_serviceObject.ExternalStartCoroutine(InternalDelayCoroutine(delay, asyncCoroutine)));
 
+#if UNITY_EDITOR
+			TrackForEditor(asyncCoroutine);
+#endif
+
 			return asyncCoroutine;
 		}
 
@@ -173,8 +195,24 @@ namespace Geuneda.Services
 			asyncCoroutine.OnComplete(call);
 			asyncCoroutine.SetCoroutine(_serviceObject.ExternalStartCoroutine(InternalDelayCoroutine(delay, asyncCoroutine)));
 
+#if UNITY_EDITOR
+			TrackForEditor(asyncCoroutine);
+#endif
+
 			return asyncCoroutine;
 		}
+
+#if UNITY_EDITOR
+		// Editor-only tracking. Uses the AsyncCoroutine.InternalCleanup event (separate from
+		// the user-facing _onComplete) so user callbacks set via OnComplete(...) are not
+		// overwritten by tracking-removal lambdas, and tracking removal still fires when the
+		// coroutine is stopped via IAsyncCoroutine.StopCoroutine(...).
+		private void TrackForEditor(AsyncCoroutine asyncCoroutine)
+		{
+			_activeAsyncCoroutines.Add(asyncCoroutine);
+			asyncCoroutine.InternalCleanup += () => _activeAsyncCoroutines.Remove(asyncCoroutine);
+		}
+#endif
 
 		/// <inheritdoc />
 		public void StopCoroutine(Coroutine coroutine)
@@ -224,8 +262,14 @@ namespace Geuneda.Services
 			private readonly ICoroutineService _coroutineService;
 			
 			private Action _onComplete;
+
+			// Editor-only tracking hook. Distinct from _onComplete so that registering a
+			// user callback via OnComplete(...) does NOT overwrite the tracking lambda
+			// (and vice versa). Always fired once per coroutine lifecycle, on either
+			// natural completion or explicit StopCoroutine.
+			public event Action InternalCleanup;
 		
-			public bool IsRunning => Coroutine != null;
+			public bool IsRunning => Coroutine != null && !IsCompleted;
 			public bool IsCompleted { get; private set; }
 			public Coroutine Coroutine { get; private set; }
 			public float StartTime { get; } = Time.time;
@@ -249,9 +293,22 @@ namespace Geuneda.Services
 
 			public void StopCoroutine(bool triggerOnComplete = false)
 			{
+				if (IsCompleted)
+				{
+					return;
+				}
+
 				_coroutineService.StopCoroutine(Coroutine);
-				
-				OnCompleteTrigger();
+
+				IsCompleted = true;
+				Coroutine = null;
+
+				if (triggerOnComplete)
+				{
+					OnCompleteTrigger();
+				}
+
+				InternalCleanup?.Invoke();
 			}
 
 			public void Completed()
@@ -265,6 +322,7 @@ namespace Geuneda.Services
 				Coroutine = null;
 
 				OnCompleteTrigger();
+				InternalCleanup?.Invoke();
 			}
 
 			protected virtual void OnCompleteTrigger()

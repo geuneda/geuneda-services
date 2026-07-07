@@ -1,0 +1,15 @@
+using Geuneda.Services.Pooling;
+
+namespace $NAMESPACE$
+{
+	public class $NAME$ : IPoolEntitySpawn, IPoolEntityDespawn
+	{
+		public void OnSpawn()
+		{
+		}
+
+		public void OnDespawn()
+		{
+		}
+	}
+}

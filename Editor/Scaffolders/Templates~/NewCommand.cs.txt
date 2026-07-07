@@ -1,0 +1,13 @@
+using Geuneda.Services;
+using Geuneda.Services.Commands;
+
+namespace $NAMESPACE$
+{
+	// Replace TGameLogic with the concrete game-logic type used in your project.
+	public struct $NAME$ : IGameCommand<TGameLogic>
+	{
+		public void Execute(TGameLogic gameLogic, IMessageBrokerService messageBroker)
+		{
+		}
+	}
+}

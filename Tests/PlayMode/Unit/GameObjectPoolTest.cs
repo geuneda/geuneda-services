@@ -1,5 +1,6 @@
 using System.Collections;
 using Geuneda.Services;
+using Geuneda.Services.Pooling;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
@@ -17,6 +18,16 @@ namespace GeunedaEditor.Services.Tests
 
 			public void OnSpawn() => SpawnCount++;
 			public void OnDespawn() => DespawnCount++;
+		}
+
+		public class MockPoolEntityWithData : MonoBehaviour, IPoolEntitySpawn, IPoolEntityDespawn, IPoolEntitySpawn<int>
+		{
+			public int SpawnCount;
+			public int LastSpawnData;
+
+			public void OnSpawn() => SpawnCount++;
+			public void OnDespawn() {}
+			public void OnSpawn(int data) => LastSpawnData = data;
 		}
 
 		private GameObject _sample;
@@ -95,6 +106,41 @@ namespace GeunedaEditor.Services.Tests
 			yield return null;
 			
 			Assert.IsTrue(_sample == null);
+		}
+
+		[UnityTest]
+		public IEnumerator SpawnWithData_InvokesIPoolEntitySpawn()
+		{
+			var sampleWithData = new GameObject("SampleWithData");
+			sampleWithData.AddComponent<MockPoolEntityWithData>();
+			sampleWithData.SetActive(false);
+			var poolWithData = new GameObjectPool(0, sampleWithData);
+
+			var instance = poolWithData.Spawn(42);
+			var mock = instance.GetComponent<MockPoolEntityWithData>();
+
+			Assert.AreEqual(42, mock.LastSpawnData);
+
+			poolWithData.Dispose(true);
+
+			yield return null;
+		}
+
+		[UnityTest]
+		public IEnumerator Dispose_AfterDespawnedInstanceDestroyedExternally_DoesNotThrow()
+		{
+			var externalParent = new GameObject("ExternalParent");
+			_sample.transform.SetParent(externalParent.transform);
+
+			var instance = _pool.Spawn();
+			_pool.Despawn(instance);
+
+			// PostDespawnEntity reparented `instance` under `externalParent`, so destroying
+			// it cascades into both children while the pool still tracks `instance`.
+			Object.Destroy(externalParent);
+			yield return null;
+
+			Assert.DoesNotThrow(() => _pool.Dispose());
 		}
 	}
 }

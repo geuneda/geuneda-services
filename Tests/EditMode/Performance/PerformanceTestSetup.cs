@@ -1,14 +1,11 @@
-using UnityEngine;
-using UnityEngine.TestTools;
-
-#if UNITY_EDITOR
-using UnityEditor;
-using Unity.PerformanceTesting.Data;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
-#endif
+using Unity.PerformanceTesting.Data;
+using UnityEditor;
+using UnityEngine;
+using UnityEngine.TestTools;
 
 // ReSharper disable once CheckNamespace
 
@@ -21,22 +18,47 @@ namespace GeunedaEditor.Services.Tests
 	/// </summary>
 	public class PerformanceTestSetup : IPrebuildSetup
 	{
+		// Mirrors Unity.PerformanceTesting.Runtime.Utils.PlayerPrefKeyRunJSON / PlayerPrefKeySettingsJSON.
+		// Both keys are reproduced here because Utils is `internal` to com.unity.test-framework.performance.
 		private const string PlayerPrefKeyRunJSON = "PT_Run";
+		private const string PlayerPrefKeySettingsJSON = "PT_Settings";
+
+		// Default RunSettings JSON. MeasurementCount = -1 is the package's "no override" sentinel —
+		// MethodMeasurement.SettingsOverride() early-returns when count < 0, preserving the per-test
+		// .WarmupCount(...) / .MeasurementCount(...) configuration.
+		private const string DefaultRunSettingsJson = "{\"MeasurementCount\":-1}";
 
 		public void Setup()
 		{
-#if UNITY_EDITOR
-			// PlayerPrefs에 실행 정보를 생성하고 저장합니다 (EditMode에서 Performance Testing Package에 필요)
-			// 참고: RunSettings는 패키지 내부이지만, Metadata.SetRuntimeSettings()에서
-			// NullReferenceException을 방지하기 위해 Run 메타데이터만 필요합니다
+			InitializePerformanceTestMetadata();
+		}
+
+		/// <summary>
+		/// 성능 테스트 메타데이터를 초기화합니다. 테스트가 실행되기 전에 메타데이터가 준비되도록
+		/// 테스트 픽스처의 [OneTimeSetUp]에서 호출하세요.
+		/// </summary>
+		/// <remarks>
+		/// EditMode에서 `Measure.Method(...).Run()` 이 성공하려면 두 개의 PlayerPrefs 항목이 필요합니다:
+		///   - PT_Run      — 전체 Run 메타데이터(에디터 정보, 의존성, 빌드 설정)이며, 결과가 방출될 때
+		///                   Metadata.SetRuntimeSettings()에서 사용됩니다.
+		///   - PT_Settings — RunSettings(측정 횟수 오버라이드)이며, 첫 워밍업이 실행되기 *전에*
+		///                   MethodMeasurement.SettingsOverride()에서 사용됩니다.
+		/// PT_Settings를 생략하면 RunSettings.Instance가 빈 JSON 문자열에서 지연 로드되고,
+		/// JsonUtility가 예외를 던지며, ResourcesLoader가 그 예외를 삼키고 null을 반환하여,
+		/// SettingsOverride()가 `RunSettings.Instance.MeasurementCount`에서 NullReferenceException을 일으킵니다.
+		/// </remarks>
+		public static void InitializePerformanceTestMetadata()
+		{
 			var run = CreateRunInfo();
 			SaveToPrefs(run, PlayerPrefKeyRunJSON);
 
+			PlayerPrefs.SetString(PlayerPrefKeySettingsJSON, DefaultRunSettingsJson);
+
+			PlayerPrefs.Save();
+
 			Debug.Log("[PerformanceTestSetup] Performance test metadata initialized.");
-#endif
 		}
 
-#if UNITY_EDITOR
 		private static Run CreateRunInfo()
 		{
 			var run = new Run
@@ -111,6 +133,5 @@ namespace GeunedaEditor.Services.Tests
 			var json = JsonUtility.ToJson(obj, true);
 			PlayerPrefs.SetString(key, json);
 		}
-#endif
 	}
 }

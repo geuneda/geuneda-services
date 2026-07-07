@@ -9,7 +9,7 @@ namespace GeunedaEditor.Services.Tests
 {
 	/// <summary>
 	/// MessageBrokerService 성능 테스트입니다.
-	/// 테스트 실행 전 성능 테스트 메타데이터가 초기화되도록 PrebuildSetup을 사용합니다.
+	/// 테스트 실행 전 성능 테스트 메타데이터가 초기화되도록 PrebuildSetup과 OneTimeSetUp을 사용합니다.
 	/// </summary>
 	[TestFixture]
 	[Category("Performance")]
@@ -17,6 +17,12 @@ namespace GeunedaEditor.Services.Tests
 	public class MessageBrokerPerformanceTest
 	{
 		public struct TestMessage : IMessage {}
+
+		[OneTimeSetUp]
+		public void OneTimeSetUp()
+		{
+			PerformanceTestSetup.InitializePerformanceTestMetadata();
+		}
 
 		[Test, Performance]
 		public void Publish_100Subscribers_MeasureTime()

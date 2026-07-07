@@ -1,0 +1,6 @@
+<ui:UXML xmlns:ui="UnityEngine.UIElements" xmlns:uie="UnityEditor.UIElements">
+    <Style src="ServicesExplorerWindow.uss" />
+    <ui:VisualElement name="root" class="root">
+        <ui:TabView name="service-tab-view" class="service-tab-view" />
+    </ui:VisualElement>
+</ui:UXML>

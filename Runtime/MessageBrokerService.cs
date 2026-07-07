@@ -66,6 +66,10 @@ namespace Geuneda.Services
 
 		private (bool, IMessage) _isPublishing;
 
+		internal IReadOnlyDictionary<Type, IDictionary<object, Delegate>> Subscriptions =>
+			(IReadOnlyDictionary<Type, IDictionary<object, Delegate>>)_subscriptions;
+		internal bool IsPublishing => _isPublishing.Item1;
+
 		/// <inheritdoc />
 		public void Publish<T>(T message) where T : IMessage
 		{

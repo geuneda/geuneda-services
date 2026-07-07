@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Xml.Linq;
 using Geuneda.Services;
+using Geuneda.Services.Pooling;
 using NSubstitute;
 using NUnit.Framework;
 
@@ -77,18 +78,24 @@ namespace GeunedaEditor.Services.Tests
 			_mockEntity.Received().OnDespawn();
 		}
 
-		/* 이 인터페이스 수정을 도와줄 사람을 찾으면 주석 해제
 		[Test]
 		public void EntityDespawn_Successfully()
 		{
-			var pool = Substitute.For<IObjectPool<IMockEntity>>();
-			var entity = new MockEntity();
+			// Substitute.For<IObjectPool<IMockEntity>>() 대신 실제 ObjectPool<IMockEntity>를 사용한다.
+			// 제네릭 인자가 자기 참조 인터페이스(IMockEntity : IPoolEntityObject<IMockEntity>)일 때
+			// NSubstitute + Castle DynamicProxy가 Unity Mono 런타임에서 프록시 생성 중 크래시하기 때문이다
+			// — ILGenerator.DeclareLocal이 null localType을 받는다. 실제 풀은 동일한
+			// MockEntity.Despawn -> pool.Despawn(this) 계약을 그대로 수행하며, SpawnedReadOnly.Count로
+			// observable 상태를 통한 라우팅을 확인한다.
+			MockEntity sharedEntity = null;
+			var pool = new ObjectPool<IMockEntity>(1, () => sharedEntity ??= new MockEntity());
+			var entity = pool.Spawn();
 
-			entity.Init(pool);
-
-			Assert.IsTrue(entity.Despawn());
-			pool.Received().Despawn(entity);
-		}*/
+			Assert.AreSame(sharedEntity, entity);
+			Assert.AreEqual(1, pool.SpawnedReadOnly.Count);
+			Assert.IsTrue(sharedEntity.Despawn());
+			Assert.AreEqual(0, pool.SpawnedReadOnly.Count);
+		}
 
 		[Test]
 		public void Despawn_NotSpawnedObject_ReturnsFalse()
@@ -115,6 +122,127 @@ namespace GeunedaEditor.Services.Tests
 			var clearedEntities = _pool.Clear();
 
 			Assert.AreEqual(_initialSize, clearedEntities.Count);
+		}
+
+		[Test]
+		public void SampleEntity_ReturnsSampleEntity()
+		{
+			Assert.AreSame(_mockEntity, _pool.SampleEntity);
+		}
+
+		[Test]
+		public void SpawnedReadOnly_ReturnsSpawnedEntities()
+		{
+			var entity = _pool.Spawn();
+
+			var spawned = _pool.SpawnedReadOnly;
+
+			Assert.AreEqual(1, spawned.Count);
+			Assert.AreSame(entity, spawned[0]);
+		}
+
+		[Test]
+		public void IsSpawned_ReturnsTrueWhenMatch()
+		{
+			var entity = _pool.Spawn();
+
+			Assert.IsTrue(_pool.IsSpawned(e => e == entity));
+			Assert.IsFalse(_pool.IsSpawned(e => false));
+		}
+
+		[Test]
+		public void Despawn_WithCondition_FirstOnly_Successfully()
+		{
+			var entity = _pool.Spawn();
+
+			Assert.IsTrue(_pool.Despawn(onlyFirst: true, e => e == entity));
+			Assert.AreEqual(0, _pool.SpawnedReadOnly.Count);
+		}
+
+		[Test]
+		public void Despawn_WithCondition_NoMatch_ReturnsFalse()
+		{
+			_pool.Spawn();
+
+			Assert.IsFalse(_pool.Despawn(onlyFirst: true, e => false));
+			Assert.AreEqual(1, _pool.SpawnedReadOnly.Count);
+		}
+
+		[Test]
+		public void Despawn_WithCondition_AllMatching_DespawnsAll()
+		{
+			_pool.Spawn();
+			_pool.Spawn();
+
+			Assert.IsTrue(_pool.Despawn(onlyFirst: false, e => true));
+			Assert.AreEqual(0, _pool.SpawnedReadOnly.Count);
+		}
+
+		[Test]
+		public void Despawn_WithCondition_DistinctMatchingEntities_AllDespawn()
+		{
+			// Regression: Despawn_WithCondition_AllMatching_DespawnsAll spawns the same _mockEntity
+			// twice (the SetUp factory returns a single instance), so SpawnedEntities.Remove matches
+			// by reference equality on duplicates. This test uses DISTINCT entities to confirm the
+			// iterate-while-mutating fix in ObjectPoolBase<T>.Despawn(bool, Func) also holds when
+			// each matching element is a separate reference.
+			var pool = new ObjectPool<IMockEntity>(0, () => Substitute.For<IMockEntity>());
+			var first = pool.Spawn();
+			var second = pool.Spawn();
+
+			Assert.AreNotSame(first, second);
+			Assert.IsTrue(pool.Despawn(onlyFirst: false, e => true));
+			Assert.AreEqual(0, pool.SpawnedReadOnly.Count);
+		}
+
+		[Test]
+		public void Despawn_WithCondition_PartialMatch_NonMatchingSurvives()
+		{
+			// Confirms the iteration step-back after a successful despawn doesn't spuriously remove
+			// non-matching neighbours when only a subset of the spawned set matches the predicate.
+			var pool = new ObjectPool<IMockEntity>(0, () => Substitute.For<IMockEntity>());
+			var target = pool.Spawn();
+			var keeper = pool.Spawn();
+
+			Assert.IsTrue(pool.Despawn(onlyFirst: false, e => e == target));
+			Assert.AreEqual(1, pool.SpawnedReadOnly.Count);
+			Assert.AreSame(keeper, pool.SpawnedReadOnly[0]);
+		}
+
+		[Test]
+		public void Reset_ClearsAndReinitializes()
+		{
+			_pool.Spawn();
+			var newSample = Substitute.For<IMockEntity>();
+			uint newSize = 3;
+
+			_pool.Reset(newSize, newSample);
+
+			Assert.AreEqual(0, _pool.SpawnedReadOnly.Count);
+			Assert.AreSame(newSample, _pool.SampleEntity);
+		}
+
+		[Test]
+		public void ObjectPool_FuncOnlyCtor_UsesProvidedFactory()
+		{
+			var invocations = 0;
+			IMockEntity Factory()
+			{
+				invocations++;
+				return Substitute.For<IMockEntity>();
+			}
+
+			const uint initSize = 3;
+			var pool = new ObjectPool<IMockEntity>(initSize, Factory);
+
+			Assert.AreEqual((int)initSize + 1, invocations);
+
+			pool.Spawn();
+			pool.Spawn();
+			pool.Spawn();
+
+			Assert.AreEqual((int)initSize + 1, invocations);
+			Assert.AreEqual(3, pool.SpawnedReadOnly.Count);
 		}
 	}
 }

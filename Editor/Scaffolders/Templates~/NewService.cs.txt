@@ -1,0 +1,19 @@
+using System;
+
+namespace $NAMESPACE$
+{
+	public interface I$NAME$
+	{
+	}
+
+	public class $NAME$ : I$NAME$, IDisposable
+	{
+		public $NAME$()
+		{
+		}
+
+		public void Dispose()
+		{
+		}
+	}
+}

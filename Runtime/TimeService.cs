@@ -79,6 +79,9 @@ namespace Geuneda.Services
 		private float _extraTime;
 		private DateTime _initialTime = DateTime.MinValue;
 
+		internal float ExtraTime => _extraTime;
+		internal DateTime InitialTime => _initialTime;
+
 		/// <inheritdoc />
 		public DateTime DateTimeUtcNow => _initialTime.AddSeconds(Time.realtimeSinceStartup - _initialUnityTime).AddSeconds(_extraTime).ToUniversalTime();
 		/// <inheritdoc />

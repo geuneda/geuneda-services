@@ -327,10 +327,15 @@ namespace Geuneda.Services
 		private static int NextNumber(int[] rndState)
 		{
 			var index1 = rndState[_valueIndex] + 1;
-			var index2 = index1 + _helperInc + 1;
 
 			index1 = index1 < _stateLength ? index1 : 1;
-			index2 = index2 < _stateLength ? index2 : 1;
+
+			// index2 는 링 {1..55} 위에서 index1 과 항상 간격 _helperInc(21)를 유지해야 한다 (.NET Random 의 inext/inextp 동치).
+			// 간격이 무너지면 감산 생성기의 lag 구조가 깨진다: 이전 구현은 오버플로 시 index2 를 1로 고정해
+			// index1 == index2 충돌(55회당 1번 ret == 0)과 저값 편향을 만들었고, 그 결과 모든 확률 판정이 약 +1.8%p 부풀었다.
+			var index2 = index1 + _helperInc;
+
+			index2 = index2 < _stateLength ? index2 : index2 - (_stateLength - 1);
 
 			var ret = rndState[index1] - rndState[index2];
 

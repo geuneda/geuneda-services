@@ -1,4 +1,5 @@
 using System;
+using System.Buffers;
 using System.Collections;
 using System.Collections.Generic;
 
@@ -62,13 +63,16 @@ namespace Geuneda.Services
 	/// <inheritdoc />
 	public class MessageBrokerService : IMessageBrokerService
 	{
-		private readonly IDictionary<Type, IDictionary<object, Delegate>> _subscriptions = new Dictionary<Type, IDictionary<object, Delegate>>();
+		// 구체 Dictionary 타입으로 선언한다. IDictionary(인터페이스)로 두면 foreach가 struct 열거자를
+		// 쓰지 못하고 박싱된 열거자를 매 Publish 마다 힙에 할당한다.
+		private readonly Dictionary<Type, Dictionary<object, Delegate>> _subscriptions = new Dictionary<Type, Dictionary<object, Delegate>>();
 
-		private (bool, IMessage) _isPublishing;
+		// 발행 중인 메시지를 IMessage 로 들고 있으면 struct 메시지가 매 발행마다 박싱되므로 타입만 보관한다.
+		private bool _isPublishing;
+		private Type _publishingType;
 
-		internal IReadOnlyDictionary<Type, IDictionary<object, Delegate>> Subscriptions =>
-			(IReadOnlyDictionary<Type, IDictionary<object, Delegate>>)_subscriptions;
-		internal bool IsPublishing => _isPublishing.Item1;
+		internal IReadOnlyDictionary<Type, Dictionary<object, Delegate>> Subscriptions => _subscriptions;
+		internal bool IsPublishing => _isPublishing;
 
 		/// <inheritdoc />
 		public void Publish<T>(T message) where T : IMessage
@@ -78,7 +82,8 @@ namespace Geuneda.Services
 				return;
 			}
 
-			_isPublishing = (true, message);
+			_isPublishing = true;
+			_publishingType = typeof(T);
 
 			foreach (var subscription in subscriptionObjects)
 			{
@@ -87,7 +92,8 @@ namespace Geuneda.Services
 				action(message);
 			}
 
-			_isPublishing = (false, message);
+			_isPublishing = false;
+			_publishingType = null;
 		}
 
 		/// <inheritdoc />
@@ -98,15 +104,27 @@ namespace Geuneda.Services
 				return;
 			}
 
-			var subscriptionCopy = new Delegate[subscriptionObjects.Count];
+			// 구독자 스냅샷은 매 발행마다 배열을 새로 만들지 않고 풀에서 대여한다.
+			// 핸들러가 다시 PublishSafe 를 호출해도(재진입) 각 호출이 별도 배열을 대여하므로 안전하다.
+			var count = subscriptionObjects.Count;
+			var subscriptionCopy = ArrayPool<Delegate>.Shared.Rent(count);
 
-			subscriptionObjects.Values.CopyTo(subscriptionCopy, 0);
-
-			for (var i = 0; i < subscriptionCopy.Length; i++)
+			try
 			{
-				var action = (Action<T>)subscriptionCopy[i];
+				subscriptionObjects.Values.CopyTo(subscriptionCopy, 0);
 
-				action(message);
+				// 대여 배열은 요청보다 길 수 있으므로 실제 구독자 수까지만 순회한다.
+				for (var i = 0; i < count; i++)
+				{
+					var action = (Action<T>)subscriptionCopy[i];
+
+					action(message);
+				}
+			}
+			finally
+			{
+				// 반납 시 비우지 않으면 대여 배열이 죽은 구독자 델리게이트를 계속 참조해 수거를 막는다.
+				ArrayPool<Delegate>.Shared.Return(subscriptionCopy, true);
 			}
 		}
 
@@ -120,10 +138,10 @@ namespace Geuneda.Services
 			{
 				throw new ArgumentException("Subscribe static functions to a message is not supported!");
 			}
-			if(_isPublishing.Item1)
+			if(_isPublishing)
 			{
 				throw new InvalidOperationException($"Cannot subscribe to {type.Name} message while publishing " +
-					$"{_isPublishing.Item2.GetType().Name} message. Use {nameof(PublishSafe)} instead!");
+					$"{_publishingType.Name} message. Use {nameof(PublishSafe)} instead!");
 			}
 
 			if (!_subscriptions.TryGetValue(type, out var subscriptionObjects))
@@ -147,10 +165,10 @@ namespace Geuneda.Services
 				return;
 			}
 
-			if (_isPublishing.Item1)
+			if (_isPublishing)
 			{
 				throw new InvalidOperationException($"Cannot unsubscribe to {type.Name} message while publishing " +
-					$"{_isPublishing.Item2.GetType().Name} message. Use {nameof(PublishSafe)} instead!");
+					$"{_publishingType.Name} message. Use {nameof(PublishSafe)} instead!");
 			}
 			if (!_subscriptions.TryGetValue(type, out var subscriptionObjects))
 			{
@@ -174,10 +192,10 @@ namespace Geuneda.Services
 				return;
 			}
 
-			if (_isPublishing.Item1)
+			if (_isPublishing)
 			{
 				throw new InvalidOperationException($"Cannot unsubscribe from {subscriber} message while publishing " +
-					$"{_isPublishing.Item2.GetType().Name} message. Use {nameof(PublishSafe)} instead!");
+					$"{_publishingType.Name} message. Use {nameof(PublishSafe)} instead!");
 			}
 			foreach (var subscriptionObjects in _subscriptions.Values)
 			{

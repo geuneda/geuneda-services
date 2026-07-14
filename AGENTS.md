@@ -240,7 +240,7 @@ asmdef에 `"rootNamespace": "Geuneda.Services"`가 있으면 Unity의 *Create > 
 
 ### 버전 데이터 파이프라인
 - 런타임은 `version-data`(`VersionServices.VersionDataFilename`)라는 이름의 Resources TextAsset을 기대합니다. 파일명은 런타임 `const`이며 구성할 수 없습니다.
-- `VersionEditorUtils`는 도메인 리로드마다(`[InitializeOnLoadMethod]`) `version-data.txt`를 작성하며 빌드 파이프라인에서 호출될 수 있습니다. git CLI를 사용하며, 실패는 우아하게 처리됩니다.
+- `VersionEditorUtils`는 도메인 리로드마다(`[InitializeOnLoadMethod]`) `version-data.txt`를 작성하며 빌드 파이프라인에서 호출될 수 있습니다. git CLI를 사용하며, 실패는 우아하게 처리됩니다. 파일이 아직 없으면(예: 생성 파일을 gitignore 한 프로젝트의 신규 클론) 에러 로그 없이 조용히 새로 생성합니다(v2.1.2). 파일 내용에 커밋 해시가 포함되어 매 커밋마다 달라지므로, 소비 프로젝트는 `version-data.txt`(+`.meta`)를 gitignore 하는 것을 권장합니다.
 - **작성 폴더**는 프로젝트별로 `VersioningEditorSettings.instance.ResourcesFolderPath`(기본값 `Assets/Configs/Resources`)를 통해 구성 가능합니다. Services Explorer의 Versioning 탭에서 변경할 수 있습니다(browse + reset). 선택한 폴더는 런타임에 `Resources.Load<TextAsset>("version-data")`가 파일을 찾을 수 있도록 `Resources` 경로 세그먼트를 포함해야 합니다. geuneda 구성에서는 이 폴더가 명시적으로 설정되지 않은 경우 프로젝트 내 기존 `version-data` 위치를 자동 감지하여 기준 경로로 삼으므로, 프로젝트가 표준 `Assets/Configs/Resources` 레이아웃을 따르지 않아도 저장/로드가 동작합니다.
 - `VersioningEditorSettings`는 `ProjectSettings/VersioningEditorSettings.asset`에 영속화됩니다(에디터 전용, 기본적으로 버전 관리에 커밋되지 않음).
 - `VersionExternal`은 항상 안전합니다(`Application.version`을 직접 읽음). `VersionInternal`, `Branch`, `Commit`, `BuildNumber`는 `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]`에서 자동 부트스트랩되며(비공개 `Bootstrap` 메서드가 `LoadVersionData()`를 호출), 추가로 비공개 `EnsureLoaded()`를 통해 첫 프로퍼티 접근 시 지연 로드됩니다 — 형제 어셈블리의 `SubsystemRegistration` 콜백이 이 패키지의 것보다 먼저 실행되는 경우를 커버합니다. `version-data` Resource가 없거나 파싱에 실패하면 접근자들은 문서화된 폴백(`VersionInternal` -> `Application.version`, 나머지 -> `string.Empty`)을 반환하고 `Debug.LogError`를 남기며; 예외는 발생하지 않습니다.

@@ -4,6 +4,11 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [유의적 버전](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
+## [2.1.2] - 2026-07-14
+
+**수정**:
+- `VersionEditorUtils.SetAndSaveInternalVersion`이 `version-data` 리소스가 아직 없을 때 에러 로그 없이 조용히 새로 생성하도록 변경했습니다. `version-data.txt`는 커밋 해시가 내용에 포함되는 자동 생성 파일이라 소비 프로젝트에서 gitignore 하는 것이 권장되는데, 그 경우 신규 클론/CI의 첫 도메인 리로드에서 "Could not load internal version from Resources." 에러가 불필요하게 찍히던 문제를 해소합니다. 공개 API `LoadVersionDataSerializedSync`의 동작(누락 시 에러 로그 + 빈 문자열 반환)은 그대로입니다.
+
 ## [2.1.1] - 2026-07-10
 
 **수정**:

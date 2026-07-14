@@ -21,7 +21,7 @@ namespace Geuneda.Services.Versioning.Editor
 		{
 			var newVersionData = GenerateInternalVersionSuffix(isStoreBuild);
 			var newVersionDataSerialized = JsonUtility.ToJson(newVersionData);
-			var oldVersionDataSerialized = LoadVersionDataSerializedSync();
+			var oldVersionDataSerialized = LoadVersionDataSerializedSilent();
 			if (newVersionDataSerialized.Equals(oldVersionDataSerialized, StringComparison.Ordinal))
 			{
 				return;
@@ -36,11 +36,26 @@ namespace Geuneda.Services.Versioning.Editor
 		/// </summary>
 		public static string LoadVersionDataSerializedSync()
 		{
-			var textAsset = Resources.Load<TextAsset>(VersionServices.VersionDataFilename);
-			if (!textAsset)
+			var serialized = LoadVersionDataSerializedSilent();
+			if (serialized == null)
 			{
 				Debug.LogError("Could not load internal version from Resources.");
 				return string.Empty;
+			}
+
+			return serialized;
+		}
+
+		/// <summary>
+		/// version-data 리소스를 로그 없이 로드합니다.
+		/// 파일이 아직 없으면(예: 생성 파일을 gitignore 한 프로젝트의 신규 클론) null 을 반환합니다.
+		/// </summary>
+		private static string LoadVersionDataSerializedSilent()
+		{
+			var textAsset = Resources.Load<TextAsset>(VersionServices.VersionDataFilename);
+			if (!textAsset)
+			{
+				return null;
 			}
 
 			var serialized = textAsset.text;

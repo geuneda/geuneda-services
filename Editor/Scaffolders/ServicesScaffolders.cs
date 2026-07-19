@@ -53,7 +53,11 @@ namespace Geuneda.Services.Scaffolders.Editor
 			endAction.TemplatePath = templatePath;
 
 			ProjectWindowUtil.StartNameEditingIfProjectWindowExists(
+#if UNITY_6000_5_OR_NEWER
+				EntityId.None,
+#else
 				0,
+#endif
 				endAction,
 				defaultName,
 				EditorGUIUtility.IconContent("cs Script Icon").image as Texture2D,
@@ -96,11 +100,20 @@ namespace Geuneda.Services.Scaffolders.Editor
 		/// Called by <see cref="ProjectWindowUtil"/> after the user confirms the file name.
 		/// Reads the template, replaces placeholders, and writes the final .cs file.
 		/// </summary>
-		private class ScriptNameEditAction : EndNameEditAction
+		private class ScriptNameEditAction :
+#if UNITY_6000_5_OR_NEWER
+			AssetCreationEndAction
+#else
+			EndNameEditAction
+#endif
 		{
 			public string TemplatePath;
 
+#if UNITY_6000_5_OR_NEWER
+			public override void Action(EntityId instanceId, string pathName, string resourceFile)
+#else
 			public override void Action(int instanceId, string pathName, string resourceFile)
+#endif
 			{
 				var scriptName = Path.GetFileNameWithoutExtension(pathName);
 				var ns = DeriveNamespace(pathName);
@@ -117,9 +130,11 @@ namespace Geuneda.Services.Scaffolders.Editor
 				ProjectWindowUtil.ShowCreatedAsset(asset);
 			}
 
+#if !UNITY_6000_5_OR_NEWER
 			public override void Cancelled(int instanceId, string pathName, string resourceFile)
 			{
 			}
+#endif
 
 			private static string DeriveNamespace(string assetPath)
 			{

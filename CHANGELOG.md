@@ -4,6 +4,11 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [유의적 버전](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
+## [2.1.3] - 2026-07-19
+
+**수정**:
+- Unity 6.5(6000.5)에서 `ServicesScaffolders`의 스크립트 생성 액션이 컴파일 에러(CS0619)를 내던 문제를 수정했습니다. 6.5부터 `EndNameEditAction`이 obsolete-as-error로 승격되어, `#if UNITY_6000_5_OR_NEWER` 가드 하에 `AssetCreationEndAction`(+ `EntityId` 시그니처)을 사용하도록 분기했습니다. 6.5 미만 버전에서는 기존 `EndNameEditAction` 경로가 그대로 유지되므로 동작 변화가 없습니다.
+
 ## [2.1.2] - 2026-07-14
 
 **수정**:

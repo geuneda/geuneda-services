@@ -1,61 +1,112 @@
-# Pool Service
+# 풀 서비스
 
-[← Back to index](README.md)
+[목차로 돌아가기](README.md)
 
-Efficient object pooling with lifecycle hooks.
+생명주기 훅을 가진 오브젝트 풀과, 타입별 풀을 모아 관리하는 `PoolService` 입니다.
 
-**Key Points:**
-- `PoolService` keeps **one pool per type**; `AddPool<T>()` throws (`ArgumentException`) if the type is already registered
-- `GameObjectPool<T>` requires `T : Behaviour`; use it when you want a typed component reference on spawn
-- `GameObjectPool` (non-generic) works with raw `GameObject` references
-- `ObjectPool<T>` is a generic pool; lifecycle hooks are called via direct cast
-- `CallOnSpawned`/`CallOnDespawned` are **virtual** in `ObjectPoolBase<T>` — override to customize dispatch
-- `GameObjectPool.Dispose(bool disposeSampleEntity)`: `true` destroys the sample entity too; `false` (overload) destroys pooled instances only
+## 네임스페이스
+
+- `PoolService` (구체 클래스): `Geuneda.Services`
+- 그 외 풀 타입 전부: `Geuneda.Services.Pooling` — `IPoolService`, `IObjectPool`, `IObjectPool<T>`, `ObjectPoolBase<T>`, `ObjectPool<T>`, `GameObjectPool`, `GameObjectPool<T>`, `IPoolEntitySpawn`, `IPoolEntitySpawn<T>`, `IPoolEntityDespawn`, `IPoolEntityObject<T>`
+
+`IPoolService` 를 쓰는 코드는 `using Geuneda.Services.Pooling;` 이 필요합니다.
+
+## 풀 종류
+
+| 타입 | 대상 | 생명주기 훅 호출 방식 |
+|------|------|------------------------|
+| `ObjectPool<T>` | 순수 C# 객체 (`T : class`) | 엔티티를 직접 캐스팅 (`entity as IPoolEntitySpawn`) |
+| `GameObjectPool` | `GameObject` | `GetComponent<IPoolEntitySpawn>()` 등 |
+| `GameObjectPool<T>` | 컴포넌트 (`T : Behaviour`) | `GetComponent<IPoolEntitySpawn>()` 등 |
+
+- `GameObjectPool` / `GameObjectPool<T>` 는 스폰 시 `SetActive(true)`, 디스폰 시 `SetActive(false)` 를 호출합니다. `DespawnToSampleParent`(기본 `true`)면 디스폰할 때 샘플 엔티티의 부모 아래로 되돌립니다.
+- 기본 인스턴시에이터는 샘플을 샘플의 부모 아래에 `Object.Instantiate` 하고 비활성화합니다. 생성자에 `Func<T, T>` 인스턴시에이터를 넘겨 바꿀 수 있습니다.
+- 풀이 비면 새로 인스턴스를 만듭니다(초기 크기는 상한이 아님).
+- `ObjectPool<T>(uint initSize, Func<T> instantiator)` 생성자는 샘플 엔티티를 만들기 위해 `instantiator` 를 한 번 더 호출합니다.
+
+## 생명주기 훅
+
+| 인터페이스 | 호출 시점 |
+|------------|-----------|
+| `IPoolEntitySpawn` | 스폰할 때마다 (`Spawn()` 과 `Spawn(data)` 모두) |
+| `IPoolEntitySpawn<TData>` | `Spawn(data)` 로 스폰할 때 (`IPoolEntitySpawn.OnSpawn()` 다음에 호출) |
+| `IPoolEntityDespawn` | 디스폰할 때 |
+| `IPoolEntityObject<T>` | 인스턴스가 처음 생성될 때 `Init(IObjectPool<T>)` 호출. 엔티티가 스스로 `Despawn()` 할 수 있게 풀 참조를 넘김 |
+
+`ObjectPoolBase<T>` 의 `CallOnSpawned` / `CallOnDespawned` 는 `protected virtual` 이라 파생 풀에서 디스패치 방식을 바꿀 수 있습니다.
+
+## 사용 예
 
 ```csharp
-var poolService = new PoolService();
+using Geuneda.Services;
+using Geuneda.Services.Pooling;
+using UnityEngine;
 
-// Create and register a pool
-var bulletPool = new GameObjectPool<Bullet>(initSize: 50, bulletPrefab);
-poolService.AddPool(bulletPool);
+public struct BulletData
+{
+    public int Damage;
+}
 
-// Spawn / Despawn
-var bullet = poolService.Spawn<Bullet>();
-poolService.Despawn(bullet);
+public class Bullet : MonoBehaviour, IPoolEntitySpawn<BulletData>, IPoolEntityDespawn
+{
+    public int Damage;
 
-// Spawn with data (entity must implement IPoolEntitySpawn<BulletData>)
-var bullet = poolService.Spawn<Bullet, BulletData>(new BulletData { Damage = 100 });
+    public void OnSpawn(BulletData data) => Damage = data.Damage;
+    public void OnDespawn() => Damage = 0;
+}
 
-// Direct pool access
-IObjectPool<Bullet> pool = poolService.GetPool<Bullet>();
-pool.DespawnAll();
+public class BulletSpawner
+{
+    private readonly IPoolService _poolService;
 
-// Despawn all via service
-poolService.DespawnAll<Bullet>();
+    public BulletSpawner(IPoolService poolService, Bullet bulletPrefab)
+    {
+        _poolService = poolService;
+        _poolService.AddPool(new GameObjectPool<Bullet>(50, bulletPrefab));
+    }
 
-// Remove pool (does not destroy entities)
-poolService.RemovePool<Bullet>();
+    public void Fire()
+    {
+        var bullet = _poolService.Spawn<Bullet, BulletData>(new BulletData { Damage = 100 });
 
-// Dispose pool and optionally destroy sample entity
-poolService.Dispose<Bullet>(disposeSampleEntity: true);
+        // ...
+
+        _poolService.Despawn(bullet);
+    }
+
+    public void Clear()
+    {
+        IObjectPool<Bullet> pool = _poolService.GetPool<Bullet>();
+        Debug.Log($"Spawned: {pool.SpawnedReadOnly.Count}");
+
+        _poolService.DespawnAll<Bullet>();
+    }
+}
 ```
 
-## Lifecycle Hook Interfaces
+## IPoolService API
 
-Implement on your entity class to receive pool events:
+| 메서드 | 설명 |
+|--------|------|
+| `AddPool<T>(IObjectPool<T> pool)` | 풀 등록. 타입당 하나만 가능 |
+| `GetPool<T>()` / `TryGetPool<T>(out IObjectPool<T>)` | 풀 조회 |
+| `RemovePool<T>()` | 서비스에서만 제거 (엔티티는 파괴하지 않음) |
+| `Spawn<T>()` / `Spawn<T, TData>(TData data)` | 스폰. `Spawn<T, TData>` 는 `T : IPoolEntitySpawn<TData>` 제약 |
+| `Despawn<T>(T entity)` | 디스폰. 성공하면 `true` |
+| `DespawnAll<T>()` | 해당 타입 풀 전체 디스폰 |
+| `Clear()` | 모든 풀을 서비스에서 떼어 `IDictionary<Type, IObjectPool>` 로 반환 (풀 자체는 해제하지 않음) |
+| `Dispose<T>(bool disposeSampleEntity)` | 해당 풀의 `Dispose(bool)` 호출 후 서비스에서 제거 |
+| `Dispose()` | 모든 풀의 `Dispose()` 호출 후 비우기 |
 
-| Interface | When Called |
-|-----------|-------------|
-| `IPoolEntitySpawn` | On every spawn (no data) |
-| `IPoolEntitySpawn<TData>` | On spawn with typed data |
-| `IPoolEntityDespawn` | On despawn |
-| `IPoolEntityObject<T>` | On first creation — receives pool reference for self-despawn |
+## 해제 동작 주의
 
-**`ObjectPool<T>`** calls hooks via `(entity as IPoolEntitySpawn)?.OnSpawn()`.
-**`GameObjectPool` / `GameObjectPool<T>`** call hooks via `entity.GetComponent<IPoolEntitySpawn>()?.OnSpawn()`.
+- `IObjectPool.Dispose()` (인자 없음): 풀이 가진 엔티티(스폰된 것과 대기 중인 것)를 비웁니다. `ObjectPool<T>` 는 참조만 버리고, `GameObjectPool` 계열은 각 인스턴스의 GameObject 를 `Object.Destroy` 합니다(이미 외부에서 파괴된 항목은 건너뜀). 샘플 엔티티는 건드리지 않습니다.
+- `GameObjectPool.Dispose(bool)` / `GameObjectPool<T>.Dispose(bool)`: 현재 구현은 **인자 값과 관계없이** 샘플 엔티티에 `Object.Destroy` 를 호출합니다. 인자 `true` 는 추가로 풀이 가진 샘플 참조를 null 로 만듭니다. 샘플을 계속 써야 하면 `Dispose()` 를 쓰세요.
+- `Reset(initSize, sampleEntity)` 는 `Dispose()` 로 기존 엔티티를 정리한 뒤 새 샘플로 다시 채웁니다.
 
-## Error Reference
+## 예외
 
-| Call | Exception | Condition |
-|------|-----------|-----------|
-| `AddPool<T>(pool)` duplicate | `ArgumentException` | Pool for `T` already registered |
+| 호출 | 예외 | 조건 |
+|------|------|------|
+| `AddPool<T>(pool)` | `ArgumentException` | `T` 타입 풀이 이미 등록됨 |
+| `GetPool<T>()`, `Spawn<T>()`, `Despawn<T>()`, `DespawnAll<T>()`, `Dispose<T>(bool)` | `ArgumentException` | `T` 타입 풀이 등록되지 않음 |

@@ -1,12 +1,10 @@
-# Claude Code Guide — Geuneda Services
+# Claude Code 가이드 — Geuneda Services
 
-This package's contributor/agent guide lives in `AGENTS.md`.
-Claude Code will automatically import it below.
+이 패키지의 기여자/에이전트 가이드는 `AGENTS.md` 에 있으며 아래에서 가져옵니다.
 
 @AGENTS.md
 
-## Claude-Specific Notes
+## Claude 참고
 
-- Treat `AGENTS.md` as the source of truth.
-- If anything in this file appears to conflict with `AGENTS.md`, prefer `AGENTS.md`.
-- For user-facing usage, see `README.md`.
+- `AGENTS.md` 가 기준입니다. 이 파일과 내용이 다르면 `AGENTS.md` 를 따르세요.
+- 사용자용 사용법은 `README.md` 와 `docs/` 를 참고하세요.

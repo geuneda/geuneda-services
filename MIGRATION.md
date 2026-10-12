@@ -1,156 +1,102 @@
-# Migration Guide — v1.x → v2.0.0
+# 마이그레이션 가이드: v1.x → v2.x
 
-## Overview
+v2.0.0 에서 `com.geuneda.assetsimporter` 가 이 패키지에 통합되었고, 일부 타입의 네임스페이스와 폴더 구조가 바뀌었습니다. v1.x 에서 올리는 경우 아래 순서로 확인하세요. 버전별 전체 변경은 [CHANGELOG.md](CHANGELOG.md) 를 참고하세요.
 
-v2.0.0 absorbs `com.geuneda.assetsimporter` into `com.geuneda.services`. The package now has two new hard dependencies (`com.unity.addressables`, `com.cysharp.unitask`) and a reorganized `Runtime/` and `Editor/` folder structure.
+## 1. 패키지 참조
 
-**Namespace changes in 2.0.0** affect pool interfaces, command interfaces, asset importer types, and editor versioning code. The concrete service classes (`PoolService`, `CommandService<>`, etc.) and foundation services (DI, messaging, ticking, persistence, time, RNG, versioning) stay in `Geuneda.Services`.
+- `manifest.json` 에서 `com.geuneda.assetsimporter` 를 제거합니다. 같은 타입이 이 패키지에 있으므로 함께 설치하면 충돌합니다.
+- 새 의존성 `com.unity.addressables`, `com.cysharp.unitask` 가 추가되었습니다. UniTask 는 Unity 레지스트리에 없으므로 직접 추가해야 합니다([README 설치](README.md#설치) 참고).
 
-Consumers should update their `using` directives per sections 2, 3, and below.
+## 2. 풀 타입 (호환성 파괴)
 
----
-
-## 1. Package Reference
-
-Remove `com.geuneda.assetsimporter` and update `com.geuneda.services` in your `manifest.json` or submodule:
+풀 인터페이스와 구현이 `Geuneda.Services` 에서 `Geuneda.Services.Pooling` 으로 이동했습니다. 구체 클래스 `PoolService` 는 `Geuneda.Services` 에 남습니다.
 
 ```diff
-- "com.geuneda.assetsimporter": "https://github.com/CoderGamester/Unity-AssetsImporter.git",
-  "com.geuneda.services": "https://github.com/CoderGamester/Services.git",
-```
-
-`com.unity.addressables` and `com.cysharp.unitask` are now resolved automatically as transitive dependencies of `com.geuneda.services`.
-
----
-
-## 2. Pool Types (Breaking)
-
-Pool interfaces and pool implementation types moved from `Geuneda.Services` to `Geuneda.Services.Pooling`.
-
-```diff
-- using Geuneda.Services;
-+ using Geuneda.Services;
+  using Geuneda.Services;
 + using Geuneda.Services.Pooling;
 ```
 
-Affected types moved to `Geuneda.Services.Pooling`: `IPoolService`, `IObjectPool`, `IObjectPool<T>`, `IPoolEntitySpawn`, `IPoolEntitySpawn<T>`, `IPoolEntityDespawn`, `IPoolEntityObject<T>`, `ObjectPoolBase<T>`, `ObjectPool<T>`, `GameObjectPool`, `GameObjectPool<T>`.
+이동한 타입: `IPoolService`, `IObjectPool`, `IObjectPool<T>`, `IPoolEntitySpawn`, `IPoolEntitySpawn<T>`, `IPoolEntityDespawn`, `IPoolEntityObject<T>`, `ObjectPoolBase<T>`, `ObjectPool<T>`, `GameObjectPool`, `GameObjectPool<T>`
 
-`PoolService` (concrete) stays in `Geuneda.Services`.
+## 3. 커맨드 타입 (호환성 파괴)
 
-## 3. Command Types (Breaking)
-
-Command interfaces moved from `Geuneda.Services` to `Geuneda.Services.Commands`.
+커맨드 계약이 `Geuneda.Services.Commands` 로 이동했습니다. 구체 클래스 `CommandService<>` 는 `Geuneda.Services` 에 남습니다.
 
 ```diff
-- using Geuneda.Services;
-+ using Geuneda.Services;
+  using Geuneda.Services;
 + using Geuneda.Services.Commands;
 ```
 
-Affected types moved to `Geuneda.Services.Commands`: `IGameCommandBase`, `IGameCommand<>`, `IGameServerCommand<>`, `ICommandService<>`.
+이동한 타입: `IGameCommandBase`, `IGameCommand<>`, `IGameServerCommand<>`, `ICommandService<>`
 
-`CommandService<>` (concrete) stays in `Geuneda.Services`.
+## 4. 에셋 임포터 런타임 타입
 
-## 4. Asset Importer Runtime Types
-
-All types previously in `Geuneda.AssetsImporter` (except `AssetResolverService`) are now in `Geuneda.Services.AssetsImporter`.
+예전 `Geuneda.AssetsImporter` 의 타입은 `Geuneda.Services.AssetsImporter` 로 이동했습니다.
 
 ```diff
 - using Geuneda.AssetsImporter;
 + using Geuneda.Services.AssetsImporter;
 ```
 
-Affected types: `IAssetLoader`, `ISceneLoader`, `AddressablesAssetLoader`, `AddressableConfig`, `AddressableConfigComparer`, `AssetConfigsScriptableObject<TId,TAsset>`, `AssetConfigsScriptableObjectBase<TId,TAsset>`, `AssetLoaderUtils`, `AssetReferenceScene`.
+대상: `IAssetLoader`, `ISceneLoader`, `AddressablesAssetLoader`, `AddressableConfig`, `AddressableConfigComparer`, `AssetConfigsScriptableObject`, `AssetConfigsScriptableObjectBase<,>`, `AssetConfigsScriptableObject<,>`, `AssetLoaderUtils`, `AssetReferenceScene`
 
----
+예외로 `AssetResolverService`, `IAssetResolverService`, `IAssetAdderService` 는 루트 네임스페이스 `Geuneda.Services` 로 이동했습니다.
 
-## 5. AssetResolverService
+## 5. 에디터 타입
 
-`AssetResolverService` (and `IAssetResolverService` / `IAssetAdderService`) moved from `Geuneda.AssetsImporter` to `Geuneda.Services` (the root services namespace).
+| 예전 네임스페이스 | 새 네임스페이스 | 대상 |
+|-------------------|-----------------|------|
+| `Geuneda.Services.Editor` | `Geuneda.Services.Versioning.Editor` | `VersionEditorUtils`, `GitEditorProcess` |
+| `GeunedaEditor.AssetsImporter` | `Geuneda.Services.AssetsImporter.Editor` | `IAssetConfigsImporter`, `IAssetConfigsGeneratorImporter`, `AssetsConfigsImporter<,,>`, `AssetsConfigsImporterBase<,,>`, `AssetsConfigsGeneratorImporter<>` |
 
-```diff
-- using Geuneda.AssetsImporter;
-- // AssetResolverService was in Geuneda.AssetsImporter
-+ using Geuneda.Services;
-+ // AssetResolverService is now in Geuneda.Services
-```
+다음 에디터 타입은 v2.0.0 에서 삭제되었습니다. 기능은 `Tools > Geuneda > ...` 메뉴와 Services Explorer 탭으로 옮겨졌습니다.
 
-If you only used `using Geuneda.AssetsImporter;` for `AssetResolverService` and nothing else, replace it with `using Geuneda.Services;` (which you almost certainly already have).
+- `AssetsImporter`, `AssetsToolImporter` → `Tools > Geuneda > Assets Importer` 메뉴, **Assets Importer** 탭
+- `AddressableIdsGenerator`, `AddressablesIdGeneratorSettings` → `Tools > Geuneda > Addressable Ids` 메뉴, **Addressable Ids** 탭
 
----
+설정은 `Assets/*.asset` 대신 `ProjectSettings/AssetsImporterEditorSettings.asset`, `ProjectSettings/AddressableIdsEditorSettings.asset` 에 저장됩니다. 예전 `Assets/AssetsImporter.asset`, `Assets/AddressablesIdGeneratorSettings.asset` 은 더 이상 쓰이지 않으므로 지워도 됩니다. 생성기 설정(파일 이름, 네임스페이스, 라벨)은 **Addressable Ids** 탭에서 다시 입력하세요.
 
-## 6. Editor Versioning Code
+## 6. 생성된 코드 다시 만들기
 
-`VersionEditorUtils` and `GitEditorProcess` moved from namespace `Geuneda.Services.Editor` to `Geuneda.Services.Versioning.Editor`.
+예전 Addressable Ids 생성기로 만든 파일에는 `using Geuneda.AssetsImporter;` 가 들어 있습니다. 다음 중 하나로 고칩니다.
 
-```diff
-- using Geuneda.Services.Editor;
-+ using Geuneda.Services.Versioning.Editor;
-```
-
----
-
-## 7. Asset Importer Editor Types
-
-Editor types previously in `GeunedaEditor.AssetsImporter` are now in `Geuneda.Services.AssetsImporter.Editor`.
-
-```diff
-- using GeunedaEditor.AssetsImporter;
-+ using Geuneda.Services.AssetsImporter.Editor;
-```
-
-Affected types: `AssetsImporter`, `AssetsToolImporter`, `IAssetConfigsImporter`, `AssetsConfigsImporter<>`, `AssetsConfigsImporterBase<>`, `AssetsConfigsGeneratorImporter<>`, `IAssetConfigsGeneratorImporter`, `AddressablesIdGeneratorSettingsEditor`, `AddressablesIdGeneratorSettings`.
-
----
-
-## 8. Re-run Code Generators
-
-If you previously used `AddressableIdsGenerator` (Tools → AddressableIds Generator), the generated file contains a `using` statement that must be updated.
-
-**Option A — Re-run the generator**: Open Unity, go to Tools → AddressableIds Generator → Generate AddressableIds. The newly generated file will have the correct `using Geuneda.Services.AssetsImporter;`.
-
-**Option B — Manual fix** in the generated file:
+- `Tools > Geuneda > Addressable Ids > Generate Addressable Ids` 로 다시 생성
+- 생성된 파일의 `using` 을 직접 수정
 
 ```diff
 - using Geuneda.AssetsImporter;
 + using Geuneda.Services.AssetsImporter;
 ```
 
-Similarly, if you used `AssetsConfigsGeneratorImporter<TAsset>` to code-generate an importer, re-run by setting the folder path on the importer ScriptableObject, or fix the generated file manually with the same `using` replacement.
+`AssetsConfigsGeneratorImporter<TAsset>` 로 생성한 코드도 같은 방식으로 `using` 을 고칩니다.
 
----
+## 7. `IAssetLoader.UnloadAsset` 시그니처 변경
 
-## 9. `IAssetLoader.UnloadAsset` Signature Change
-
-`IAssetLoader.UnloadAssetAsync<T>(T, Action)` was renamed to `IAssetLoader.UnloadAsset<T>(T, Action)` and its return type changed from `UniTask` to `void`. The underlying behaviour (`Addressables.Release(asset)` + invoke callback) is already synchronous, so the previous `UniTask`-returning signature was misleading; the rename makes the API honest.
+`UnloadAssetAsync<T>(T, Action)` 가 `UnloadAsset<T>(T, Action)` 으로 바뀌고 반환 타입이 `UniTask` 에서 `void` 가 되었습니다. 동작(`Addressables.Release` 후 콜백 호출)은 원래 동기였습니다.
 
 ```diff
 - await loader.UnloadAssetAsync(texture);
 + loader.UnloadAsset(texture);
 ```
 
-If you chained the release inside an `async` method, the fix is a single-line change: drop the `await` and the `Async` suffix. No other call-site adjustments are required.
+v2.0.0 부터 `UnloadAsset` 은 `Resources.UnloadUnusedAssets()` 나 `GC.Collect()` 를 호출하지 않습니다. 메모리 회수가 필요하면 적절한 시점에 직접 호출하세요.
 
-**Behavioural reminder**: `UnloadAsset` only decrements the Addressables reference count. It does not free memory and does not destroy `GameObject` instances returned by `InstantiateAsync`. To reclaim memory, call `UnityEngine.Resources.UnloadUnusedAssets()` at scene transitions, boot, or memory-pressure events. To destroy instantiated prefabs, call `UnityEngine.Object.Destroy` separately.
+## 8. 동작 변경
 
----
+- `IAsyncCoroutine.StopCoroutine(triggerOnComplete)` 가 인자를 따릅니다. `false`(기본값)면 완료 콜백이 호출되지 않습니다. 예전에는 항상 호출되었습니다.
+- v2.1.0: `VersionServices` 가 자동으로 로드됩니다. `LoadVersionDataAsync()` 를 부팅 시 직접 호출하던 코드는 지워도 됩니다.
+- v2.1.1: `RngService` 의 분포 편향이 수정되어 같은 시드의 난수 시퀀스가 달라졌습니다. 시드 기반 리플레이 데이터는 호환되지 않습니다.
 
-## 10. What Did NOT Change
+## 바뀌지 않은 것
 
-The following types remain in namespace `Geuneda.Services` — no action needed if you only use `using Geuneda.Services;`:
+다음 타입은 그대로 `Geuneda.Services` 에 있습니다.
 
 - DI: `IInstaller`, `Installer`, `MainInstaller`
-- Messaging: `IMessageBrokerService`, `MessageBrokerService`, `IMessage`
-- Ticking: `ITickService`, `TickService`
-- Coroutines: `ICoroutineService`, `CoroutineService`, `IAsyncCoroutine`, `IAsyncCoroutine<T>`
-- Data: `IDataService`, `IDataProvider`, `DataService`
-- Time: `ITimeService`, `ITimeManipulator`, `TimeService`
+- 메시징: `IMessageBrokerService`, `MessageBrokerService`, `IMessage`
+- 틱: `ITickService`, `TickService`
+- 코루틴: `ICoroutineService`, `CoroutineService`, `IAsyncCoroutine`, `IAsyncCoroutine<T>`
+- 데이터: `IDataService`, `IDataProvider`, `DataService`
+- 시간: `ITimeService`, `ITimeManipulator`, `TimeService`
 - RNG: `IRngService`, `RngService`, `RngData`, `IRngData`
-- Versioning: `VersionServices`, `VersionData`
-- Concrete services and their interfaces that remain in `Geuneda.Services`: `PoolService`, `CommandService<>`, `AssetResolverService`, `IAssetResolverService`, `IAssetAdderService`
-
-The following types **moved** to sub-namespaces (see sections 2, 3, 4 above):
-
-- `Geuneda.Services.Pooling`: `IPoolService`, `IObjectPool`, `IObjectPool<T>`, `IPoolEntitySpawn`, `IPoolEntitySpawn<T>`, `IPoolEntityDespawn`, `IPoolEntityObject<T>`, `ObjectPoolBase<T>`, `ObjectPool<T>`, `GameObjectPool`, `GameObjectPool<T>`
-- `Geuneda.Services.Commands`: `IGameCommandBase`, `IGameCommand<>`, `IGameServerCommand<>`, `ICommandService<>`
-- `Geuneda.Services.AssetsImporter`: `IAssetLoader`, `ISceneLoader`, `AddressablesAssetLoader`, `AddressableConfig`, `AddressableConfigComparer`, `AssetConfigsScriptableObject`, `AssetConfigsScriptableObjectBase<,>`, `AssetConfigsScriptableObject<,>`, `AssetLoaderUtils`, `AssetReferenceScene`
+- 버전: `VersionServices`, `VersionServices.VersionData`
+- 구체 클래스: `PoolService`, `CommandService<>`

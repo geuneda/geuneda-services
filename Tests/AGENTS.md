@@ -1,94 +1,113 @@
-# Geuneda.Services Tests - AI Agent Guide
+# Geuneda.Services 테스트 - AI 에이전트 가이드
 
-This file contains testing conventions for the `com.geuneda.services` package. It is the source of truth when reading, editing, or creating test files under `Tests/`.
+`com.geuneda.services` 패키지의 테스트 규칙입니다. `Tests/` 아래 파일을 읽거나 고치거나 만들 때 이 파일이 기준입니다. 런타임 구조와 함정은 상위 [AGENTS.md](../AGENTS.md) 를 참고하세요.
 
-For runtime architecture, gotchas, and package-level context, see the parent [`AGENTS.md`](../AGENTS.md).
+## 1. 배치 규칙 (EditMode / PlayMode)
 
-## 1. Placement Rules (EditMode vs PlayMode)
-- **EditMode / Unit** (`EditMode/Unit/`): Pure-logic services with no `MonoBehaviour` or `GameObject` dependency. Use `[Test]`. NSubstitute is available (referenced only in the EditMode asmdef).
-- **EditMode / Performance** (`EditMode/Performance/`): Perf benchmarks that do not need a running player. Require `PerformanceTestSetup` (see below).
-- **PlayMode / Unit** (`PlayMode/Unit/`): Services that create `DontDestroyOnLoad` GameObjects (`TickService`, `CoroutineService`, `GameObjectPool`, `GameObjectPool<T>`). Use `[UnityTest]` returning `IEnumerator`.
-- **PlayMode / Integration** (`PlayMode/Integration/`): Cross-service or async workflows (e.g., `VersionServicesIntegrationTest` loads resources).
-- **PlayMode / Performance** (`PlayMode/Performance/`): Perf benchmarks that need a running player.
-- **PlayMode / Smoke** (`PlayMode/Smoke/`): Lightweight "construct without throwing" tests that confirm services instantiate and basic bind/resolve works.
+- **EditMode / Unit** (`EditMode/Unit/`): `MonoBehaviour` 나 `GameObject` 에 의존하지 않는 순수 로직. `[Test]` 사용. NSubstitute 는 EditMode asmdef 에만 참조되어 있습니다.
+- **EditMode / Performance** (`EditMode/Performance/`): 플레이어 실행이 필요 없는 성능 측정. `PerformanceTestSetup` 필요(아래 참고).
+- **PlayMode / Unit** (`PlayMode/Unit/`): `DontDestroyOnLoad` GameObject 를 만드는 서비스(`TickService`, `CoroutineService`, `GameObjectPool`, `GameObjectPool<T>`). `IEnumerator` 를 반환하는 `[UnityTest]` 사용.
+- **PlayMode / Integration** (`PlayMode/Integration/`): 여러 서비스에 걸치거나 비동기인 흐름(예: 리소스를 로드하는 `VersionServicesIntegrationTest`).
+- **PlayMode / Performance** (`PlayMode/Performance/`): 플레이어 실행이 필요한 성능 측정.
+- **PlayMode / Smoke** (`PlayMode/Smoke/`): 서비스가 예외 없이 생성되고 기본 바인드/해석이 되는지 확인하는 가벼운 테스트.
 
-**Decision tree**: if the service under test creates a `GameObject` or relies on Unity callbacks → **PlayMode**; otherwise → **EditMode**.
+판단 기준: 테스트 대상이 `GameObject` 를 만들거나 Unity 콜백에 의존하면 PlayMode, 아니면 EditMode.
 
-## 2. Namespace and Suppression
-All test files use `namespace GeunedaEditor.Services.Tests` with the suppression comment:
+어셈블리 이름: EditMode `Geuneda.Services.Editor.Tests`, PlayMode `Geuneda.Services.Tests.Playmode`.
+
+## 2. 네임스페이스
+
+모든 테스트 파일은 `namespace GeunedaEditor.Services.Tests` 를 쓰고 다음 주석을 붙입니다.
+
 ```csharp
 // ReSharper disable once CheckNamespace
 ```
 
-## 3. Naming
-- **Test class**: `{ServiceName}Test` (e.g., `ObjectPoolTest`, `TickServiceTest`). Performance tests use `{ServiceName}PerformanceTest`. Integration tests use `{ServiceName}IntegrationTest`.
-- **Test method**: `MethodOrBehavior_Condition_ExpectedResult` — e.g., `Spawn_Successfully`, `Range_MinEqualsMax_ReturnsMin`, `Despawn_NotSpawnedObject_ReturnsFalse`.
-- **SetUp method**: Named `Init()`.
-- **TearDown method**: Named `Dispose()` (when calling `service.Dispose()`) or `Cleanup()` (when doing `Object.Destroy` / `MainInstaller.Clean()`).
+## 3. 이름 규칙
 
-## 4. Mock / Helper Types
-- Define mock interfaces and classes as **nested types** inside the test class (e.g., `IMockEntity`, `MockEntity`, `MockBehaviour`, `IMockSubscriber`).
-- EditMode tests use **NSubstitute** (`Substitute.For<T>()`) for interface mocking. PlayMode tests use concrete `MonoBehaviour` stubs with manual counters (NSubstitute is not referenced in the PlayMode asmdef).
+- 테스트 클래스: `{ServiceName}Test` (예: `ObjectPoolTest`, `TickServiceTest`). 성능은 `{ServiceName}PerformanceTest`, 통합은 `{ServiceName}IntegrationTest`.
+- 테스트 메서드: `MethodOrBehavior_Condition_ExpectedResult` (예: `Spawn_Successfully`, `Range_MinEqualsMax_ReturnsMin`, `Despawn_NotSpawnedObject_ReturnsFalse`).
+- SetUp 메서드: `Init()`.
+- TearDown 메서드: `service.Dispose()` 를 호출하면 `Dispose()`, `Object.Destroy` / `MainInstaller.Clean()` 을 하면 `Cleanup()`.
 
-### NSubstitute limitation on Unity's Mono runtime
-NSubstitute 4.4.0 (bundled Castle.Core DynamicProxy) cannot generate a proxy for a generic interface whose type argument is a **self-referentially-constrained interface**. Example: `Substitute.For<IObjectPool<IMockEntity>>()` where `IMockEntity : IPoolEntityObject<IMockEntity>` fails with `ArgumentNullException: localType` deep in `Castle.DynamicProxy.Generators.Emitters.SimpleAST.LocalReference.Generate` → `ILGenerator.DeclareLocal(null)`. Root cause is Castle's IL emitter resolving a generic parameter to `null` during type-building on Mono.
+## 4. Mock / 헬퍼 타입
 
-When a test would otherwise substitute such an interface, do ONE of:
-- Use the real concrete implementation and verify via observable state (e.g., `new ObjectPool<IMockEntity>(...)` + assertions on `SpawnedReadOnly.Count`). This is preferred — see `EntityDespawn_Successfully` in `ObjectPoolTest`.
-- Hand-write a minimal fake class implementing the interface.
-Do not "work around" the proxy failure by restructuring the type hierarchy — `IMockEntity : IPoolEntityObject<IMockEntity>` is a legitimate modelling choice that the runtime code relies on.
+- Mock 인터페이스와 클래스는 테스트 클래스 안의 **중첩 타입**으로 정의합니다(예: `IMockEntity`, `MockEntity`, `MockBehaviour`, `IMockSubscriber`).
+- EditMode 는 NSubstitute(`Substitute.For<T>()`)로 인터페이스를 대체합니다. PlayMode 는 NSubstitute 를 참조하지 않으므로 수동 카운터를 가진 `MonoBehaviour` 스텁을 씁니다.
 
-## 5. Fields and Setup
-- Fields are prefixed with `_` and use **concrete service types** (not interfaces): `private TickService _tickService;`, `private ObjectPool<IMockEntity> _pool;`.
-- Constants use `PascalCase`: `private const int Seed = 12345;`.
-- `[SetUp]` creates fresh service instances. Services that create GameObjects (`TickService`, `CoroutineService`) **must** call `Dispose()` in `[TearDown]`; `GameObjectPool` tests also `Object.Destroy` the sample GameObject.
+### Unity Mono 런타임에서의 NSubstitute 제약
 
-## 6. Assertion Style
-- NUnit classic model only: `Assert.AreEqual`, `Assert.AreSame`, `Assert.IsTrue`, `Assert.Throws<T>`, `Assert.DoesNotThrow`, etc.
-- No constraint-model (`Assert.That(...)`) usage in the existing suite.
+NSubstitute 4.4.0(내장 Castle.Core DynamicProxy)은 타입 인자가 **자기 참조 제약 인터페이스**인 제네릭 인터페이스의 프록시를 만들지 못합니다. 예: `IMockEntity : IPoolEntityObject<IMockEntity>` 일 때 `Substitute.For<IObjectPool<IMockEntity>>()` 는 `Castle.DynamicProxy.Generators.Emitters.SimpleAST.LocalReference.Generate` → `ILGenerator.DeclareLocal(null)` 에서 `ArgumentNullException: localType` 으로 실패합니다. Mono 에서 타입 생성 중 제네릭 인자가 null 로 해석되는 Castle IL emitter 문제입니다.
 
-## 7. Performance Tests
-- Annotate with `[Test, Performance]` and `[Category("Performance")]`.
-- Apply `[PrebuildSetup(typeof(PerformanceTestSetup))]` at the class level and call `PerformanceTestSetup.InitializePerformanceTestMetadata()` in `[OneTimeSetUp]`.
-- Use `Measure.Method(() => { ... }).WarmupCount(n).MeasurementCount(n).Run()`.
+이런 인터페이스를 대체해야 하면 다음 중 하나를 쓰세요.
 
-### `PerformanceTestSetup` PlayerPref contract (do NOT regress)
-`InitializePerformanceTestMetadata()` MUST prime **two** PlayerPref keys before any `Measure.Method(...).Run()` call — dropping either one ships a latent NRE that masks the actual perf-test logic:
-- `PT_Run` — full Run metadata (editor info, dependencies, build settings); consumed by `Metadata.SetRuntimeSettings()` when results are emitted.
-- `PT_Settings` — RunSettings JSON (use `"{\"MeasurementCount\":-1}"`); consumed by `MethodMeasurement.SettingsOverride()` *before* the first warmup.
+- 실제 구현을 쓰고 관찰 가능한 상태로 검증합니다(예: `new ObjectPool<IMockEntity>(...)` 후 `SpawnedReadOnly.Count` 검사). 권장 방법이며 `ObjectPoolTest` 의 `EntityDespawn_Successfully` 를 참고하세요.
+- 최소한의 가짜 클래스를 직접 작성합니다.
 
-Why both keys: `RunSettings.Instance` is a lazy-loaded singleton (`ResourcesLoader.Load<RunSettings>("PerformanceTestRunSettings", "PT_Settings")`). In Editor it falls back to `PlayerPrefs.GetString("PT_Settings")`; if the value is empty, `JsonUtility.FromJson` throws, the loader silently swallows the exception and returns `null`, and `SettingsOverride()` then NREs at `RunSettings.Instance.MeasurementCount`. The failure surfaces at `MethodMeasurement.cs:288` with no hint that the setup is incomplete.
+프록시 실패를 피하려고 타입 계층을 바꾸지 마세요. `IMockEntity : IPoolEntityObject<IMockEntity>` 는 런타임 코드가 기대하는 정상적인 모델링입니다.
 
-`MeasurementCount = -1` is the package's "no override" sentinel — `SettingsOverride()` early-returns when `count < 0`, so each fixture's per-test `WarmupCount(...).MeasurementCount(...)` is preserved.
+## 5. 필드와 SetUp
 
-`PerformanceTestSetupTest.MeasureMethod_AfterInitialize_DoesNotThrow` is the regression sentinel for this contract: a no-op `Measure.Method(() => {}).WarmupCount(1).MeasurementCount(1).Run()` wrapped in `Assert.DoesNotThrow`. If a future change to `PerformanceTestSetup` drops either PlayerPref, this test fails first with a class name that points directly at the harness — keep it green.
+- 필드는 `_` 접두사와 **구체 서비스 타입**을 씁니다: `private TickService _tickService;`, `private ObjectPool<IMockEntity> _pool;`
+- 상수는 `PascalCase`: `private const int Seed = 12345;`
+- `[SetUp]` 에서 새 서비스 인스턴스를 만듭니다. GameObject 를 만드는 서비스(`TickService`, `CoroutineService`)는 `[TearDown]` 에서 반드시 `Dispose()` 하고, `GameObjectPool` 테스트는 샘플 GameObject 도 `Object.Destroy` 합니다.
 
-## 8. Integration Tests
-- Use `[Order(n)]` when tests must run in sequence (e.g., `VersionServicesIntegrationTest` resets static state, then loads, then reads).
-- Reset shared static state in `[SetUp]` (reflection into private fields is acceptable for static classes like `VersionServices`).
+## 6. Assert 스타일
 
-### Authorized reflection sites (storage-assertion exception)
-Reflection on private state is also authorized when a setter has no observable readback path through the public API and exercising the side-effect would require a runtime environment the EditMode harness cannot provide (e.g., a partially-loaded `AssetReference`). In those cases, asserting the storage field directly via `BindingFlags.NonPublic | BindingFlags.Instance` is acceptable and preferable to a Red-testability skip. The test method MUST be a single setter-storage assertion (not a multi-step behavioural assertion); if behaviour is what you need to verify, refactor to expose an `internal` accessor under `InternalsVisibleTo` instead.
+- NUnit 클래식 모델만 사용합니다: `Assert.AreEqual`, `Assert.AreSame`, `Assert.IsTrue`, `Assert.Throws<T>`, `Assert.DoesNotThrow` 등.
+- 기존 테스트에는 제약 모델(`Assert.That(...)`)을 쓰지 않습니다.
 
-Currently authorized:
-- `AssetResolverServiceTest.AddDebugConfigs_StoresAllProvided` — reads the private `AssetResolverService._errorMaterial` field to confirm `AddDebugConfigs` stored its argument. The fallback-material lookup path (`AssetResolverService.Convert<T>` at `Runtime/AssetResolverService.cs:474`) only fires when `!assetReference.IsDone`, which the EditMode harness cannot fabricate without a real Addressables catalog. Documented here per the Type B audit run on 2026-05-04 (Referee §4 missed-anti-pattern finding, parent picked option A).
+## 7. 성능 테스트
 
-## 9. Test Directory Layout
+- `[Test, Performance]` 와 `[Category("Performance")]` 를 붙입니다.
+- 클래스에 `[PrebuildSetup(typeof(PerformanceTestSetup))]` 를 붙이고 `[OneTimeSetUp]` 에서 `PerformanceTestSetup.InitializePerformanceTestMetadata()` 를 호출합니다.
+- `Measure.Method(() => { ... }).WarmupCount(n).MeasurementCount(n).Run()` 형태로 측정합니다.
 
-| Directory | Contents |
-|-----------|----------|
-| `EditMode/Unit/` | NUnit + NSubstitute; tests all non-MonoBehaviour services, incl. `AddressableConfigTest`, `AssetLoaderUtilsTest`, `AssetResolverServiceTest` |
-| `EditMode/Performance/` | `Unity.PerformanceTesting`; ObjectPool, MessageBroker perf |
-| `PlayMode/Unit/` | TickService, CoroutineService, GameObjectPool, GameObjectPool\<T\> (require a runtime) |
-| `PlayMode/Integration/` | `ServiceLifecycleTest` full bootstrap/teardown, `VersionServicesIntegrationTest` async resource loading |
-| `PlayMode/Performance/` | TickService, GameObjectPool perf |
+### `PerformanceTestSetup` 의 PlayerPrefs 계약 (되돌리지 말 것)
+
+`InitializePerformanceTestMetadata()` 는 `Measure.Method(...).Run()` 전에 PlayerPrefs 키 **두 개**를 채워야 합니다. 하나라도 빠지면 실제 테스트 로직을 가리는 NRE 가 납니다.
+
+- `PT_Run`: 전체 Run 메타데이터(에디터 정보, 의존성, 빌드 설정). 결과를 낼 때 `Metadata.SetRuntimeSettings()` 가 읽습니다.
+- `PT_Settings`: RunSettings JSON(`"{\"MeasurementCount\":-1}"`). 첫 워밍업 **전에** `MethodMeasurement.SettingsOverride()` 가 읽습니다.
+
+두 키가 모두 필요한 이유: `RunSettings.Instance` 는 지연 로드 싱글톤(`ResourcesLoader.Load<RunSettings>("PerformanceTestRunSettings", "PT_Settings")`)입니다. 에디터에서는 `PlayerPrefs.GetString("PT_Settings")` 로 폴백하는데, 값이 비어 있으면 `JsonUtility.FromJson` 이 던진 예외를 로더가 삼키고 `null` 을 반환하며, 이어서 `SettingsOverride()` 가 `RunSettings.Instance.MeasurementCount` 에서 NRE 를 냅니다. 오류 위치(`MethodMeasurement.cs`)만으로는 설정 누락이 원인이라는 단서가 없습니다.
+
+`MeasurementCount = -1` 은 "재정의 없음" 값입니다. `SettingsOverride()` 는 `count < 0` 이면 바로 반환하므로 각 테스트의 `WarmupCount(...).MeasurementCount(...)` 가 유지됩니다.
+
+`PerformanceTestSetupTest.MeasureMethod_AfterInitialize_DoesNotThrow` 가 이 계약의 회귀 감시용입니다. `Assert.DoesNotThrow` 로 감싼 빈 `Measure.Method(() => {}).WarmupCount(1).MeasurementCount(1).Run()` 이며, `PerformanceTestSetup` 에서 키가 빠지면 가장 먼저 실패합니다. 항상 통과 상태로 유지하세요.
+
+## 8. 통합 테스트
+
+- 순서가 필요한 테스트에는 `[Order(n)]` 을 씁니다(예: `VersionServicesIntegrationTest` 는 정적 상태 초기화 → 로드 → 읽기 순).
+- 공유 정적 상태는 `[SetUp]` 에서 초기화합니다. `VersionServices` 같은 정적 클래스는 private 필드 리플렉션이 허용됩니다.
+
+### 허용된 리플렉션 지점 (저장값 검증 예외)
+
+setter 의 결과를 공개 API 로 읽어 올 방법이 없고, 부수 효과를 실행하려면 EditMode 환경이 제공할 수 없는 런타임(예: 일부만 로드된 `AssetReference`)이 필요한 경우에도 private 상태 리플렉션을 허용합니다. 이때 `BindingFlags.NonPublic | BindingFlags.Instance` 로 저장 필드를 직접 검사하는 편이 테스트 생략보다 낫습니다. 테스트 메서드는 setter 저장값 하나만 검사해야 하며, 동작을 검증해야 한다면 대신 `InternalsVisibleTo` 아래 internal 접근자를 추가하세요.
+
+현재 허용된 지점:
+
+- `AssetResolverServiceTest.AddDebugConfigs_StoresAllProvided`: `AddDebugConfigs` 가 인자를 저장했는지 확인하려고 private `AssetResolverService._errorMaterial` 을 읽습니다. 대체 머티리얼 경로(`AssetResolverService.Convert<T>` 의 `!assetReference.IsDone` 분기)는 실제 Addressables 카탈로그 없이 EditMode 에서 재현할 수 없습니다.
+
+## 9. 디렉터리 구성
+
+| 디렉터리 | 내용 |
+|----------|------|
+| `EditMode/Unit/` | NUnit + NSubstitute. MonoBehaviour 가 아닌 서비스 전체, 에셋 설정/리졸버(`AddressableConfigTest`, `AssetConfigsScriptableObjectTest`, `AssetLoaderUtilsTest`, `AssetResolverServiceTest`), 에디터 설정(`AddressableIdsEditorSettingsTest`, `AssetsImporterEditorSettingsTest`, `VersioningEditorSettingsTest`) |
+| `EditMode/Performance/` | `Unity.PerformanceTesting`. ObjectPool, MessageBroker 성능 |
+| `PlayMode/Unit/` | TickService, CoroutineService, GameObjectPool, GameObjectPool\<T\> |
+| `PlayMode/Integration/` | `ServiceLifecycleTest`(전체 부트스트랩/정리), `VersionServicesIntegrationTest`(비동기 리소스 로드) |
+| `PlayMode/Performance/` | TickService, GameObjectPool 성능 |
 | `PlayMode/Smoke/` | `ServicesBootstrapSmokeTest` |
 
-### Note on `AddressablesAssetLoader` coverage
-`AddressablesAssetLoader` is intentionally not covered by automated integration tests. It is a thin wrapper over `UnityEngine.AddressableAssets.Addressables` static APIs with no branching logic — every method is `LoadAssetAsync → ToUniTask → throw-on-failure → return`. Live integration would require a pre-built Addressables catalog plus a manually registered asset in the host project, and would validate Unity code rather than package code. The consumer layer (`AssetResolverService`) has full unit coverage via `AssetResolverServiceTest`, and the wrapper's behaviour is documented in `docs/asset-loading.md`.
+### `AddressablesAssetLoader` 커버리지
 
-## 10. Update Policy
-Update this file when:
-- Test conventions change (new asmdef references, assertion style, naming patterns, new test categories)
-- New test directories or categories are added
-- Mock/stub patterns change (e.g., NSubstitute added to PlayMode asmdef)
+`AddressablesAssetLoader` 는 의도적으로 자동 통합 테스트를 두지 않습니다. 분기 없는 `Addressables` 정적 API 래퍼(로드 → `ToUniTask` → 실패 시 throw → 반환)이고, 실제 통합 테스트에는 미리 빌드한 Addressables 카탈로그와 호스트 프로젝트에 등록된 에셋이 필요해 패키지 코드가 아니라 Unity 코드를 검증하게 됩니다. 소비 계층인 `AssetResolverService` 는 `AssetResolverServiceTest` 로 커버하며, 래퍼 동작은 `docs/asset-loading.md` 에 정리되어 있습니다.
+
+## 10. 갱신 정책
+
+다음이 바뀌면 이 파일을 고치세요.
+
+- 테스트 규칙(asmdef 참조, Assert 스타일, 이름 패턴, 테스트 분류)
+- 테스트 디렉터리나 분류 추가
+- Mock/스텁 방식(예: PlayMode asmdef 에 NSubstitute 추가)

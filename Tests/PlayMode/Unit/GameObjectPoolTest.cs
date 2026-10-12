@@ -155,5 +155,22 @@ namespace GeunedaEditor.Services.Tests
 
 			Assert.DoesNotThrow(() => _pool.Dispose());
 		}
+
+		[UnityTest]
+		public IEnumerator Spawn_AfterDespawnedInstanceDestroyedExternally_ReturnsLiveInstance()
+		{
+			var instance = _pool.Spawn();
+			_pool.Despawn(instance);
+
+			// 풀 스택에 남은 `instance` 를 풀 밖에서 파괴한다(Unity fake null 이 된다).
+			Object.Destroy(instance);
+			yield return null;
+
+			GameObject spawned = null;
+			Assert.DoesNotThrow(() => spawned = _pool.Spawn());
+			Assert.IsTrue(spawned != null);
+			Assert.IsTrue(spawned.activeSelf);
+			Assert.AreEqual(1, _pool.SpawnedReadOnly.Count);
+		}
 	}
 }

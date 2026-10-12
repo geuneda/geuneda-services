@@ -166,17 +166,40 @@ namespace Geuneda.Services.Pooling
 		{
 			T entity = null;
 
-			do
+			// 풀 서비스가 제대로 해제하기 전에 부모 객체가 대기 중인 엔티티/게임 오브젝트를 파괴했을 수 있으므로
+			// 무효한 항목은 건너뜁니다. T 가 class 제약뿐이라 == 는 참조 비교가 되므로,
+			// 파괴된 Unity 객체(fake null)는 Despawn 과 같이 Equals(null) 로 걸러냅니다
+			while (_stack.Count > 0)
 			{
-				entity = _stack.Count == 0 ? CallInstantiator() : _stack.Pop();
+				var candidate = _stack.Pop();
+
+				if (!IsNullOrDestroyed(candidate))
+				{
+					entity = candidate;
+					break;
+				}
 			}
-			// 풀 서비스가 제대로 해제하기 전에 부모 객체가 엔티티/게임 오브젝트를 파괴했을 수 있으므로
-			// while 루프로 확인해야 합니다
-			while (entity == null);
+
+			if (entity == null)
+			{
+				entity = CallInstantiator();
+
+				// 새로 만든 엔티티까지 무효하면 다시 만들어도 같은 결과일 수 있으므로 재시도하지 않습니다
+				if (IsNullOrDestroyed(entity))
+				{
+					throw new InvalidOperationException(
+						$"The pool instantiator returned a null or destroyed {typeof(T).Name} instance");
+				}
+			}
 
 			SpawnedEntities.Add(entity);
 
 			return entity;
+		}
+
+		private static bool IsNullOrDestroyed(T entity)
+		{
+			return entity == null || entity.Equals(null);
 		}
 
 		protected virtual void PostDespawnEntity(T entity) { }
@@ -184,6 +207,14 @@ namespace Geuneda.Services.Pooling
 		protected T CallInstantiator()
 		{
 			var entity = _instantiator.Invoke(SampleEntity);
+
+			// 무효한 인스턴스(파괴된 Unity 객체 등)에는 Init 훅을 부르지 않습니다.
+			// Spawn 은 이 결과를 다시 확인해 예외를 던지고, 생성자/Reset 은 스택에 넣어 Spawn 때 건너뜁니다
+			if (IsNullOrDestroyed(entity))
+			{
+				return entity;
+			}
+
 			var poolEntity = entity as IPoolEntityObject<T>;
 
 			poolEntity?.Init(this);

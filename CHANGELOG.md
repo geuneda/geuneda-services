@@ -4,6 +4,12 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [유의적 버전](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
+## [Unreleased]
+
+**수정**:
+- 풀 스택에 돌아간 객체가 풀 밖에서 파괴된 뒤 `GameObjectPool.Spawn()` / `GameObjectPool<T>.Spawn()`을 부르면 `MissingReferenceException`이 나던 문제를 수정했습니다. `ObjectPoolBase<T>`는 `T : class` 제약이라 `entity == null`이 참조 비교로 컴파일되어 파괴된 Unity 객체(fake null)를 걸러내지 못했습니다. 이제 `Despawn`과 같이 `Equals(null)`로도 확인해 파괴된 객체는 건너뛰고 다음 객체를 꺼내거나 새로 만듭니다.
+- 인스턴시에이터가 null을 돌려주면 `Spawn()`이 끝없이 다시 만들던 문제를 수정했습니다. 새로 만든 객체가 null이거나 파괴된 객체면 재시도하지 않고 `InvalidOperationException`을 던집니다.
+
 ## [2.1.4] - 2026-10-12
 
 **수정**:

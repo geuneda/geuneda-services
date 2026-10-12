@@ -103,6 +103,7 @@ public class BulletSpawner
 - `IObjectPool.Dispose()` (인자 없음): 풀이 가진 엔티티(스폰된 것과 대기 중인 것)를 비웁니다. `ObjectPool<T>` 는 참조만 버리고, `GameObjectPool` 계열은 각 인스턴스의 GameObject 를 `Object.Destroy` 합니다(이미 외부에서 파괴된 항목은 건너뜀). 샘플 엔티티는 건드리지 않습니다.
 - `GameObjectPool.Dispose(bool)` / `GameObjectPool<T>.Dispose(bool)`: `Dispose()` 와 같이 엔티티를 정리하고, 인자가 `true` 이면 샘플 엔티티(GameObject)도 `Object.Destroy` 하고 풀이 가진 샘플 참조를 null 로 만듭니다. `false` 이면 샘플은 그대로 둡니다(v2.1.4 이전에는 인자와 관계없이 샘플을 파괴했습니다).
 - `Reset(initSize, sampleEntity)` 는 `Dispose()` 로 기존 엔티티를 정리한 뒤 새 샘플로 다시 채웁니다.
+- 디스폰되어 풀에 대기 중인 GameObject 가 풀 밖에서 파괴되면, 다음 `Spawn()` 은 그 항목을 건너뛰고 다음 대기 항목을 꺼내거나 새로 만듭니다(v2.1.4 까지는 `MissingReferenceException` 이 났습니다). 인스턴시에이터가 null 이나 파괴된 객체를 돌려주면 재시도하지 않고 `InvalidOperationException` 을 던집니다.
 
 ## 예외
 

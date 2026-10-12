@@ -244,5 +244,51 @@ namespace GeunedaEditor.Services.Tests
 			Assert.AreEqual((int)initSize + 1, invocations);
 			Assert.AreEqual(3, pool.SpawnedReadOnly.Count);
 		}
+
+		/// <summary>
+		/// 파괴된 Unity 객체처럼 <c>Equals(null)</c> 이 true 인 엔티티. Init 호출 수를 셉니다
+		/// </summary>
+		public class NullEquivalentEntity : IPoolEntityObject<NullEquivalentEntity>
+		{
+			public int InitCount;
+
+			public void Init(IObjectPool<NullEquivalentEntity> pool) => InitCount++;
+			public bool Despawn() => false;
+			public override bool Equals(object obj) => obj == null || ReferenceEquals(this, obj);
+			public override int GetHashCode() => 0;
+		}
+
+		[Test]
+		public void Spawn_InstantiatorReturnsNullEquivalent_ThrowsWithoutRetry()
+		{
+			var calls = 0;
+			var created = new NullEquivalentEntity();
+			var pool = new ObjectPool<NullEquivalentEntity>(0, null, _ =>
+			{
+				// 재시도하면 이 예외가 나므로 회귀가 생겨도 테스트가 멈추지 않고 실패합니다
+				if (++calls > 1) throw new AssertionException("Instantiator was called again");
+				return created;
+			});
+
+			Assert.Throws<InvalidOperationException>(() => pool.Spawn());
+			Assert.AreEqual(1, calls);
+			Assert.AreEqual(0, created.InitCount);
+			Assert.AreEqual(0, pool.SpawnedReadOnly.Count);
+		}
+
+		[Test]
+		public void Spawn_InstantiatorReturnsNull_ThrowsWithoutRetry()
+		{
+			var calls = 0;
+			var pool = new ObjectPool<object>(0, null, _ =>
+			{
+				if (++calls > 1) throw new AssertionException("Instantiator was called again");
+				return null;
+			});
+
+			Assert.Throws<InvalidOperationException>(() => pool.Spawn());
+			Assert.AreEqual(1, calls);
+			Assert.AreEqual(0, pool.SpawnedReadOnly.Count);
+		}
 	}
 }

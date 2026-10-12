@@ -10,20 +10,20 @@ using UnityEngine.AddressableAssets;
 namespace Geuneda.Services.AssetsImporter
 {
 	/// <summary>
-	/// Abstract base class for asset configuration scriptable objects.
-	/// Provides a basic contract for asset configurations with reference to weak link assets.
+	/// 에셋 설정 ScriptableObject 의 추상 기반 클래스입니다.
+	/// 에셋을 weak-link 로 참조하는 에셋 설정의 기본 계약을 제공합니다.
 	/// </summary>
 	public abstract class AssetConfigsScriptableObject : ScriptableObject
 	{
 		[SerializeField] private string _assetsFolderPath;
 
 		/// <summary>
-		/// Gets the type of asset that this scriptable object is configured for.
+		/// 이 ScriptableObject 가 설정하는 에셋의 타입을 가져옵니다.
 		/// </summary>
 		public abstract Type AssetType { get; }
 
 		/// <summary>
-		/// Returns the folder path of the assets to be referenced in this container.
+		/// 이 컨테이너가 참조할 에셋들의 폴더 경로를 반환합니다.
 		/// </summary>
 		public string AssetsFolderPath
 		{
@@ -32,11 +32,11 @@ namespace Geuneda.Services.AssetsImporter
 		}
 	}
 	/// <summary>
-	/// Abstract base class for asset configuration scriptable objects.
-	/// Provides a basic contract for asset configurations with reference to weak link assets.
+	/// 에셋 설정 ScriptableObject 의 추상 기반 클래스입니다.
+	/// 에셋을 weak-link 로 참조하는 에셋 설정의 기본 계약을 제공합니다.
 	/// </summary>
-	/// <typeparam name="TId">The type of the identifier, which must be a struct.</typeparam>
-	/// <typeparam name="TAsset">The type of the asset.</typeparam>
+	/// <typeparam name="TId">식별자 타입(struct 여야 함).</typeparam>
+	/// <typeparam name="TAsset">에셋 타입.</typeparam>
 	public abstract class AssetConfigsScriptableObjectBase<TId, TAsset> :
 		AssetConfigsScriptableObject, IPairConfigsContainer<TId, TAsset>, ISerializationCallbackReceiver
 	{
@@ -50,14 +50,14 @@ namespace Geuneda.Services.AssetsImporter
 		}
 
 		/// <summary>
-		/// Requests the assets configs as a read only dictionary
+		/// 에셋 설정을 읽기 전용 딕셔너리로 가져옵니다
 		/// </summary>
 		public IReadOnlyDictionary<TId, TAsset> ConfigsDictionary { get; private set; }
 
 		/// <inheritdoc />
 		public void OnBeforeSerialize()
 		{
-			// Do Nothing
+			// 아무 작업도 하지 않음
 		}
 
 		/// <inheritdoc />

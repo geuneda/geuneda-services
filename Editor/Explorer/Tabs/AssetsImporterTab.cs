@@ -8,10 +8,10 @@ using UnityEngine.UIElements;
 namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
-	/// Services Explorer tab for the Assets Importer pipeline.
-	/// Replaces the old <c>AssetsImporter.asset</c> custom inspector.
-	/// Reads/writes settings via <see cref="AssetsImporterEditorSettings"/> and invokes
-	/// discovery/import via <see cref="AssetsImporterEditorUtils"/>.
+	/// Assets Importer 파이프라인용 Services Explorer 탭입니다.
+	/// 예전 <c>AssetsImporter.asset</c> 커스텀 인스펙터를 대체합니다.
+	/// 설정은 <see cref="AssetsImporterEditorSettings"/> 로 읽고 쓰며, 탐색/임포트는
+	/// <see cref="AssetsImporterEditorUtils"/> 로 실행합니다.
 	/// </summary>
 	public class AssetsImporterTab : ServiceTab
 	{
@@ -27,7 +27,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			var scroll = new ScrollView(ScrollViewMode.Vertical);
 			scroll.AddToClassList("tab-scroll");
 
-			// ---- Auto Import section ----
+			// ---- Auto Import 섹션 ----
 			scroll.Add(MakeSectionLabel("Auto Import"));
 
 			_autoImportToggle = new Toggle("Refresh after script compilation");
@@ -39,7 +39,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			});
 			scroll.Add(_autoImportToggle);
 
-			// ---- Discovered Importers section ----
+			// ---- Discovered Importers 섹션 ----
 			scroll.Add(MakeSectionLabel("Discovered Importers"));
 
 			_importerList = new VisualElement();
@@ -47,7 +47,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 
 			Add(scroll);
 
-			// ---- Action bar ----
+			// ---- 액션 바 ----
 			var bar = MakeActionBar();
 			bar.Add(MakePrimaryButton("Import All", OnImportAll));
 			bar.Add(new Button(OnRefreshImporters) { text = "Refresh Importers" });
@@ -85,12 +85,12 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 				var row = new VisualElement();
 				row.AddToClassList("row");
 
-			// Type name
+			// 타입 이름
 			var typeLabel = new Label(capturedData.Type.Name);
 			typeLabel.AddToClassList("row-label");
 			row.Add(typeLabel);
 
-			// Path label (italic if unset)
+			// 경로 레이블(설정되지 않았으면 회색)
 			var pathLabel = new Label();
 			pathLabel.AddToClassList("row-label-mono");
 			pathLabel.style.maxWidth = 160;
@@ -108,14 +108,14 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 
 			row.Add(pathLabel);
 
-			// Set/Update Path button
+			// Set/Update Path 버튼
 			var pathBtnText = string.IsNullOrEmpty(capturedData.AssetsFolderPath) ? "Set Path" : "Update Path";
 			var pathBtn = MakeRowButton(pathBtnText, () => OnSetPath(capturedData, pathLabel));
 			row.Add(pathBtn);
 
 			if (capturedData.Importer is IAssetConfigsGeneratorImporter)
 				{
-					// Generator importers need a path before they can do anything
+					// 생성기 임포터는 경로가 있어야 동작합니다
 					var noteLabel = new Label("Set path to generate scripts");
 					noteLabel.AddToClassList("tab-empty-label");
 					noteLabel.style.marginLeft = 4;
@@ -123,7 +123,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 				}
 				else
 				{
-					// Regular importers: Import + Select buttons
+					// 일반 임포터: Import + Select 버튼
 					var importBtn = MakeRowButton("Import", () =>
 					{
 						AssetsImporterEditorUtils.Import(capturedData.Importer);
@@ -150,7 +150,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 				return;
 			}
 
-			// Convert to project-relative path starting with "Assets/"
+			// "Assets/" 로 시작하는 프로젝트 기준 상대 경로로 바꿉니다
 			var assetsIndex = selected.IndexOf("Assets/", System.StringComparison.Ordinal);
 
 			if (assetsIndex < 0)

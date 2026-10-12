@@ -119,11 +119,6 @@ namespace Geuneda.Services
 		
 		public TickService()
 		{
-			if (_tickObject != null)
-			{
-				throw new InvalidOperationException("The tick service is being initialized for the second time and that is not valid");
-			}
-
 			var gameObject = new GameObject(typeof(TickServiceMonoBehaviour).Name);
 			
 			Object.DontDestroyOnLoad(gameObject);

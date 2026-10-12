@@ -6,41 +6,41 @@ using System.Collections.Generic;
 namespace Geuneda.Services.Pooling
 {
 	/// <summary>
-	/// This service allows to manage multiple pools of different types.
-	/// The service can only have a single pool of the same type. 
+	/// 서로 다른 타입의 풀 여러 개를 관리하는 서비스입니다.
+	/// 같은 타입의 풀은 하나만 가질 수 있습니다.
 	/// </summary>
 	public interface IPoolService : IDisposable
 	{
 		/// <summary>
-		/// Retrieves the pool of objects of type <typeparamref name="T"/>.
-		/// If the pool does not exist, an <see cref="ArgumentException"/> is thrown.
+		/// <typeparamref name="T"/> 타입 객체의 풀을 가져옵니다.
+		/// 풀이 없으면 <see cref="ArgumentException"/> 을 던집니다.
 		/// </summary>
-		/// <typeparam name="T">The type of objects in the pool.</typeparam>
-		/// <returns>The pool of objects.</returns>
-		/// <exception cref="ArgumentException">Thrown if the pool does not exist.</exception>
+		/// <typeparam name="T">풀에 담긴 객체의 타입.</typeparam>
+		/// <returns>객체 풀.</returns>
+		/// <exception cref="ArgumentException">풀이 없을 때 발생합니다.</exception>
 		IObjectPool<T> GetPool<T>() where T : class;
 
 		/// <summary>
-		/// Tries to retrieve the pool of objects of type <typeparamref name="T"/>.
+		/// <typeparamref name="T"/> 타입 객체의 풀을 가져오려고 시도합니다.
 		/// </summary>
-		/// <typeparam name="T">The type of objects in the pool.</typeparam>
-		/// <param name="pool">The pool of objects, or null if it does not exist.</param>
-		/// <returns>True if the pool exists, false otherwise.</returns>
+		/// <typeparam name="T">풀에 담긴 객체의 타입.</typeparam>
+		/// <param name="pool">객체 풀. 없으면 null.</param>
+		/// <returns>풀이 있으면 true, 없으면 false.</returns>
 		bool TryGetPool<T>(out IObjectPool<T> pool) where T : class;
 
 		/// <summary>
-		/// Adds a new pool of objects of type <typeparamref name="T"/> to the service.
-		/// If a pool of the same type already exists, an <see cref="ArgumentException"/> is thrown.
+		/// <typeparamref name="T"/> 타입 객체의 새 풀을 서비스에 추가합니다.
+		/// 같은 타입의 풀이 이미 있으면 <see cref="ArgumentException"/> 을 던집니다.
 		/// </summary>
-		/// <typeparam name="T">The type of objects in the pool.</typeparam>
-		/// <param name="pool">The pool of objects to add.</param>
-		/// <exception cref="ArgumentException">Thrown if a pool of the same type already exists.</exception>
+		/// <typeparam name="T">풀에 담긴 객체의 타입.</typeparam>
+		/// <param name="pool">추가할 객체 풀.</param>
+		/// <exception cref="ArgumentException">같은 타입의 풀이 이미 있을 때 발생합니다.</exception>
 		void AddPool<T>(IObjectPool<T> pool) where T : class;
 
 		/// <summary>
-		/// Removes the pool of objects of type <typeparamref name="T"/> from the service.
+		/// <typeparamref name="T"/> 타입 객체의 풀을 서비스에서 제거합니다.
 		/// </summary>
-		/// <typeparam name="T">The type of objects in the pool.</typeparam>
+		/// <typeparam name="T">풀에 담긴 객체의 타입.</typeparam>
 		void RemovePool<T>() where T : class;
 
 		/// <inheritdoc cref="IObjectPool{T}.Spawn"/>
@@ -53,20 +53,20 @@ namespace Geuneda.Services.Pooling
 		bool Despawn<T>(T entity) where T : class;
 
 		/// <summary>
-		/// Despawns all entities from the pool of type <typeparamref name="T"/>.
+		/// <typeparamref name="T"/> 타입 풀의 모든 엔티티를 디스폰합니다.
 		/// </summary>
-		/// <typeparam name="T">The type of the entities to be despawned.</typeparam>
+		/// <typeparam name="T">디스폰할 엔티티의 타입.</typeparam>
 		/// <exception cref="ArgumentException">
-		/// Thrown if the service does not contain a pool of the given <typeparamref name="T"/> type.
+		/// 서비스에 주어진 <typeparamref name="T"/> 타입의 풀이 없을 때 발생합니다.
 		/// </exception>
 		void DespawnAll<T>() where T : class;
 
 		/// <summary>
-		/// Clears the contents out of this service.
-		/// Returns back all pools so they can be independently disposed.
+		/// 이 서비스의 내용을 비웁니다.
+		/// 모든 풀을 반환하므로 따로 해제할 수 있습니다.
 		/// </summary>
 		/// <returns>
-		/// A dictionary containing all the pools in this service, where the key is the type of the pool and the value is the pool itself.
+		/// 이 서비스의 모든 풀을 담은 딕셔너리. 키는 풀의 타입, 값은 풀 자체입니다.
 		/// </returns>
 		IDictionary<Type, IObjectPool> Clear();
 

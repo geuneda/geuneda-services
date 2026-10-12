@@ -3,7 +3,7 @@ using Geuneda.Services.Commands;
 
 namespace $NAMESPACE$
 {
-	// Replace TGameLogic with the concrete game-logic type used in your project.
+	// TGameLogic 을 프로젝트에서 쓰는 실제 게임 로직 타입으로 바꾼다.
 	public struct $NAME$ : IGameCommand<TGameLogic>
 	{
 		public void Execute(TGameLogic gameLogic, IMessageBrokerService messageBroker)

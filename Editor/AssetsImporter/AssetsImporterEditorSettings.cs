@@ -6,8 +6,8 @@ using UnityEngine;
 namespace Geuneda.Services.AssetsImporter.Editor
 {
 	/// <summary>
-	/// Editor-only project-level settings for the Assets Importer pipeline.
-	/// Persisted to <c>ProjectSettings/AssetsImporterEditorSettings.asset</c> via <see cref="ScriptableSingleton{T}"/>.
+	/// Assets Importer 파이프라인의 에디터 전용 프로젝트 설정입니다.
+	/// <see cref="ScriptableSingleton{T}"/> 로 <c>ProjectSettings/AssetsImporterEditorSettings.asset</c> 에 저장됩니다.
 	/// </summary>
 	[FilePath("ProjectSettings/AssetsImporterEditorSettings.asset", FilePathAttribute.Location.ProjectFolder)]
 	internal sealed class AssetsImporterEditorSettings : ScriptableSingleton<AssetsImporterEditorSettings>
@@ -15,8 +15,9 @@ namespace Geuneda.Services.AssetsImporter.Editor
 		[SerializeField] private bool _autoUpdateOnRefresh;
 
 		/// <summary>
-		/// When <c>true</c>, all importers are refreshed automatically after every script compilation.
-		/// Change this via the Services Explorer Assets Importer tab.
+		/// <c>true</c> 이면 스크립트 컴파일이 끝날 때마다 모든 임포터를 자동으로 임포트합니다
+		/// (<see cref="AssetsImporterEditorUtils.TryScheduleAutoImport"/>).
+		/// Services Explorer 의 Assets Importer 탭에서 바꿉니다.
 		/// </summary>
 		public bool AutoUpdateOnRefresh
 		{

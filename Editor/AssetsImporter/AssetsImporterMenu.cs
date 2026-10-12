@@ -7,8 +7,8 @@ using UnityEditor;
 namespace Geuneda.Services.AssetsImporter.Editor
 {
 	/// <summary>
-	/// Top-bar menu stubs for the Assets Importer pipeline under <c>Tools &gt; Geuneda &gt; Assets Importer</c>.
-	/// Settings and per-importer controls live in the Services Explorer Assets Importer tab.
+	/// <c>Tools &gt; Geuneda &gt; Assets Importer</c> 아래의 Assets Importer 파이프라인 상단 메뉴 스텁입니다.
+	/// 설정과 임포터별 조작은 Services Explorer 의 Assets Importer 탭에 있습니다.
 	/// </summary>
 	internal static class AssetsImporterMenu
 	{

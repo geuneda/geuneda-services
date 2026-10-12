@@ -85,6 +85,8 @@ namespace Geuneda.Services
 
 		private static VersionData _versionData;
 		private static bool _loaded;
+		// 리소스가 없을 때 프로퍼티에 접근할 때마다 다시 로드해 에러 로그가 반복되지 않도록 로드 시도 여부를 따로 기록한다.
+		private static bool _loadAttempted;
 
 		/// <summary>
 		/// 자동 부트스트랩 훅: Unity가 노출하는 가장 이른 런타임 단계에서 버전 메타데이터를 채웁니다.
@@ -107,14 +109,17 @@ namespace Geuneda.Services
 		/// <summary>
 		/// 리소스에서 내부 버전 문자열을 동기적으로 로드합니다. <see cref="Bootstrap"/>이
 		/// <see cref="RuntimeInitializeLoadType.SubsystemRegistration"/> 시점에 자동으로 호출하며,
-		/// 명시적인 사전 예열(pre-warming)을 위해 직접 호출해도 안전합니다. 멱등(idempotent)하며,
-		/// 버전 데이터가 이미 로드된 경우 <see cref="EnsureLoaded"/> 호출부를 통해 조기 반환합니다.
-		/// 작은 페이로드(기본 <c>version-data.txt</c>는 수백 바이트)를 대상으로 하며,
+		/// 명시적인 사전 예열(pre-warming)을 위해 직접 호출해도 안전합니다. 조기 반환 없이 호출할 때마다
+		/// 리소스를 다시 읽으며, 리소스가 없으면 그때마다 에러 로그를 남깁니다. 프로퍼티 접근에 따른 지연 로드
+		/// (<see cref="EnsureLoaded"/>)는 이 메서드나 <see cref="LoadVersionDataAsync"/>가 한 번도 호출되지 않았을 때만
+		/// 실행됩니다. 작은 페이로드(기본 <c>version-data.txt</c>는 수백 바이트)를 대상으로 하며,
 		/// <see cref="VersionData"/>가 메인 스레드를 눈에 띄게 멈추게 할 만큼 큰 blob으로 확장된
 		/// 경우에는 <see cref="LoadVersionDataAsync"/>를 사용하세요.
 		/// </summary>
 		public static void LoadVersionData()
 		{
+			_loadAttempted = true;
+
 			try
 			{
 				var textAsset = Resources.Load<TextAsset>(VersionDataFilename);
@@ -137,6 +142,8 @@ namespace Geuneda.Services
 		/// </summary>
 		public static async Task LoadVersionDataAsync()
 		{
+			_loadAttempted = true;
+
 			try
 			{
 				var source = new TaskCompletionSource<TextAsset>();
@@ -217,7 +224,7 @@ namespace Geuneda.Services
 
 		private static void EnsureLoaded()
 		{
-			if (_loaded) return;
+			if (_loaded || _loadAttempted) return;
 
 			LoadVersionData();
 		}

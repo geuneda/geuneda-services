@@ -10,8 +10,8 @@ using UnityEngine.UIElements;
 namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
-	/// Displays the AssetMap tree held by <see cref="IAssetResolverService"/>.
-	/// Destructive unload actions are gated behind a toggle.
+	/// <see cref="IAssetResolverService"/> 가 가진 AssetMap 트리를 표시합니다.
+	/// 파괴적인 언로드 동작은 토글을 켜야 사용할 수 있습니다.
 	/// </summary>
 	public class AssetResolverTab : ServiceTab
 	{
@@ -33,9 +33,8 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		_destructiveToggle = new Toggle("Enable destructive actions");
 		_destructiveToggle.AddToClassList("destructive-toggle");
 		_destructiveToggle.value = false;
-		// The destructive toggle gates per-row Unload buttons in the rebuild path, so
-		// flipping it must invalidate the digest — otherwise the next Refresh sees
-		// matching data and short-circuits, leaving the buttons un-rendered.
+		// 파괴적 동작 토글은 재구성 경로에서 행별 Unload 버튼 표시 여부를 정하므로, 바꿀 때 다이제스트를
+		// 무효화해야 합니다. 그렇지 않으면 다음 Refresh 가 같은 데이터로 보고 건너뛰어 버튼이 그려지지 않습니다.
 		_destructiveToggle.RegisterValueChangedCallback(_ => InvalidateRefreshDigest());
 		header.Add(_destructiveToggle);
 		Add(header);
@@ -56,9 +55,9 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			var resolver = TryResolve<IAssetResolverService>() as AssetResolverService;
 			var digest = ComputeDigest(resolver);
 
-			// Skip rebuild if nothing changed — see ServiceTab.TryShortCircuitRefresh.
-			// This is what keeps rapid foldout clicks from getting eaten by the periodic
-			// timer destroying mouse-captured VisualElements mid-click.
+			// 바뀐 것이 없으면 재구성을 건너뜁니다(ServiceTab.TryShortCircuitRefresh 참고).
+			// 주기 타이머가 클릭 도중 마우스를 캡처한 VisualElement 를 파괴해 빠른 폴드아웃 클릭이
+			// 사라지는 것을 막아 줍니다.
 			if (TryShortCircuitRefresh(digest))
 			{
 				return;
@@ -87,7 +86,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 				var assetType = assetKvp.Key;
 				var idMap = assetKvp.Value;
 
-				// Sticky foldouts so the periodic Refresh doesn't re-expand on every tick.
+				// 주기 Refresh 가 틱마다 다시 펼치지 않도록 상태가 유지되는 폴드아웃을 씁니다.
 				var assetFoldout = MakeStickyFoldout(
 					key: assetType.FullName ?? assetType.Name,
 					text: assetType.Name);
@@ -137,11 +136,9 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		}
 
 		/// <summary>
-		/// Builds a deterministic digest of every piece of state the rebuild path renders:
-		/// the not-bound branch, the destructive-toggle flag (gates per-row Unload buttons),
-		/// and per-row <c>(assetType, idType, id, loaded)</c> tuples. When two consecutive
-		/// refreshes produce the same digest the rebuild can be skipped — keeping rapid
-		/// foldout clicks from getting destroyed mid-click by the 250 ms timer.
+		/// 재구성 경로가 그리는 모든 상태로 결정적 다이제스트를 만듭니다: 미바인딩 분기, 파괴적 동작 토글
+		/// 플래그(행별 Unload 버튼 표시 여부), 행별 <c>(assetType, idType, id, loaded)</c> 튜플. 연속된 두 갱신의
+		/// 다이제스트가 같으면 재구성을 건너뛰어 250 ms 타이머가 빠른 폴드아웃 클릭을 클릭 도중 파괴하지 않게 합니다.
 		/// </summary>
 		private string ComputeDigest(AssetResolverService resolver)
 		{

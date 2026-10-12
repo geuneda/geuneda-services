@@ -4,9 +4,8 @@ using UnityEngine.UIElements;
 namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
-	/// Displays the current state of <see cref="IRngService"/>: Seed, Counter, the next
-	/// upcoming value (always-on peek), a configurable Peek-N preview list, and a
-	/// rewind/fast-forward control over the deterministic counter.
+	/// <see cref="IRngService"/> 의 현재 상태를 표시합니다: Seed, Counter, 다음에 나올 값(항상 미리 보기),
+	/// 개수를 정할 수 있는 Peek-N 미리 보기 목록, 그리고 결정적 카운터를 되감거나 앞으로 감는 조작.
 	/// </summary>
 	public class RngTab : ServiceTab
 	{
@@ -68,10 +67,9 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 
 			scroll.Add(MakeSectionLabel("Peek next N values (non-consuming)"));
 
-			// Slider + IntegerField pair (matches TimeTab.AddTime layout). The two widgets
-			// stay bidirectionally synced so the user can drag for quick iteration OR type
-			// an exact count without the cramped single-widget form factor that buried the
-			// numeric input behind the field's "Count" label.
+			// Slider + IntegerField 쌍(TimeTab.AddTime 배치와 같음). 두 위젯은 양방향으로 동기화되어
+			// 사용자가 드래그로 빠르게 조절하거나 정확한 개수를 직접 입력할 수 있습니다. 위젯 하나만 쓰면
+			// 숫자 입력란이 "Count" 레이블 뒤에 좁게 묻혀 버립니다.
 			var peekControls = new VisualElement();
 			peekControls.style.flexDirection = FlexDirection.Row;
 			peekControls.style.alignItems = Align.Center;
@@ -128,8 +126,8 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			restoreLabel.style.minWidth = 60;
 			restoreRow.Add(restoreLabel);
 
-			// Slider 0..1000 covers the common save/replay-window scenario; users needing
-			// arbitrarily large counters can type directly into the IntegerField next to it.
+			// 슬라이더 0..1000 은 일반적인 저장/리플레이 구간을 다룹니다. 더 큰 카운터가 필요하면
+			// 옆의 IntegerField 에 직접 입력하면 됩니다.
 			_restoreSlider = new SliderInt(0, RestoreSliderMax) { value = 0, tooltip = RestoreTooltip };
 			_restoreSlider.style.flexGrow = 1;
 			_restoreSlider.style.minWidth = 100;
@@ -162,11 +160,9 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 
 		protected override void Refresh()
 		{
-			// Hide RNG state in edit mode (initial OR after a play session ended) regardless
-			// of any leftover RngService kept alive by a static field. Together with
-			// OnExitingPlayMode() this guarantees the tab does not retain a live snapshot
-			// after Stop, even if the consumer's bootstrap forgot to call
-			// MainInstaller.Clean() in OnDestroy.
+			// Edit 모드(처음이든 플레이 세션이 끝난 뒤든)에서는 정적 필드에 남은 RngService 가 있더라도
+			// RNG 상태를 숨깁니다. OnExitingPlayMode() 와 함께, 사용하는 쪽 부트스트랩이 OnDestroy 에서
+			// MainInstaller.Clean() 호출을 잊었더라도 Stop 이후 탭이 살아 있는 스냅샷을 유지하지 않도록 보장합니다.
 			if (!UnityEditor.EditorApplication.isPlaying)
 			{
 				ShowUnboundState();
@@ -186,9 +182,9 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			_nextValueLabel.text = rng.Peek.ToString();
 		}
 
-		// Forcibly clear all RNG-state widgets when the user stops play mode. Belt-and-braces
-		// guarantee that the tab does not retain a frozen "last play" snapshot even if the
-		// consumer's bootstrap forgot to call MainInstaller.Clean() in OnDestroy.
+		// 사용자가 Play 모드를 멈추면 모든 RNG 상태 위젯을 강제로 비웁니다. 사용하는 쪽 부트스트랩이
+		// OnDestroy 에서 MainInstaller.Clean() 호출을 잊었더라도 탭이 멈춘 "마지막 플레이" 스냅샷을
+		// 유지하지 않도록 하는 이중 안전장치입니다.
 		protected override void OnExitingPlayMode()
 		{
 			ShowUnboundState();

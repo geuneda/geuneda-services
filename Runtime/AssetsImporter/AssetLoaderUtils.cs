@@ -8,16 +8,16 @@ using System.Threading.Tasks;
 namespace Geuneda.Services.AssetsImporter
 {
 	/// <summary>
-	/// Helper class with util improvements for loading methods
+	/// 로딩 메서드를 보조하는 유틸리티 클래스
 	/// </summary>
 	public static class AssetLoaderUtils
 	{
 		/// <summary>
-		/// Helper method to interpolate over a list of the given <paramref name="tasks"/>.
-		/// Returns the first completed task and moves to the next until all tasks are completed.
+		/// 주어진 <paramref name="tasks"/> 목록을 완료 순서대로 순회할 수 있게 하는 헬퍼 메서드입니다.
+		/// 먼저 완료된 작업부터 반환하고, 모든 작업이 완료될 때까지 다음 작업으로 넘어갑니다.
 		/// </summary>
 		/// <remarks>
-		/// Based on the implementation of a .Net engineer <seealso cref="https://devblogs.microsoft.com/pfxteam/processing-tasks-as-they-complete/"/>
+		/// .NET 엔지니어의 구현을 바탕으로 합니다 <seealso cref="https://devblogs.microsoft.com/pfxteam/processing-tasks-as-they-complete/"/>
 		/// </remarks>
 		public static Task<Task<T>>[] Interleaved<T>(IEnumerable<Task<T>> tasks)
 		{
@@ -39,7 +39,7 @@ namespace Geuneda.Services.AssetsImporter
 
 			return results;
 
-			// Local function
+			// 로컬 함수
 			void Continuation(Task<T> completed)
 			{
 				buckets[Interlocked.Increment(ref nextTaskIndex)].TrySetResult(completed);

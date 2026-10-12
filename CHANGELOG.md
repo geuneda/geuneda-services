@@ -4,6 +4,27 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [유의적 버전](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
+## [2.1.4] - 2026-10-12
+
+**수정**:
+- `GameObjectPool.Dispose(bool)` / `GameObjectPool<T>.Dispose(bool)`가 인자와 관계없이 샘플 엔티티를 `Object.Destroy`하던 문제를 수정했습니다. 이제 `disposeSampleEntity`가 `true`일 때만 샘플 GameObject를 파괴합니다(`IObjectPool.Dispose(bool)` 계약과 `ObjectPoolBase<T>` 동작에 맞춤).
+- `MessageBrokerService.Publish`에서 핸들러가 예외를 던지면 "발행 중" 상태가 남아 이후 `Subscribe` / `Unsubscribe`가 계속 `InvalidOperationException`을 내던 문제를 수정했습니다. try/finally로 진입 전 상태로 되돌리므로, 핸들러 안에서 다시 `Publish` 한 중첩 발행이 끝나도 바깥 발행이 끝날 때까지 발행 중 상태가 유지됩니다. 추가 할당은 없습니다.
+- `VersionServices`가 `version-data` 리소스가 없을 때 프로퍼티에 접근할 때마다 다시 로드하며 에러 로그를 남기던 문제를 수정했습니다. 프로퍼티 접근에 따른 지연 로드는 한 번만 시도합니다. `LoadVersionData()` / `LoadVersionDataAsync()`를 직접 호출하면 지금처럼 매번 다시 읽습니다.
+- `AssetsConfigsGeneratorImporter.Import`가 검색 결과 길이를 확인하기 전에 `thisAsset[0]`에 접근해, 대상 스크립트를 찾지 못하면 에러 로그 대신 `IndexOutOfRangeException`이 나던 문제를 수정했습니다.
+- `AssetsImporterEditorSettings.AutoUpdateOnRefresh`가 저장만 되고 아무 동작도 하지 않던 문제를 수정했습니다. 켜져 있으면 스크립트 컴파일 후(`[DidReloadScripts]`) 다음 에디터 업데이트에서 `AssetsImporterEditorUtils.ImportAll()`을 실행합니다. Play 모드 진입에 따른 리로드에서는 실행하지 않습니다.
+- `AssetsImporterEditorUtils.TryGetScriptableObject`가 null이나 `AssetConfigsScriptableObject`가 아닌 타입을 Unity API에 넘겨 예외가 나던 문제를 수정했습니다. 설정 타입이 아직 생성되지 않은 생성기 임포터가 있어도 임포터 탐색과 자동 임포트가 멈추지 않습니다.
+- asmdef 파일 이름을 어셈블리 이름에 맞췄습니다(`Editor/Geuneda.Services.Editor.asmdef`, `Tests/EditMode/Geuneda.Services.Editor.Tests.asmdef`). `ServicesScaffolders`가 템플릿 위치를 찾는 `"Geuneda.Services.Editor t:asmdef"` 검색이 이제 실제 파일 이름과 일치합니다.
+
+**변경**:
+- `Geuneda.Services.Editor` asmdef에서 어떤 어셈블리에도 해당하지 않는 GUID 참조(`ffab5256b265d45fa9fb86697af7ee2b`)를 제거했습니다.
+- `AssetConfigsScriptableObjectEditor`에서 패키지에 없는 Asset Resolver 샘플용 버튼(`Tools/Geuneda/Samples/Asset Resolver/Refresh Addressables` 메뉴 호출)을 제거했습니다.
+- `TickService` 생성자에서 항상 거짓이던 중복 초기화 검사를 제거했습니다(동작 변화 없음).
+- `Runtime/Pooling`, `Runtime/Commands`, `Runtime/AssetsImporter`, `Editor/`에 남아 있던 영어 주석을 한국어로 옮겼습니다.
+- `VersionServicesSyncLoadTest` / `VersionServicesIntegrationTest`의 Branch / Commit 테스트가 git 저장소가 아닌 프로젝트(version-data의 두 값이 비어 있음)에서 전제를 확인하고 `Inconclusive`로 끝나도록 바꿨습니다.
+
+**문서**:
+- XML 주석 정정: `IObjectPool.Spawn`(풀이 비면 예외 없이 새 엔티티를 만듦), `VersionServices.LoadVersionData`(멱등/조기 반환 서술 삭제), `ISceneLoader.UnloadSceneAsync`(콜백은 언로드 완료 시점), `IAssetLoader.UnloadAsset`(Addressables 2.9.1 소스 기준 `InstantiateAsync`로 만든 인스턴스를 넘기면 GameObject도 파괴됨. 2.0.0 항목의 "인스턴스를 파괴하지 않음" 설명과 다릅니다).
+
 ## [2.1.3] - 2026-07-19
 
 **수정**:
@@ -61,7 +82,7 @@
 - `Runtime/AssetsImporter/`에 `IAssetLoader`, `ISceneLoader`, `AddressablesAssetLoader` 추가 (ns `Geuneda.Services.AssetsImporter`)
 - `Runtime/AssetsImporter/`에 `AddressableConfig`, `AssetConfigsScriptableObject<TId,TAsset>`, `AssetLoaderUtils`, `AssetReferenceScene` 추가 (ns `Geuneda.Services.AssetsImporter`)
 - `Runtime/` 루트에 `AssetResolverService`(`IAssetResolverService` / `IAssetAdderService` 구현) 추가 (ns `Geuneda.Services`)
-- Editor/AssetsImporter/ 추가: `AssetsImporter`, `AssetsToolImporter`, `AssetConfigsImporter`, `AddressableIdsGenerator`, `AddressablesIdGeneratorSettings` (ns `Geuneda.Services.AssetsImporter.Editor`)
+- Editor/AssetsImporter/ 추가: `AssetConfigsImporter`, `AssetsImporterEditorSettings`, `AssetsImporterEditorUtils`, `AssetsImporterMenu` (ns `Geuneda.Services.AssetsImporter.Editor`). Addressable Ids 생성기는 Editor/AddressableIds/ 에 추가: `AddressableIdsEditorSettings`, `AddressableIdsGeneratorUtils`, `AddressableIdsMenu` (ns `Geuneda.Services.AddressableIds.Editor`)
 - `Samples~/` 하위에 임포트 가능한 **Samples** 추가 (Unity Package Manager > Geuneda Services > Samples에서 임포트 가능).
   - **Services Playground** — `MainInstaller`를 통해 모든 기반 서비스를 연결하고 13개 Services Explorer 탭 중 10개를 처음부터 끝까지 실습하는 단일 씬, 무설정 워크스루.
   - **Asset Resolver** — `AssetResolverService`를 처음부터 끝까지 다루는 집중 데모(`AddConfigs` / `RequestAsset` / `UnloadAssets`), `SpriteConfigs : AssetConfigsScriptableObject<SpriteId, Sprite>` 사용. Playground가 다루지 않는 세 개의 Services Explorer 탭(Asset Resolver, Assets Importer, Addressable Ids)을 구동합니다.

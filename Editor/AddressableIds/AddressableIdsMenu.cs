@@ -5,8 +5,8 @@ using UnityEditor;
 namespace Geuneda.Services.AddressableIds.Editor
 {
 	/// <summary>
-	/// Top-bar menu stubs for the Addressable Ids Generator under <c>Tools &gt; Geuneda &gt; Addressable Ids</c>.
-	/// Settings live in the Services Explorer Addressable Ids tab.
+	/// <c>Tools &gt; Geuneda &gt; Addressable Ids</c> 아래의 Addressable Ids 생성기 상단 메뉴 스텁입니다.
+	/// 설정은 Services Explorer 의 Addressable Ids 탭에 있습니다.
 	/// </summary>
 	internal static class AddressableIdsMenu
 	{

@@ -9,10 +9,10 @@ using UnityEngine.UIElements;
 namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
-	/// Services Explorer tab for the Addressable Ids Generator.
-	/// Replaces the old <c>AddressablesIdGeneratorSettings.asset</c> custom inspector.
-	/// Reads/writes settings via <see cref="AddressableIdsEditorSettings"/> and invokes
-	/// generation via <see cref="AddressableIdsGeneratorUtils"/>.
+	/// Addressable Ids 생성기용 Services Explorer 탭입니다.
+	/// 예전 <c>AddressablesIdGeneratorSettings.asset</c> 커스텀 인스펙터를 대체합니다.
+	/// 설정은 <see cref="AddressableIdsEditorSettings"/> 로 읽고 쓰며, 생성은
+	/// <see cref="AddressableIdsGeneratorUtils"/> 로 실행합니다.
 	/// </summary>
 	public class AddressableIdsTab : ServiceTab
 	{
@@ -48,12 +48,12 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			var scroll = new ScrollView(ScrollViewMode.Vertical);
 			scroll.AddToClassList("tab-scroll");
 
-			// ---- Generator Settings section ----
+			// ---- Generator Settings 섹션 ----
 			scroll.Add(MakeSectionLabel("Generator Settings"));
 
 			var settings = AddressableIdsEditorSettings.instance;
 
-			// Script Filename
+			// 스크립트 파일 이름
 			_filenameField = new TextField("Script Filename")
 			{
 				tooltip = "Name of the generated C# file and the enum it contains (no extension).",
@@ -78,7 +78,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			scroll.Add(_filenameField);
 			scroll.Add(_filenameError);
 
-			// Namespace
+			// 네임스페이스
 			_namespaceField = new TextField("Namespace")
 			{
 				tooltip = "C# namespace for the generated Addressable Ids file.",
@@ -101,7 +101,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			scroll.Add(_namespaceField);
 			scroll.Add(_namespaceError);
 
-			// Addressable Label filter
+			// Addressable 라벨 필터
 			_labelField = new TextField("Addressable Label")
 			{
 				tooltip = "Label filter for Addressables asset entries. Leave empty to include all non-read-only groups.",
@@ -113,7 +113,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			});
 			scroll.Add(_labelField);
 
-			// ---- Output section ----
+			// ---- Output 섹션 ----
 			scroll.Add(MakeSectionLabel("Output"));
 
 			_freshnessBanner = new Label();
@@ -137,7 +137,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			outputBar.Add(new Button(OnRevealSettings) { text = "Open Settings file" });
 			scroll.Add(outputBar);
 
-			// ---- Pending changes section ----
+			// ---- 보류 중인 변경 섹션 ----
 			scroll.Add(MakeSectionLabel("Pending changes"));
 
 			var pendingRow = new VisualElement();
@@ -165,7 +165,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 
 			Add(scroll);
 
-			// ---- Bottom action bar ----
+			// ---- 하단 액션 바 ----
 			var mainBar = MakeActionBar();
 			mainBar.Add(MakePrimaryButton("Generate Addressable Ids", OnGenerate));
 			mainBar.Add(new Button(OnOpenAddressablesGroups) { text = "Open Addressables Groups" });

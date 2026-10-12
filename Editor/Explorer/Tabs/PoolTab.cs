@@ -7,8 +7,8 @@ using UnityEngine.UIElements;
 namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
-	/// Displays all pools registered in <see cref="IPoolService"/>.
-	/// Supports DespawnAll, Dispose, and RemovePool per entry.
+	/// <see cref="IPoolService"/> 에 등록된 모든 풀을 표시합니다.
+	/// 항목별 DespawnAll, Dispose, RemovePool 을 지원합니다.
 	/// </summary>
 	public class PoolTab : ServiceTab
 	{
@@ -42,11 +42,10 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		{
 			_list.Clear();
 
-			// Hide pool entries in edit mode (initial OR after a play session ended)
-			// regardless of any leftover PoolService kept alive by a static field.
-			// Together with OnExitingPlayMode() this guarantees the pool list does not
-			// retain a live snapshot after Stop, even if the consumer's bootstrap forgot
-			// to dispose the pool service / call MainInstaller.Clean() in OnDestroy.
+			// Edit 모드(처음이든 플레이 세션이 끝난 뒤든)에서는 정적 필드에 남은 PoolService 가 있더라도
+			// 풀 항목을 숨깁니다. OnExitingPlayMode() 와 함께, 사용하는 쪽 부트스트랩이 OnDestroy 에서
+			// 풀 서비스 해제나 MainInstaller.Clean() 호출을 잊었더라도 Stop 이후 풀 목록이 살아 있는
+			// 스냅샷을 유지하지 않도록 보장합니다.
 			if (!EditorApplication.isPlaying)
 			{
 				_countLabel.text = "Pools: 0";
@@ -116,7 +115,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			}
 			catch
 			{
-				// ignored
+				// 무시
 			}
 
 			return -1;
@@ -153,7 +152,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			}
 			catch
 			{
-				// ignored
+				// 무시
 			}
 		}
 
@@ -170,11 +169,10 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			Refresh();
 		}
 
-		// Forcibly clear the pool list synchronously when the user stops play mode.
-		// Belt-and-braces against bootstraps that fail to dispose IPoolService / call
-		// MainInstaller.Clean() in OnDestroy — without this the static MainInstaller
-		// would surface stale pools (and their spawned-readonly counts) until the next
-		// play session.
+		// 사용자가 Play 모드를 멈추면 풀 목록을 동기적으로 강제로 비웁니다.
+		// OnDestroy 에서 IPoolService 를 해제하거나 MainInstaller.Clean() 을 호출하지 않는 부트스트랩에 대한
+		// 이중 안전장치입니다. 이것이 없으면 정적 MainInstaller 때문에 다음 플레이 세션까지 지난 풀
+		// (과 스폰 개수)이 표시됩니다.
 		protected override void OnExitingPlayMode()
 		{
 			_countLabel.text = "Pools: 0";

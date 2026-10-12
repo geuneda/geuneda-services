@@ -203,10 +203,9 @@ namespace Geuneda.Services
 		}
 
 #if UNITY_EDITOR
-		// Editor-only tracking. Uses the AsyncCoroutine.InternalCleanup event (separate from
-		// the user-facing _onComplete) so user callbacks set via OnComplete(...) are not
-		// overwritten by tracking-removal lambdas, and tracking removal still fires when the
-		// coroutine is stopped via IAsyncCoroutine.StopCoroutine(...).
+		// 에디터 전용 추적. 사용자용 _onComplete 와 별개인 AsyncCoroutine.InternalCleanup 이벤트를 써서
+		// OnComplete(...) 로 등록한 사용자 콜백이 추적 해제 람다에 덮어써지지 않게 하고,
+		// IAsyncCoroutine.StopCoroutine(...) 으로 멈춘 경우에도 추적 해제가 실행되게 한다.
 		private void TrackForEditor(AsyncCoroutine asyncCoroutine)
 		{
 			_activeAsyncCoroutines.Add(asyncCoroutine);
@@ -263,10 +262,9 @@ namespace Geuneda.Services
 			
 			private Action _onComplete;
 
-			// Editor-only tracking hook. Distinct from _onComplete so that registering a
-			// user callback via OnComplete(...) does NOT overwrite the tracking lambda
-			// (and vice versa). Always fired once per coroutine lifecycle, on either
-			// natural completion or explicit StopCoroutine.
+			// 에디터 전용 추적 훅. _onComplete 와 분리해 두어 OnComplete(...) 로 사용자 콜백을 등록해도
+			// 추적 람다를 덮어쓰지 않는다(반대도 마찬가지). 자연 완료든 명시적 StopCoroutine 이든
+			// 코루틴 수명 동안 한 번만 실행된다.
 			public event Action InternalCleanup;
 		
 			public bool IsRunning => Coroutine != null && !IsCompleted;

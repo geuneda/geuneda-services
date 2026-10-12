@@ -5,8 +5,8 @@ using UnityEngine.UIElements;
 namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
-	/// Live display of all time values from <see cref="ITimeService"/>.
-	/// AddTime and SetInitialTime controls are shown when the service is bound as <see cref="ITimeManipulator"/>.
+	/// <see cref="ITimeService"/> 의 모든 시간 값을 실시간으로 표시합니다.
+	/// 서비스가 <see cref="ITimeManipulator"/> 로 바인딩되어 있으면 AddTime 과 SetInitialTime 조작을 보여 줍니다.
 	/// </summary>
 	public class TimeTab : ServiceTab
 	{
@@ -159,7 +159,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			return;
 		}
 
-		// Reset extra time to 0 by subtracting the current extra offset.
+		// 현재 추가 오프셋을 빼서 추가 시간을 0 으로 되돌립니다.
 		if (manipulator is TimeService ts)
 		{
 			manipulator.AddTime(-ts.ExtraTime);

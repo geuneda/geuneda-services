@@ -3,8 +3,8 @@ using UnityEngine.UIElements;
 namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
-	/// Displays active <see cref="IAsyncCoroutine"/> handles tracked by <see cref="ICoroutineService"/>.
-	/// Editor-build tracking is enabled via <c>#if UNITY_EDITOR</c> in <see cref="CoroutineService"/>.
+	/// <see cref="ICoroutineService"/> 가 추적하는 활성 <see cref="IAsyncCoroutine"/> 핸들을 표시합니다.
+	/// 에디터 전용 추적은 <see cref="CoroutineService"/> 의 <c>#if UNITY_EDITOR</c> 로 켜집니다.
 	/// </summary>
 	public class CoroutineTab : ServiceTab
 	{
@@ -39,9 +39,8 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			_list.Clear();
 
 #if UNITY_EDITOR
-			// Hide active-coroutine entries in edit mode regardless of any leftover
-			// CoroutineService instance kept alive by a static field. See ServiceTab
-			// OnExitingPlayMode() docs for the broader rationale.
+			// Edit 모드에서는 정적 필드에 남은 CoroutineService 인스턴스가 있더라도 활성 코루틴 항목을
+			// 숨깁니다. 자세한 이유는 ServiceTab.OnExitingPlayMode() 문서를 참고하세요.
 			if (UnityEditor.EditorApplication.isPlaying == false)
 			{
 				_totalLabel.text = "Active: 0";
@@ -84,9 +83,9 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 #endif
 		}
 
-		// Forcibly clear the active-coroutine list synchronously when the user stops
-		// play mode. Belt-and-braces against bootstraps that fail to dispose the
-		// coroutine service / call MainInstaller.Clean() in OnDestroy.
+		// 사용자가 Play 모드를 멈추면 활성 코루틴 목록을 동기적으로 강제로 비웁니다.
+		// OnDestroy 에서 코루틴 서비스를 해제하거나 MainInstaller.Clean() 을 호출하지 않는
+		// 부트스트랩에 대한 이중 안전장치입니다.
 		protected override void OnExitingPlayMode()
 		{
 			_totalLabel.text = "Active: 0";

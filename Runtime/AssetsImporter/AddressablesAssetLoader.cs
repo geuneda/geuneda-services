@@ -12,7 +12,7 @@ using UnityEngine.SceneManagement;
 namespace Geuneda.Services.AssetsImporter
 {
 	/// <summary>
-	/// The asset loader to use with Addressables
+	/// Addressables 와 함께 쓰는 에셋 로더
 	/// </summary>
 	public class AddressablesAssetLoader : IAssetLoader, ISceneLoader
 	{			 

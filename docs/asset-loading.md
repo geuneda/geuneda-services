@@ -43,8 +43,8 @@ public class LowLevelLoading
 ```
 
 - `UnloadAsset<T>` 는 동기이며 `void` 입니다. `Addressables.Release(asset)` 로 참조 카운트만 줄이고 콜백을 호출합니다. 메모리 회수는 호출자가 씬 전환, 부팅, 메모리 경고 같은 시점에 `Resources.UnloadUnusedAssets()` 로 직접 하세요(`LoadSceneMode.Single` 씬 로드 때는 Unity 가 자동으로 정리합니다).
-- 이 패키지에는 `InstantiateAsync` 로 만든 인스턴스 전용 해제 메서드가 없습니다. 필요하면 Addressables API 를 직접 사용하세요.
-- `UnloadSceneAsync(Scene)` 은 `SceneManager.UnloadSceneAsync` 를 호출합니다(Addressables 씬 핸들을 해제하는 `Addressables.UnloadSceneAsync` 가 아님).
+- 이 패키지에는 `InstantiateAsync` 로 만든 인스턴스 전용 해제 메서드가 없습니다. 필요하면 Addressables API 를 직접 사용하세요. `UnloadAsset` 에 그런 인스턴스를 넘기면 Addressables 가 인스턴스 작업 핸들을 해제하면서 GameObject 도 파괴합니다(Addressables 2.9.1 `InstanceProvider.ReleaseInstance` 기준).
+- `UnloadSceneAsync(Scene)` 은 `Addressables.UnloadSceneAsync` 가 아니라 `SceneManager.UnloadSceneAsync` 를 호출합니다. `LoadSceneAsync` 는 기본 해제 모드로 씬을 로드하므로, 씬이 내려가면 Addressables 가 `SceneManager.sceneUnloaded` 에서 해당 씬 핸들을 해제합니다(Addressables 2.9.1 `AddressablesImpl.OnSceneUnloaded` 기준).
 
 ## 고수준: AssetResolverService
 
@@ -169,6 +169,7 @@ public class SpriteConfigsImporter : AssetsConfigsImporter<SpriteId, Sprite, Spr
 ```
 
 - 실행: `Tools > Geuneda > Assets Importer > Import Assets Data`(발견된 모든 임포터), 또는 Services Explorer 의 **Assets Importer** 탭(임포터별 경로 지정과 임포트)
+- 자동 실행: **Assets Importer** 탭의 "Refresh after script compilation" 을 켜면 스크립트 컴파일이 끝날 때마다 발견된 모든 임포터를 임포트합니다(v2.1.4 부터 동작. Play 모드 진입 리로드에서는 실행하지 않음). 설정은 `ProjectSettings/AssetsImporterEditorSettings.asset` 에 저장됩니다.
 - 대상 폴더는 설정 에셋의 `AssetsFolderPath` 입니다. 설정 에셋이 없으면 `Assets/{TScriptableObject 이름}.asset` 으로 새로 만듭니다.
 - `AssetsConfigsGeneratorImporter<TAsset>` 는 폴더의 파일 이름으로 enum(`Game.Ids`), 설정 ScriptableObject(`Game.Configs`), 임포터 스크립트를 `Assets/` 에 생성하는 일회성 생성기입니다.
 

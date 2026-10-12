@@ -82,18 +82,28 @@ namespace Geuneda.Services
 				return;
 			}
 
+			// 핸들러 안에서 다시 Publish 해도(중첩) 바깥 발행이 끝날 때까지 발행 중 상태가 유지되도록
+			// 진입 전 상태를 보관해 두었다가 finally 에서 되돌린다. 핸들러가 예외를 던져도 같다(할당 없음).
+			var wasPublishing = _isPublishing;
+			var previousPublishingType = _publishingType;
+
 			_isPublishing = true;
 			_publishingType = typeof(T);
 
-			foreach (var subscription in subscriptionObjects)
+			try
 			{
-				var action = (Action<T>)subscription.Value;
+				foreach (var subscription in subscriptionObjects)
+				{
+					var action = (Action<T>)subscription.Value;
 
-				action(message);
+					action(message);
+				}
 			}
-
-			_isPublishing = false;
-			_publishingType = null;
+			finally
+			{
+				_isPublishing = wasPublishing;
+				_publishingType = previousPublishingType;
+			}
 		}
 
 		/// <inheritdoc />

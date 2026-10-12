@@ -7,9 +7,9 @@ using UnityEngine.UIElements;
 namespace Geuneda.Services.Inspectors.Editor
 {
 	/// <summary>
-	/// UIToolkit property drawer for <see cref="AssetReferenceScene"/>.
-	/// Shows the default GUID picker, a read-only scene path label, and
-	/// an "Open in Addressables Groups" button that focuses the entry.
+	/// <see cref="AssetReferenceScene"/> 용 UIToolkit 프로퍼티 드로어입니다.
+	/// 기본 GUID 선택기, 읽기 전용 씬 경로 레이블, 그리고 Addressables Groups 창을 여는
+	/// "Open in Addressables" 버튼을 표시합니다.
 	/// </summary>
 	[CustomPropertyDrawer(typeof(AssetReferenceScene), useForChildren: true)]
 	public class AssetReferenceSceneDrawer : PropertyDrawer

@@ -65,6 +65,71 @@ namespace GeunedaEditor.Services.Tests
 		}
 
 		[Test]
+		public void Publish_HandlerThrows_ResetsPublishingState()
+		{
+			_messageBroker.Subscribe<MessageType1>(m => throw new InvalidOperationException("handler failure"));
+
+			Assert.Throws<InvalidOperationException>(() => _messageBroker.Publish(_messageType1));
+			Assert.DoesNotThrow(() => _messageBroker.Subscribe<MessageType2>(_subscriber.MockMessageAlternativeCall));
+			Assert.DoesNotThrow(() => _messageBroker.Unsubscribe<MessageType2>(_subscriber));
+		}
+
+		[Test]
+		public void Publish_NestedPublishCompletes_OuterPublishStillRejectsSubscribe()
+		{
+			var rejectedDuringOuterPublish = false;
+			_messageBroker.Subscribe<MessageType2>(_subscriber.MockMessageAlternativeCall);
+			_messageBroker.Subscribe<MessageType1>(m =>
+			{
+				_messageBroker.Publish(_messageType2);
+
+				// 중첩 발행이 끝나도 바깥 발행은 아직 구독자를 순회 중이므로 구독 변경이 거부되어야 한다
+				try
+				{
+					_messageBroker.Subscribe<MessageType1>(_subscriber.MockMessageCall);
+				}
+				catch (InvalidOperationException)
+				{
+					rejectedDuringOuterPublish = true;
+				}
+			});
+
+			Assert.DoesNotThrow(() => _messageBroker.Publish(_messageType1));
+			Assert.IsTrue(rejectedDuringOuterPublish);
+			Assert.DoesNotThrow(() => _messageBroker.Subscribe<MessageType1>(_subscriber.MockMessageCall));
+		}
+
+		[Test]
+		public void Publish_NestedHandlerThrowsAndIsCaught_OuterPublishStillRejectsSubscribe()
+		{
+			var rejectedDuringOuterPublish = false;
+			_messageBroker.Subscribe<MessageType2>(m => throw new ArgumentException("nested failure"));
+			_messageBroker.Subscribe<MessageType1>(m =>
+			{
+				try
+				{
+					_messageBroker.Publish(_messageType2);
+				}
+				catch (ArgumentException)
+				{
+				}
+
+				try
+				{
+					_messageBroker.Subscribe<MessageType1>(_subscriber.MockMessageCall);
+				}
+				catch (InvalidOperationException)
+				{
+					rejectedDuringOuterPublish = true;
+				}
+			});
+
+			Assert.DoesNotThrow(() => _messageBroker.Publish(_messageType1));
+			Assert.IsTrue(rejectedDuringOuterPublish);
+			Assert.DoesNotThrow(() => _messageBroker.Subscribe<MessageType1>(_subscriber.MockMessageCall));
+		}
+
+		[Test]
 		public void PublishSafe_ChainSubscribe_Succeeds()
 		{
 			_messageBroker.Subscribe<MessageType1>(m => _messageBroker.Subscribe<MessageType2>(_subscriber.MockMessageAlternativeCall));

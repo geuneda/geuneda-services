@@ -8,8 +8,8 @@ using UnityEngine.UIElements;
 namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
-	/// Displays all data entries held by <see cref="IDataService"/>.
-	/// Supports Save, Load, AddOrReplace, and Delete PlayerPrefs key.
+	/// <see cref="IDataService"/> 가 가진 모든 데이터 항목을 표시합니다.
+	/// Save, Load, AddOrReplace, PlayerPrefs 키 삭제를 지원합니다.
 	/// </summary>
 	public class DataTab : ServiceTab
 	{
@@ -43,11 +43,10 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		{
 			_list.Clear();
 
-			// Hide entries in edit mode (initial OR after a play session ended) regardless
-			// of any leftover DataService kept alive by a static field. Together with
-			// OnExitingPlayMode() this guarantees the data list does not retain a live
-			// snapshot after Stop, even if the consumer's bootstrap forgot to call
-			// MainInstaller.Clean() in OnDestroy.
+			// Edit 모드(처음이든 플레이 세션이 끝난 뒤든)에서는 정적 필드에 남은 DataService 가 있더라도
+			// 항목을 숨깁니다. OnExitingPlayMode() 와 함께, 사용하는 쪽 부트스트랩이 OnDestroy 에서
+			// MainInstaller.Clean() 호출을 잊었더라도 Stop 이후 데이터 목록이 살아 있는 스냅샷을 유지하지
+			// 않도록 보장합니다.
 			if (!EditorApplication.isPlaying)
 			{
 				_countLabel.text = "Entries: 0";
@@ -108,10 +107,10 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			}
 		}
 
-		// Forcibly clear the data entries widget synchronously when the user stops play
-		// mode. Belt-and-braces against bootstraps that fail to call MainInstaller.Clean()
-		// in OnDestroy — the DataService entries dictionary lives on the service instance
-		// and would otherwise surface as a stale snapshot in edit mode.
+		// 사용자가 Play 모드를 멈추면 데이터 항목 위젯을 동기적으로 강제로 비웁니다.
+		// OnDestroy 에서 MainInstaller.Clean() 을 호출하지 않는 부트스트랩에 대한 이중 안전장치입니다.
+		// DataService 항목 딕셔너리는 서비스 인스턴스에 남아 있어, 그렇지 않으면 Edit 모드에서 지난
+		// 스냅샷으로 표시됩니다.
 		protected override void OnExitingPlayMode()
 		{
 			_countLabel.text = "Entries: 0";

@@ -8,8 +8,8 @@ using UnityEngine;
 namespace Geuneda.Services.Scaffolders.Editor
 {
 	/// <summary>
-	/// Provides <c>Assets &gt; Create &gt; Geuneda Services &gt; …</c> menu items that scaffold
-	/// common service types from templates. No test stubs are emitted.
+	/// 템플릿으로 자주 쓰는 서비스 타입의 뼈대 코드를 만드는 <c>Assets &gt; Create &gt; Geuneda Services &gt; …</c>
+	/// 메뉴 항목을 제공합니다. 테스트 스텁은 만들지 않습니다.
 	/// </summary>
 	public static class ServicesScaffolders
 	{
@@ -97,8 +97,8 @@ namespace Geuneda.Services.Scaffolders.Editor
 		}
 
 		/// <summary>
-		/// Called by <see cref="ProjectWindowUtil"/> after the user confirms the file name.
-		/// Reads the template, replaces placeholders, and writes the final .cs file.
+		/// 사용자가 파일 이름을 확정하면 <see cref="ProjectWindowUtil"/> 이 호출합니다.
+		/// 템플릿을 읽어 플레이스홀더를 치환하고 최종 .cs 파일을 씁니다.
 		/// </summary>
 		private class ScriptNameEditAction :
 #if UNITY_6000_5_OR_NEWER

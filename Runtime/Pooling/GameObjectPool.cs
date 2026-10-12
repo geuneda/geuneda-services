@@ -8,13 +8,13 @@ namespace Geuneda.Services.Pooling
 {
 	/// <inheritdoc />
 	/// <remarks>
-	/// Useful for pools that use object references to create new <see cref="GameObject"/>
+	/// 객체 참조로 새 <see cref="GameObject"/> 를 만드는 풀에 유용합니다
 	/// </remarks>
 	public class GameObjectPool : ObjectPoolBase<GameObject>
 	{
 		/// <summary>
-		/// If true then when the object is despawned back to the pool will be parented to the same as the sample entity
-		/// parent transform
+		/// true 이면 객체가 디스폰되어 풀로 돌아올 때 샘플 엔티티와 같은 부모 트랜스폼 아래로
+		/// 옮겨집니다
 		/// </summary>
 		public bool DespawnToSampleParent { get; set; } = true;
 
@@ -29,7 +29,10 @@ namespace Geuneda.Services.Pooling
 		/// <inheritdoc />
 		public override void Dispose(bool disposeSampleEntity)
 		{
-			Object.Destroy(SampleEntity);
+			if (disposeSampleEntity && SampleEntity != null)
+			{
+				Object.Destroy(SampleEntity);
+			}
 
 			base.Dispose(disposeSampleEntity);
 		}
@@ -41,7 +44,7 @@ namespace Geuneda.Services.Pooling
 
 			foreach (var obj in content)
 			{
-				// Skip entries already destroyed by an external owner (Unity fake-null).
+				// 외부 소유자가 이미 파괴한 항목은 건너뜁니다(Unity fake-null).
 				if (obj == null)
 				{
 					continue;
@@ -52,7 +55,7 @@ namespace Geuneda.Services.Pooling
 		}
 
 		/// <summary>
-		/// Generic instantiator for <see cref="GameObject"/> pools
+		/// <see cref="GameObject"/> 풀용 범용 인스턴시에이터
 		/// </summary>
 		public static GameObject Instantiator(GameObject entityRef)
 		{
@@ -109,13 +112,13 @@ namespace Geuneda.Services.Pooling
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// Useful for pools that use object references to create new <see cref="GameObject"/> by their component reference
+	/// 컴포넌트 참조로 새 <see cref="GameObject"/> 를 만드는 풀에 유용합니다
 	/// </remarks>
 	public class GameObjectPool<T> : ObjectPoolBase<T> where T : Behaviour
 	{
 		/// <summary>
-		/// If true then when the object is despawned back to the pool will be parented to the same as the sample entity
-		/// parent transform
+		/// true 이면 객체가 디스폰되어 풀로 돌아올 때 샘플 엔티티와 같은 부모 트랜스폼 아래로
+		/// 옮겨집니다
 		/// </summary>
 		public bool DespawnToSampleParent { get; set; } = true;
 
@@ -130,7 +133,10 @@ namespace Geuneda.Services.Pooling
 		/// <inheritdoc />
 		public override void Dispose(bool disposeSampleEntity)
 		{
-			Object.Destroy(SampleEntity.gameObject);
+			if (disposeSampleEntity && SampleEntity != null)
+			{
+				Object.Destroy(SampleEntity.gameObject);
+			}
 
 			base.Dispose(disposeSampleEntity);
 		}
@@ -142,8 +148,8 @@ namespace Geuneda.Services.Pooling
 
 			foreach (var obj in content)
 			{
-				// Skip entries already destroyed by an external owner; .gameObject
-				// on a destroyed Behaviour throws MissingReferenceException.
+				// 외부 소유자가 이미 파괴한 항목은 건너뜁니다. 파괴된 Behaviour 의
+				// .gameObject 는 MissingReferenceException 을 던집니다.
 				if (obj == null)
 				{
 					continue;
@@ -154,7 +160,7 @@ namespace Geuneda.Services.Pooling
 		}
 
 		/// <summary>
-		/// Generic instantiator for <see cref="GameObject"/> pools
+		/// <see cref="GameObject"/> 풀용 범용 인스턴시에이터
 		/// </summary>
 		public static T Instantiator(T entityRef)
 		{

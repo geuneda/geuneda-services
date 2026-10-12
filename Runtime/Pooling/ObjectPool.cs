@@ -139,9 +139,8 @@ namespace Geuneda.Services.Pooling
 					continue;
 				}
 
-				// Despawn(entity) removes the first occurrence from SpawnedEntities, shifting
-				// subsequent items down by one. Step back so the next iteration revisits the
-				// current index, otherwise adjacent matches would be skipped.
+				// Despawn(entity) 는 SpawnedEntities 에서 첫 번째 항목을 제거해 뒤 항목들을 한 칸씩 당깁니다.
+				// 다음 반복에서 현재 인덱스를 다시 보도록 한 칸 물러서지 않으면 연속으로 일치하는 항목을 건너뜁니다.
 				if (Despawn(SpawnedEntities[i]))
 				{
 					despawned = true;
@@ -171,8 +170,8 @@ namespace Geuneda.Services.Pooling
 			{
 				entity = _stack.Count == 0 ? CallInstantiator() : _stack.Pop();
 			}
-			// Need to do while loop and check as parent objects could have destroyed the entity/gameobject before it could
-			// be properly disposed by pool service
+			// 풀 서비스가 제대로 해제하기 전에 부모 객체가 엔티티/게임 오브젝트를 파괴했을 수 있으므로
+			// while 루프로 확인해야 합니다
 			while (entity == null);
 
 			SpawnedEntities.Add(entity);

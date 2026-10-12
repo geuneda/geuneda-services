@@ -349,22 +349,9 @@ namespace GeunedaEditor.Services.Tests
 		[Test]
 		public void MultipleInstances_CreateMultipleGameObjects()
 		{
-			// 참고: 서비스가 싱글톤을 강제하지 않지만, _tickObject가 이미 설정된 경우 예외를 발생시킵니다
-			// 그러나 _tickObject는 현재 구현에서 인스턴스 필드입니다.
-			// 생성자에 다음 검사가 있습니다:
-			/*
-			public TickService()
-			{
-				if (_tickObject != null)
-				{
-					throw new InvalidOperationException("The tick service is being initialized for the second time and that is not valid");
-				}
-				...
-			}
-			*/
-			// 하지만 _tickObject는 private readonly TickServiceMonoBehaviour _tickObject;
-			// 따라서 새 인스턴스에서는 항상 null입니다. 이 검사는 정적 필드를 위한 것으로 보이지만 그렇지 않습니다.
-			
+			// 참고: 서비스는 싱글톤을 강제하지 않습니다. 인스턴스마다 자체 호스트 GameObject 를 만듭니다.
+			// (v2.1.4 에서 항상 거짓이던 생성자의 _tickObject 중복 초기화 검사를 제거했습니다)
+
 			var service1 = new TickService();
 			var service2 = new TickService();
 			

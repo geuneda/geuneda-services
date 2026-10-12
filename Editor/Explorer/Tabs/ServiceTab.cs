@@ -6,8 +6,8 @@ using UnityEngine.UIElements;
 namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
-	/// Abstract base for all Services Explorer tab panels.
-	/// Handles play-mode-aware refresh scheduling and the "not in Play" snapshot banner.
+	/// 모든 Services Explorer 탭 패널의 추상 기반 클래스입니다.
+	/// Play 모드에 맞춘 갱신 예약과 "Play 모드 아님" 스냅샷 배너를 처리합니다.
 	/// </summary>
 	public abstract class ServiceTab : VisualElement
 	{
@@ -20,21 +20,21 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		private IVisualElementScheduledItem _refreshTask;
 		private bool _hasSeenPlay;
 
-		// Tracks foldouts the user has explicitly collapsed in this tab instance, by stable key.
-		// Tabs that nuke-and-rebuild their hierarchy in Refresh() need this — without it, fresh
-		// Foldout instances default to value=true and the periodic refresh re-expands them
-		// every RefreshIntervalMs, making collapse appear broken to the user.
+		// 이 탭 인스턴스에서 사용자가 직접 접은 폴드아웃을 고정 키로 기록합니다.
+		// Refresh() 에서 계층을 지우고 다시 만드는 탭에 필요합니다. 이것이 없으면 새 Foldout 인스턴스가
+		// 기본값 value=true 로 만들어져 주기 갱신이 RefreshIntervalMs 마다 다시 펼치므로
+		// 사용자에게는 접기가 고장 난 것처럼 보입니다.
 		private readonly HashSet<string> _collapsedFoldoutKeys = new HashSet<string>();
 
-		// Last data digest seen by Refresh(). Tabs that rebuild their hierarchy can short-circuit
-		// when data is unchanged so the periodic timer doesn't fight user clicks (the rebuild
-		// destroys mouse-captured VisualElements mid-click, losing rapid clicks).
+		// Refresh() 가 마지막으로 본 데이터 다이제스트. 계층을 다시 만드는 탭은 데이터가 같으면
+		// 재구성을 건너뛰어 주기 타이머가 사용자 클릭과 충돌하지 않게 합니다(재구성은 클릭 도중
+		// 마우스를 캡처한 VisualElement 를 파괴해 빠른 클릭을 잃게 만듭니다).
 		private string _lastRefreshDigest;
 
-		/// <summary>Tab header text shown in the TabView strip.</summary>
+		/// <summary>TabView 탭 줄에 표시되는 탭 제목.</summary>
 		public abstract string DisplayName { get; }
 
-		/// <summary>Refresh interval in milliseconds during Play mode. Override for slower updates.</summary>
+		/// <summary>Play 모드 중 갱신 간격(밀리초). 더 느리게 갱신하려면 재정의하세요.</summary>
 		protected virtual int RefreshIntervalMs => 250;
 
 		protected ServiceTab()
@@ -53,26 +53,25 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			RegisterCallback<DetachFromPanelEvent>(OnDetach);
 		}
 
-		/// <summary>Build all child VisualElements. Called once in the constructor after the banner.</summary>
+		/// <summary>모든 자식 VisualElement 를 만듭니다. 생성자에서 배너 다음에 한 번 호출됩니다.</summary>
 		protected abstract void BuildUi();
 
 		/// <summary>
-		/// Pull latest data from services and repopulate UI.
-		/// Called every <see cref="RefreshIntervalMs"/> ms during Play mode,
-		/// and once manually on attach (Edit mode snapshot).
+		/// 서비스에서 최신 데이터를 가져와 UI 를 다시 채웁니다.
+		/// Play 모드 중에는 <see cref="RefreshIntervalMs"/> ms 마다,
+		/// 패널에 붙을 때는 한 번(Edit 모드 스냅샷) 호출됩니다.
 		/// </summary>
 		protected abstract void Refresh();
 
 		/// <summary>
-		/// Called synchronously on <see cref="PlayModeStateChange.ExitingPlayMode"/>, BEFORE
-		/// scene teardown / <c>MonoBehaviour.OnDestroy</c> runs. Subclasses with populated
-		/// state widgets (lists, labels, dropdowns) should override this to forcibly clear
-		/// those widgets to an "unbound / session ended" state.
+		/// <see cref="PlayModeStateChange.ExitingPlayMode"/> 에서 씬 정리 / <c>MonoBehaviour.OnDestroy</c> 가
+		/// 실행되기 전에 동기적으로 호출됩니다. 상태를 표시하는 위젯(리스트, 레이블, 드롭다운)이 있는
+		/// 파생 클래스는 이를 재정의해 위젯을 "바인딩 해제 / 세션 종료" 상태로 강제로 비워야 합니다.
 		///
-		/// This is a belt-and-braces guarantee that the tab visually clears the moment play
-		/// stops, independent of whether the consumer's bootstrap properly disposed services
-		/// and called <see cref="MainInstaller.Clean"/> in <c>OnDestroy</c>. Tabs that already
-		/// render correctly off an unbound <c>MainInstaller</c> can leave this as a no-op.
+		/// 사용하는 쪽 부트스트랩이 서비스를 제대로 해제하고 <c>OnDestroy</c> 에서
+		/// <see cref="MainInstaller.Clean"/> 을 호출했는지와 상관없이, 플레이를 멈추는 순간 탭이 비워지도록
+		/// 보장하는 이중 안전장치입니다. 바인딩이 없는 <c>MainInstaller</c> 로도 이미 올바르게 그리는 탭은
+		/// 비워 두어도 됩니다.
 		/// </summary>
 		protected virtual void OnExitingPlayMode() { }
 
@@ -85,8 +84,8 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 				_hasSeenPlay = true;
 			}
 
-			// Force the first refresh after open to fully rebuild, so toggling tabs always
-			// renders the latest state regardless of any cached digest from a prior session.
+			// 열린 뒤 첫 갱신은 반드시 전체를 다시 만들도록 해, 이전 세션의 다이제스트가 남아 있어도
+			// 탭을 오갈 때 항상 최신 상태를 그립니다.
 			InvalidateRefreshDigest();
 
 			UpdateBannerVisibility();
@@ -117,16 +116,14 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 					break;
 				case PlayModeStateChange.ExitingPlayMode:
 					StopRefreshTimer();
-					// Forcibly clear the populated UI right now, BEFORE OnDestroy runs.
-					// This decouples the tab's empty-state from MainInstaller cleanup so
-					// the user sees a clean snapshot the moment they press Stop, even if
-					// their bootstrap forgot to call MainInstaller.Clean().
+					// OnDestroy 가 실행되기 전에 채워진 UI 를 지금 바로 강제로 비웁니다.
+					// 탭의 빈 상태를 MainInstaller 정리와 분리해, 부트스트랩이 MainInstaller.Clean()
+					// 호출을 잊었더라도 사용자가 Stop 을 누르는 순간 깨끗한 화면을 보게 합니다.
 					OnExitingPlayMode();
 					UpdateBannerVisibility();
 					InvalidateRefreshDigest();
-					// Then defer a follow-up refresh so it lands AFTER scene teardown
-					// (i.e. after MonoBehaviour.OnDestroy → MainInstaller.Clean()), which
-					// re-renders any state from the now-empty MainInstaller.
+					// 이어서 후속 갱신을 미뤄 씬 정리 이후(MonoBehaviour.OnDestroy → MainInstaller.Clean() 이후)에
+					// 실행되게 하고, 비워진 MainInstaller 기준으로 상태를 다시 그립니다.
 					EditorApplication.delayCall += DelayedExitRefresh;
 					break;
 				case PlayModeStateChange.EnteredEditMode:
@@ -179,11 +176,11 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			_banner.style.display = DisplayStyle.Flex;
 		}
 
-		// ---- Helpers for sub-classes ----
+		// ---- 파생 클래스용 헬퍼 ----
 
 		/// <summary>
-		/// Creates a horizontal row with a type label on the left and optional value label,
-		/// then appends action buttons on the right.
+		/// 왼쪽에 타입 레이블과 선택적인 값 레이블을 둔 가로 행을 만듭니다.
+		/// 액션 버튼은 호출하는 쪽에서 오른쪽에 덧붙입니다.
 		/// </summary>
 		protected static VisualElement MakeRow(string label, string value = null)
 		{
@@ -204,7 +201,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			return row;
 		}
 
-		/// <summary>Creates a small action button styled for use inside a row.</summary>
+		/// <summary>행 안에서 쓰는 작은 액션 버튼을 만듭니다.</summary>
 		protected static Button MakeRowButton(string text, System.Action onClick, bool danger = false)
 		{
 			var btn = new Button(onClick) { text = text };
@@ -218,7 +215,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			return btn;
 		}
 
-		/// <summary>Displays a section heading label.</summary>
+		/// <summary>섹션 제목 레이블을 만듭니다.</summary>
 		protected static Label MakeSectionLabel(string text)
 		{
 			var lbl = new Label(text);
@@ -226,7 +223,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			return lbl;
 		}
 
-		/// <summary>Displays an italic "empty" label.</summary>
+		/// <summary>기울임꼴 "비어 있음" 레이블을 만듭니다.</summary>
 		protected static Label MakeEmptyLabel(string text = "— none —")
 		{
 			var lbl = new Label(text);
@@ -234,7 +231,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			return lbl;
 		}
 
-		/// <summary>Creates a bottom action bar VisualElement.</summary>
+		/// <summary>하단 액션 바 VisualElement 를 만듭니다.</summary>
 		protected static VisualElement MakeActionBar()
 		{
 			var bar = new VisualElement();
@@ -243,8 +240,8 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		}
 
 		/// <summary>
-		/// Creates a visually prominent primary action button styled with the <c>action-primary</c> USS class.
-		/// Use for the single most important call-to-action in each tab's action bar.
+		/// <c>action-primary</c> USS 클래스를 적용한 눈에 띄는 주요 액션 버튼을 만듭니다.
+		/// 각 탭 액션 바에서 가장 중요한 동작 하나에 쓰세요.
 		/// </summary>
 		protected static Button MakePrimaryButton(string text, System.Action onClick)
 		{
@@ -254,9 +251,9 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		}
 
 		/// <summary>
-		/// Creates a destructive primary action button styled with the <c>action-primary-danger</c>
-		/// USS class. Use for primary call-to-actions that remove or invalidate state
-		/// (e.g. <c>Unsubscribe All</c>, <c>Stop All Coroutines</c>, <c>Clean All</c> bindings).
+		/// <c>action-primary-danger</c> USS 클래스를 적용한 파괴적 주요 액션 버튼을 만듭니다.
+		/// 상태를 지우거나 무효화하는 주요 동작(예: <c>Unsubscribe All</c>, <c>Stop All Coroutines</c>,
+		/// 바인딩 <c>Clean All</c>)에 쓰세요.
 		/// </summary>
 		protected static Button MakePrimaryDangerButton(string text, System.Action onClick)
 		{
@@ -266,8 +263,8 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		}
 
 		/// <summary>
-		/// Tries to resolve <typeparamref name="T"/> from <see cref="MainInstaller"/>.
-		/// Returns null and does not throw if the service is not bound.
+		/// <see cref="MainInstaller"/> 에서 <typeparamref name="T"/> 를 찾아봅니다.
+		/// 서비스가 바인딩되지 않았으면 예외 없이 null 을 반환합니다.
 		/// </summary>
 		protected static T TryResolve<T>() where T : class
 		{
@@ -276,23 +273,21 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		}
 
 		/// <summary>
-		/// Returns <c>true</c> when the supplied <paramref name="digest"/> matches the digest
-		/// recorded on the previous <see cref="Refresh"/> call, i.e. the displayed data has
-		/// not changed and the tab can return early without rebuilding the hierarchy.
+		/// 주어진 <paramref name="digest"/> 가 이전 <see cref="Refresh"/> 호출 때 기록한 다이제스트와 같으면
+		/// <c>true</c> 를 반환합니다. 즉 표시할 데이터가 바뀌지 않았으므로 탭이 계층을 다시 만들지 않고
+		/// 바로 반환해도 됩니다.
 		/// </summary>
 		/// <remarks>
-		/// <para>The 250 ms periodic refresh otherwise nukes-and-rebuilds the visual tree even
-		/// when nothing changed, which destroys mouse-captured <see cref="VisualElement"/>s
-		/// mid-click — rapid clicks on <see cref="Foldout"/>s appear lost because Unity loses
-		/// the mouse-up against a now-deleted target. Skipping the rebuild whenever the digest
-		/// matches solves this in the common case (asset load/subscription churn is rare
-		/// compared to every-250 ms).</para>
+		/// <para>이 검사가 없으면 250 ms 주기 갱신이 아무것도 바뀌지 않아도 비주얼 트리를 지우고 다시 만들어,
+		/// 클릭 도중 마우스를 캡처한 <see cref="VisualElement"/> 를 파괴합니다. Unity 가 이미 삭제된 대상에서
+		/// 마우스 업을 놓치므로 <see cref="Foldout"/> 을 빠르게 클릭하면 클릭이 사라진 것처럼 보입니다.
+		/// 다이제스트가 같을 때 재구성을 건너뛰면 일반적인 경우 이 문제가 해결됩니다(에셋 로드나 구독 변경은
+		/// 250 ms 주기에 비해 드뭅니다).</para>
 		///
-		/// <para>The digest must be a deterministic string built from every piece of state the
-		/// tab renders — counts, identities, per-row status flags, etc. Computing it should be
-		/// cheap (single pass over the data; no allocations in hot inner loops beyond a shared
-		/// <c>StringBuilder</c>). The digest is reset to <c>null</c> on attach so the very first
-		/// refresh after the tab opens always rebuilds.</para>
+		/// <para>다이제스트는 탭이 그리는 모든 상태(개수, 식별자, 행별 상태 플래그 등)로 만든 결정적 문자열이어야
+		/// 합니다. 계산 비용은 작아야 합니다(데이터를 한 번만 순회하고, 공유 <c>StringBuilder</c> 외에는 내부 루프에서
+		/// 할당하지 않음). 패널에 붙을 때 다이제스트를 <c>null</c> 로 초기화하므로 탭이 열린 뒤 첫 갱신은 항상
+		/// 다시 만듭니다.</para>
 		/// </remarks>
 		protected bool TryShortCircuitRefresh(string digest)
 		{
@@ -305,9 +300,9 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		}
 
 		/// <summary>
-		/// Forces the next <see cref="Refresh"/> to rebuild even if the digest matches.
-		/// Call this from any code path that mutates child VisualElements outside of
-		/// <see cref="Refresh"/> (e.g. an action-bar button that adds/removes rows directly).
+		/// 다이제스트가 같아도 다음 <see cref="Refresh"/> 가 다시 만들도록 강제합니다.
+		/// <see cref="Refresh"/> 밖에서 자식 VisualElement 를 바꾸는 코드 경로(예: 행을 직접 추가/제거하는
+		/// 액션 바 버튼)에서 호출하세요.
 		/// </summary>
 		protected void InvalidateRefreshDigest()
 		{
@@ -315,23 +310,20 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		}
 
 		/// <summary>
-		/// Creates a <see cref="Foldout"/> whose expanded/collapsed state survives the tab's
-		/// periodic <see cref="Refresh"/>. Use this in any tab whose <c>Refresh</c> rebuilds
-		/// the hierarchy from scratch (e.g. <see cref="AssetResolverTab"/>, <see cref="MessageBrokerTab"/>),
-		/// otherwise the user-visible collapse is reverted every <see cref="RefreshIntervalMs"/> ms.
+		/// 펼침/접힘 상태가 탭의 주기적 <see cref="Refresh"/> 를 거쳐도 유지되는 <see cref="Foldout"/> 을 만듭니다.
+		/// <c>Refresh</c> 에서 계층을 처음부터 다시 만드는 탭(예: <see cref="AssetResolverTab"/>,
+		/// <see cref="MessageBrokerTab"/>)에서 쓰세요. 그렇지 않으면 사용자가 접은 상태가
+		/// <see cref="RefreshIntervalMs"/> ms 마다 되돌아갑니다.
 		/// </summary>
 		/// <remarks>
-		/// State is keyed by <paramref name="key"/> (must be unique per tab instance — a stable
-		/// string built from the data identity, e.g. <c>"Sprite"</c> or <c>"Sprite/SpriteId"</c>),
-		/// stored in the per-tab <see cref="_collapsedFoldoutKeys"/> set. The set is NOT persisted
-		/// across domain reloads; collapse memory lives only as long as the tab instance.
+		/// 상태는 <paramref name="key"/> 로 구분합니다(탭 인스턴스 안에서 고유해야 하며, 데이터 식별자로 만든
+		/// 고정 문자열, 예: <c>"Sprite"</c> 또는 <c>"Sprite/SpriteId"</c>). 탭별 <see cref="_collapsedFoldoutKeys"/>
+		/// 집합에 저장되며 도메인 리로드를 넘어 저장되지 않습니다. 접힘 기억은 탭 인스턴스가 살아 있는 동안만 유지됩니다.
 		///
-		/// <para>The callback filters by <c>evt.target == foldout</c> on purpose. UIToolkit's
-		/// <see cref="ChangeEvent{T}"/> bubbles up the visual tree, so a click on a NESTED
-		/// foldout's internal <see cref="Toggle"/> would otherwise reach an ANCESTOR foldout's
-		/// callback (target = the inner toggle, not the ancestor) and we'd incorrectly mark
-		/// the ancestor as collapsed. Only the foldout's own value-set path produces events
-		/// whose <c>target</c> equals the foldout itself; that's what we want to record.</para>
+		/// <para>콜백은 일부러 <c>evt.target == foldout</c> 으로 거릅니다. UIToolkit 의 <see cref="ChangeEvent{T}"/> 는
+		/// 비주얼 트리를 따라 버블링되므로, 중첩된 폴드아웃 내부 <see cref="Toggle"/> 을 클릭한 이벤트가 상위 폴드아웃의
+		/// 콜백에도 도달합니다(target 은 상위가 아니라 내부 토글). 거르지 않으면 상위 폴드아웃을 잘못 접힘으로 기록합니다.
+		/// <c>target</c> 이 폴드아웃 자신인 이벤트는 그 폴드아웃의 값 설정 경로에서만 나오며, 기록할 대상은 그것뿐입니다.</para>
 		/// </remarks>
 		protected Foldout MakeStickyFoldout(string key, string text, bool defaultExpanded = true)
 		{
@@ -344,9 +336,9 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 
 			foldout.RegisterValueChangedCallback(evt =>
 			{
-				// Ignore ChangeEvent<bool> bubbled up from descendant Toggles / nested Foldouts.
-				// Without this filter, collapsing an inner foldout marks the OUTER foldout
-				// collapsed too on the next refresh tick.
+				// 하위 Toggle / 중첩 Foldout 에서 버블링된 ChangeEvent<bool> 은 무시합니다.
+				// 이 필터가 없으면 안쪽 폴드아웃을 접을 때 다음 갱신 틱에서 바깥 폴드아웃도
+				// 접힘으로 기록됩니다.
 				if (evt.target != foldout)
 				{
 					return;

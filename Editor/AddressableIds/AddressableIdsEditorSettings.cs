@@ -6,8 +6,8 @@ using UnityEngine;
 namespace Geuneda.Services.AddressableIds.Editor
 {
 	/// <summary>
-	/// Editor-only project-level settings for the Addressable Ids Generator.
-	/// Persisted to <c>ProjectSettings/AddressableIdsEditorSettings.asset</c> via <see cref="ScriptableSingleton{T}"/>.
+	/// Addressable Ids 생성기의 에디터 전용 프로젝트 설정입니다.
+	/// <see cref="ScriptableSingleton{T}"/> 로 <c>ProjectSettings/AddressableIdsEditorSettings.asset</c> 에 저장됩니다.
 	/// </summary>
 	[FilePath("ProjectSettings/AddressableIdsEditorSettings.asset", FilePathAttribute.Location.ProjectFolder)]
 	internal sealed class AddressableIdsEditorSettings : ScriptableSingleton<AddressableIdsEditorSettings>
@@ -16,7 +16,7 @@ namespace Geuneda.Services.AddressableIds.Editor
 		[SerializeField] private string _namespace = "Game.Ids";
 		[SerializeField] private string _addressableLabel = "GenerateIds";
 
-		// ---- Last-generation snapshot (persisted) ----
+		// ---- 마지막 생성 스냅샷 (저장됨) ----
 		[SerializeField] private long _lastGenerationUtcTicks;
 		[SerializeField] private int _lastGenerationIdCount;
 		[SerializeField] private int _lastGenerationLabelCount;
@@ -25,7 +25,7 @@ namespace Geuneda.Services.AddressableIds.Editor
 		[SerializeField] private string[] _lastGenerationAddresses = Array.Empty<string>();
 		[SerializeField] private string[] _lastGenerationLabels = Array.Empty<string>();
 
-		/// <summary>Name of the generated C# file (without extension) and the enum/class it contains.</summary>
+		/// <summary>생성되는 C# 파일 이름(확장자 제외)이자 그 안의 enum/클래스 이름.</summary>
 		public string ScriptFilename
 		{
 			get => string.IsNullOrWhiteSpace(_scriptFilename) ? "AddressableId" : _scriptFilename;
@@ -42,7 +42,7 @@ namespace Geuneda.Services.AddressableIds.Editor
 			}
 		}
 
-		/// <summary>C# namespace for the generated file.</summary>
+		/// <summary>생성되는 파일의 C# 네임스페이스.</summary>
 		public string Namespace
 		{
 			get => string.IsNullOrWhiteSpace(_namespace) ? "Game.Ids" : _namespace;
@@ -59,7 +59,7 @@ namespace Geuneda.Services.AddressableIds.Editor
 			}
 		}
 
-		/// <summary>Addressables label used to filter which assets get Ids generated. Empty = generate all.</summary>
+		/// <summary>Id 를 생성할 에셋을 거르는 Addressables 라벨. 비어 있으면 전부 생성합니다.</summary>
 		public string AddressableLabel
 		{
 			get => _addressableLabel ?? "";
@@ -76,12 +76,12 @@ namespace Geuneda.Services.AddressableIds.Editor
 			}
 		}
 
-		// ---- Last-generation snapshot accessors ----
+		// ---- 마지막 생성 스냅샷 접근자 ----
 
-		/// <summary>True when a generation snapshot has been recorded by <see cref="RecordGeneration"/>.</summary>
+		/// <summary><see cref="RecordGeneration"/> 으로 생성 스냅샷이 기록되었으면 true.</summary>
 		public bool HasSnapshot => _lastGenerationUtcTicks != 0L;
 
-		/// <summary>UTC timestamp of the last successful generation, or <c>default(DateTime)</c> when none.</summary>
+		/// <summary>마지막으로 성공한 생성의 UTC 시각. 없으면 <c>default(DateTime)</c>.</summary>
 		public DateTime LastGenerationUtc => _lastGenerationUtcTicks == 0L
 			? default
 			: new DateTime(_lastGenerationUtcTicks, DateTimeKind.Utc);
@@ -91,17 +91,17 @@ namespace Geuneda.Services.AddressableIds.Editor
 		public string LastGenerationFilenameUsed => _lastGenerationFilenameUsed ?? string.Empty;
 		public string LastGenerationLabelFilterUsed => _lastGenerationLabelFilterUsed ?? string.Empty;
 
-		/// <summary>Sorted list of addressable addresses that were emitted in the last generation. Empty array when no snapshot.</summary>
+		/// <summary>마지막 생성에서 출력한 Addressable 주소의 정렬된 목록. 스냅샷이 없으면 빈 배열.</summary>
 		public IReadOnlyList<string> LastGenerationAddresses => _lastGenerationAddresses ?? Array.Empty<string>();
 
-		/// <summary>Sorted list of addressable labels that were emitted in the last generation. Empty array when no snapshot.</summary>
+		/// <summary>마지막 생성에서 출력한 Addressable 라벨의 정렬된 목록. 스냅샷이 없으면 빈 배열.</summary>
 		public IReadOnlyList<string> LastGenerationLabels => _lastGenerationLabels ?? Array.Empty<string>();
 
 		/// <summary>
-		/// Records the snapshot of the last successful generation: addresses, labels, and the
-		/// generator settings (filename, label filter) that were used at that moment. Both lists are
-		/// stored sorted so subsequent set-diffs can be done in O(n+m) without re-sorting at read time.
-		/// Persists immediately via <c>Save(true)</c>.
+		/// 마지막으로 성공한 생성의 스냅샷을 기록합니다: 주소, 라벨, 그리고 그 시점의
+		/// 생성기 설정(파일 이름, 라벨 필터). 두 목록은 정렬해서 저장하므로 이후 집합 비교를
+		/// 읽을 때 다시 정렬하지 않고 O(n+m) 에 할 수 있습니다.
+		/// <c>Save(true)</c> 로 즉시 저장합니다.
 		/// </summary>
 		internal void RecordGeneration(IReadOnlyList<string> addresses, IReadOnlyList<string> labels)
 		{
@@ -136,8 +136,8 @@ namespace Geuneda.Services.AddressableIds.Editor
 		}
 
 		/// <summary>
-		/// Validates <paramref name="identifier"/> for use as a C# script filename / enum name.
-		/// Returns <c>true</c> when valid; populates <paramref name="error"/> on failure.
+		/// <paramref name="identifier"/> 가 C# 스크립트 파일 이름 / enum 이름으로 쓸 수 있는지 검증합니다.
+		/// 유효하면 <c>true</c> 를 반환하고, 실패하면 <paramref name="error"/> 를 채웁니다.
 		/// </summary>
 		public static bool IsValidIdentifier(string identifier, out string error)
 		{
@@ -170,8 +170,8 @@ namespace Geuneda.Services.AddressableIds.Editor
 		}
 
 		/// <summary>
-		/// Validates <paramref name="ns"/> as a C# namespace string (dot-separated identifiers).
-		/// Returns <c>true</c> when valid; populates <paramref name="error"/> on failure.
+		/// <paramref name="ns"/> 가 C# 네임스페이스 문자열(점으로 구분한 식별자)인지 검증합니다.
+		/// 유효하면 <c>true</c> 를 반환하고, 실패하면 <paramref name="error"/> 를 채웁니다.
 		/// </summary>
 		public static bool IsValidNamespace(string ns, out string error)
 		{

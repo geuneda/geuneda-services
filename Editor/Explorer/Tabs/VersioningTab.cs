@@ -7,10 +7,10 @@ using UnityEngine.UIElements;
 namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
-	/// Shows build version information, exposes the configurable write location for
-	/// <c>version-data.txt</c>, and provides a "Reveal file" action.
-	/// Works in both Edit and Play mode (reads the file directly on the Editor side).
-	/// Regeneration runs automatically on every domain reload via <see cref="VersionEditorUtils"/>.
+	/// 빌드 버전 정보를 보여 주고, <c>version-data.txt</c> 를 쓸 위치를 설정할 수 있게 하며,
+	/// 파일을 Finder/탐색기에서 보여 주는 동작을 제공합니다.
+	/// Edit 모드와 Play 모드 모두에서 동작합니다(파일 미리 보기는 에디터에서 파일을 직접 읽음).
+	/// 재생성은 <see cref="VersionEditorUtils"/> 가 도메인 리로드마다 자동으로 실행합니다.
 	/// </summary>
 	public class VersioningTab : ServiceTab
 	{
@@ -41,11 +41,11 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			var scroll = new ScrollView(ScrollViewMode.Vertical);
 			scroll.AddToClassList("tab-scroll");
 
-			// ---- Write Location section ----
+			// ---- 쓰기 위치 섹션 ----
 			scroll.Add(MakeSectionLabel("Version File Path"));
 			scroll.Add(BuildFolderRow());
 
-			// ---- Runtime Values section ----
+			// ---- Runtime Values 섹션 ----
 			scroll.Add(MakeSectionLabel("Runtime Values"));
 
 			_externalLabel = AddValueRow(scroll, "VersionExternal");
@@ -54,7 +54,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			_commitLabel = AddValueRow(scroll, "Commit");
 			_buildNumberLabel = AddValueRow(scroll, "BuildNumber");
 
-			// ---- File preview section ----
+			// ---- 파일 미리 보기 섹션 ----
 			scroll.Add(MakeSectionLabel("version-data.txt"));
 
 			_fileStatusLabel = new Label();
@@ -157,7 +157,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 				return;
 			}
 
-			// Convert absolute path to project-relative (Assets/...).
+			// 절대 경로를 프로젝트 기준 상대 경로(Assets/...)로 바꿉니다.
 			var projectRoot = Directory.GetParent(Application.dataPath)?.FullName ?? Application.dataPath;
 			var relative = GetRelativePath(projectRoot, selectedAbs);
 
@@ -194,9 +194,9 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		}
 
 		/// <summary>
-		/// Returns a forward-slash project-relative path (e.g. <c>Assets/Configs/Resources</c>)
-		/// from an absolute path that lives under <paramref name="baseDir"/>.
-		/// Returns the original string unchanged if it does not start with <paramref name="baseDir"/>.
+		/// <paramref name="baseDir"/> 아래에 있는 절대 경로를 슬래시(/)를 쓰는 프로젝트 기준 상대 경로
+		/// (예: <c>Assets/Configs/Resources</c>)로 바꿔 반환합니다.
+		/// <paramref name="baseDir"/> 로 시작하지 않으면 원래 문자열을 그대로 반환합니다.
 		/// </summary>
 		private static string GetRelativePath(string baseDir, string fullPath)
 		{

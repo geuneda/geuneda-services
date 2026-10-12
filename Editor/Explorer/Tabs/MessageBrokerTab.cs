@@ -9,9 +9,9 @@ using UnityEngine.UIElements;
 namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
-	/// Displays all <see cref="IMessage"/> subscriptions held by <see cref="IMessageBrokerService"/>.
-	/// Supports Unsubscribe per message type, UnsubscribeAll, and a dropdown-driven test publish
-	/// against any concrete <see cref="IMessage"/> implementer discovered via reflection.
+	/// <see cref="IMessageBrokerService"/> 가 가진 모든 <see cref="IMessage"/> 구독을 표시합니다.
+	/// 메시지 타입별 Unsubscribe, UnsubscribeAll, 그리고 리플렉션으로 찾은 구체 <see cref="IMessage"/> 구현 타입을
+	/// 드롭다운에서 골라 테스트 발행하는 기능을 제공합니다.
 	/// </summary>
 	public class MessageBrokerTab : ServiceTab
 	{
@@ -75,13 +75,12 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			RefreshSubscriptionList();
 		}
 
-		// Forcibly clear the subscription list synchronously when the user stops play mode.
-		// Belt-and-braces against bootstraps that fail to dispose the broker / call
-		// MainInstaller.Clean() in OnDestroy — the broker's Subscriptions dictionary lives
-		// on the service instance and survives until the static MainInstaller field is
-		// reset (next domain reload) without this guard. Note: ServiceTab also invalidates
-		// the refresh digest on play-mode transitions, so the deferred refresh that lands
-		// after scene teardown will rebuild from scratch instead of short-circuiting.
+		// 사용자가 Play 모드를 멈추면 구독 목록을 동기적으로 강제로 비웁니다.
+		// OnDestroy 에서 브로커를 해제하거나 MainInstaller.Clean() 을 호출하지 않는 부트스트랩에 대한
+		// 이중 안전장치입니다. 이 보호가 없으면 브로커의 Subscriptions 딕셔너리는 서비스 인스턴스에 남아
+		// 정적 MainInstaller 필드가 초기화될 때(다음 도메인 리로드)까지 유지됩니다. 참고: ServiceTab 도
+		// Play 모드 전환 때 갱신 다이제스트를 무효화하므로, 씬 정리 뒤에 실행되는 지연 갱신은 건너뛰지 않고
+		// 처음부터 다시 만듭니다.
 		protected override void OnExitingPlayMode()
 		{
 			_list.Clear();
@@ -94,9 +93,9 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			var broker = isPlaying ? TryResolve<IMessageBrokerService>() as MessageBrokerService : null;
 			var digest = ComputeDigest(isPlaying, broker);
 
-			// Skip rebuild if nothing changed — see ServiceTab.TryShortCircuitRefresh.
-			// This is what keeps rapid foldout clicks from getting eaten by the periodic
-			// timer destroying mouse-captured VisualElements mid-click.
+			// 바뀐 것이 없으면 재구성을 건너뜁니다(ServiceTab.TryShortCircuitRefresh 참고).
+			// 주기 타이머가 클릭 도중 마우스를 캡처한 VisualElement 를 파괴해 빠른 폴드아웃 클릭이
+			// 사라지는 것을 막아 줍니다.
 			if (TryShortCircuitRefresh(digest))
 			{
 				return;
@@ -104,11 +103,10 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 
 			_list.Clear();
 
-			// Hide subscriber state in edit mode (initial OR after a play session ended)
-			// regardless of any leftover MessageBrokerService kept alive by a static field.
-			// Together with OnExitingPlayMode() this guarantees the subscription list does
-			// not retain a live snapshot after Stop, even if the consumer's bootstrap
-			// forgot to dispose the broker / call MainInstaller.Clean() in OnDestroy.
+			// Edit 모드(처음이든 플레이 세션이 끝난 뒤든)에서는 정적 필드에 남은 MessageBrokerService 가
+			// 있더라도 구독자 상태를 숨깁니다. OnExitingPlayMode() 와 함께, 사용하는 쪽 부트스트랩이
+			// OnDestroy 에서 브로커 해제나 MainInstaller.Clean() 호출을 잊었더라도 Stop 이후 구독 목록이
+			// 살아 있는 스냅샷을 유지하지 않도록 보장합니다.
 			if (!isPlaying)
 			{
 				_list.Add(MakeEmptyLabel());
@@ -134,15 +132,14 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 				var messageType = kvp.Key;
 				var subscribers = kvp.Value;
 
-				// Sticky foldouts so the periodic Refresh doesn't re-expand on every tick.
+				// 주기 Refresh 가 틱마다 다시 펼치지 않도록 상태가 유지되는 폴드아웃을 씁니다.
 				var foldout = MakeStickyFoldout(
 					key: messageType.FullName ?? messageType.Name,
 					text: $"{messageType.Name}  ({subscribers.Count})");
 				foldout.AddToClassList("section-foldout");
 
-				// Place the Unsubscribe button on the foldout's header row (next to the
-				// type name + count) so destructive action is co-located with the object
-				// it acts on, instead of buried at the bottom of the subscriber list.
+				// Unsubscribe 버튼을 폴드아웃 헤더 행(타입 이름 + 개수 옆)에 둡니다. 파괴적 동작을
+				// 구독자 목록 맨 아래에 묻어 두지 않고 대상 옆에 배치하기 위해서입니다.
 				var headerToggle = foldout.Q<Toggle>();
 
 				if (headerToggle != null)
@@ -155,8 +152,8 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 					headerToggle.Add(headerSpacer);
 
 					var headerUnsubBtn = MakeRowButton("Unsubscribe All", () => OnUnsubscribeType(broker, messageType), danger: true);
-					// Stop the click from bubbling to the toggle (would otherwise expand/collapse
-					// the foldout every time the user fires the destructive action).
+					// 클릭이 토글로 버블링되지 않게 막습니다(그렇지 않으면 파괴적 동작을 실행할 때마다
+					// 폴드아웃이 펼쳐지거나 접힙니다).
 					headerUnsubBtn.RegisterCallback<ClickEvent>(evt => evt.StopPropagation());
 					headerToggle.Add(headerUnsubBtn);
 				}
@@ -174,11 +171,9 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		}
 
 		/// <summary>
-		/// Builds a deterministic digest of every piece of state the rebuild path renders:
-		/// edit-mode-empty, not-bound, and per-subscription <c>(messageType, [target.method, ...])</c>
-		/// tuples. When two consecutive refreshes produce the same digest the rebuild can be
-		/// skipped — keeping rapid foldout clicks from getting destroyed mid-click by the
-		/// 250 ms timer.
+		/// 재구성 경로가 그리는 모든 상태로 결정적 다이제스트를 만듭니다: Edit 모드 빈 상태, 미바인딩,
+		/// 구독별 <c>(messageType, [target.method, ...])</c> 튜플. 연속된 두 갱신의 다이제스트가 같으면
+		/// 재구성을 건너뛰어 250 ms 타이머가 빠른 폴드아웃 클릭을 클릭 도중 파괴하지 않게 합니다.
 		/// </summary>
 		private static string ComputeDigest(bool isPlaying, MessageBrokerService broker)
 		{
@@ -206,8 +201,8 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			return sb.ToString();
 		}
 
-		// Re-scans assemblies only when the loaded count changes (cheap to do per refresh).
-		// Avoids the per-tick allocation cost of a full reflection scan.
+		// 로드된 어셈블리 수가 바뀔 때만 다시 스캔합니다(갱신마다 확인해도 비용이 작음).
+		// 틱마다 전체 리플렉션 스캔을 하며 생기는 할당 비용을 피합니다.
 		private void RebuildMessageTypeChoicesIfStale()
 		{
 			var current = AppDomain.CurrentDomain.GetAssemblies().Length;
@@ -279,8 +274,8 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			_publishTypeDropdown.index = restoredIndex >= 0 ? restoredIndex : 0;
 		}
 
-		// Prefers Type.Name for readability; falls back to FullName for any ambiguous short
-		// names so the user can still distinguish e.g. NamespaceA.Foo from NamespaceB.Foo.
+		// 읽기 쉽도록 Type.Name 을 우선 쓰고, 짧은 이름이 겹치면 FullName 으로 대체해
+		// 예를 들어 NamespaceA.Foo 와 NamespaceB.Foo 를 구분할 수 있게 합니다.
 		private static List<string> BuildShortLabelChoices(IReadOnlyList<Type> types)
 		{
 			var nameCounts = new Dictionary<string, int>();

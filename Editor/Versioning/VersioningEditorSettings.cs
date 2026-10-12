@@ -6,26 +6,26 @@ using UnityEngine;
 namespace Geuneda.Services.Versioning.Editor
 {
 	/// <summary>
-	/// Editor-only project-level settings for the versioning pipeline.
-	/// Persisted to <c>ProjectSettings/VersioningEditorSettings.asset</c> via <see cref="ScriptableSingleton{T}"/>.
+	/// 버전 관리 파이프라인의 에디터 전용 프로젝트 설정입니다.
+	/// <see cref="ScriptableSingleton{T}"/> 로 <c>ProjectSettings/VersioningEditorSettings.asset</c> 에 저장됩니다.
 	/// </summary>
 	[FilePath("ProjectSettings/VersioningEditorSettings.asset", FilePathAttribute.Location.ProjectFolder)]
 	internal sealed class VersioningEditorSettings : ScriptableSingleton<VersioningEditorSettings>
 	{
-		/// <summary>Folder under which <c>version-data.txt</c> is written. Must contain a <c>Resources</c> segment.</summary>
+		/// <summary><c>version-data.txt</c> 를 쓰는 기본 폴더. <c>Resources</c> 세그먼트를 포함해야 합니다.</summary>
 		public const string DefaultFolderPath = "Assets/Configs/Resources";
 
 		[SerializeField] private string _resourcesFolderPath = DefaultFolderPath;
 
 		/// <summary>
-		/// Returns the configured project-relative folder path, or <see cref="DefaultFolderPath"/> when unset.
+		/// 설정된 프로젝트 기준 상대 폴더 경로를 반환합니다. 설정되지 않았으면 <see cref="DefaultFolderPath"/> 를 반환합니다.
 		/// </summary>
 		public string ResourcesFolderPath =>
 			string.IsNullOrWhiteSpace(_resourcesFolderPath) ? DefaultFolderPath : _resourcesFolderPath;
 
 		/// <summary>
-		/// Persists a new resources folder path. Normalises separators to forward-slash before saving.
-		/// Call <see cref="IsValidResourcesPath"/> first to ensure the value is acceptable.
+		/// 새 Resources 폴더 경로를 저장합니다. 저장 전에 구분자를 슬래시(/)로 정규화합니다.
+		/// 값이 유효한지 먼저 <see cref="IsValidResourcesPath"/> 로 확인하세요.
 		/// </summary>
 		public void SetResourcesFolderPath(string relativePath)
 		{
@@ -34,16 +34,16 @@ namespace Geuneda.Services.Versioning.Editor
 		}
 
 		/// <summary>
-		/// Validates <paramref name="relativePath"/> for use as the version-data write location.
-		/// Returns <c>true</c> when valid; populates <paramref name="error"/> with a human-readable message on failure.
+		/// <paramref name="relativePath"/> 가 version-data 쓰기 위치로 쓸 수 있는지 검증합니다.
+		/// 유효하면 <c>true</c> 를 반환하고, 실패하면 <paramref name="error"/> 에 사람이 읽을 수 있는 메시지를 채웁니다.
 		/// </summary>
 		/// <remarks>
-		/// Rules enforced:
+		/// 검사 규칙:
 		/// <list type="bullet">
-		///   <item>Must start with <c>Assets/</c></item>
-		///   <item>Must not contain <c>..</c> path segments</item>
-		///   <item>Must contain a path segment named exactly <c>Resources</c></item>
-		///   <item>Must resolve to a path inside the Unity project root</item>
+		///   <item><c>Assets/</c> 로 시작해야 합니다</item>
+		///   <item><c>..</c> 경로 세그먼트를 포함하면 안 됩니다</item>
+		///   <item>이름이 정확히 <c>Resources</c> 인 경로 세그먼트를 포함해야 합니다</item>
+		///   <item>Unity 프로젝트 루트 안의 경로로 해석되어야 합니다</item>
 		/// </list>
 		/// </remarks>
 		public static bool IsValidResourcesPath(string relativePath, out string error)
@@ -91,7 +91,7 @@ namespace Geuneda.Services.Versioning.Editor
 				return false;
 			}
 
-			// Ensure the resolved absolute path stays within the project root.
+			// 해석된 절대 경로가 프로젝트 루트 안에 있는지 확인합니다.
 			var projectRoot = Directory.GetParent(UnityEngine.Application.dataPath)?.FullName;
 			if (projectRoot == null)
 			{

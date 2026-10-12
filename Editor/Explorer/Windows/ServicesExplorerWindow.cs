@@ -7,8 +7,8 @@ using Geuneda.Services.Editor.Explorer.Tabs;
 namespace Geuneda.Services.Editor.Explorer
 {
 	/// <summary>
-	/// Main Services Explorer dockable window.
-	/// Open via <c>Tools &gt; Geuneda &gt; Services Explorer</c>.
+	/// 도킹 가능한 Services Explorer 메인 창입니다.
+	/// <c>Tools &gt; Geuneda &gt; Services Explorer</c> 로 엽니다.
 	/// </summary>
 	public class ServicesExplorerWindow : EditorWindow
 	{
@@ -30,7 +30,7 @@ namespace Geuneda.Services.Editor.Explorer
 		}
 
 		/// <summary>
-		/// Opens the Services Explorer window and navigates to the tab matching <typeparamref name="T"/>.
+		/// Services Explorer 창을 열고 <typeparamref name="T"/> 에 해당하는 탭으로 이동합니다.
 		/// </summary>
 		public static ServicesExplorerWindow OpenOnTab<T>() where T : ServiceTab
 		{
@@ -45,7 +45,7 @@ namespace Geuneda.Services.Editor.Explorer
 		}
 
 		/// <summary>
-		/// Navigates to the tab matching <typeparamref name="T"/>. No-ops if no such tab is registered.
+		/// <typeparamref name="T"/> 에 해당하는 탭으로 이동합니다. 그런 탭이 등록되어 있지 않으면 아무것도 하지 않습니다.
 		/// </summary>
 		public void SelectTab<T>() where T : ServiceTab
 		{

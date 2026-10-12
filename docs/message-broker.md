@@ -66,7 +66,7 @@ broker.UnsubscribeAll();
 
 ## 주의사항
 
-- 핸들러가 예외를 던지면 내부의 "발행 중" 플래그가 해제되지 않아, 이후 `Subscribe` / `Unsubscribe` 호출이 계속 `InvalidOperationException` 을 낼 수 있습니다. 핸들러 안에서 예외를 처리하세요.
+- 핸들러가 예외를 던지면 그 예외는 `Publish` / `PublishSafe` 호출자에게 전파되고, 남은 구독자는 호출되지 않습니다. "발행 중" 플래그는 예외가 나도 해제됩니다(v2.1.4 이전 `Publish` 는 플래그가 남아 이후 `Subscribe` / `Unsubscribe` 가 계속 `InvalidOperationException` 을 냈습니다).
 - 구독 순서는 보장되지 않습니다(내부적으로 `Dictionary` 를 사용).
 
 ## 예외

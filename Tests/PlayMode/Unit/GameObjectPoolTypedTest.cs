@@ -246,5 +246,18 @@ namespace GeunedaEditor.Services.Tests
 
 			Assert.IsTrue(_sampleGo == null);
 		}
+
+		[UnityTest]
+		public IEnumerator DisposeWithoutSampleDestroy_KeepsSampleGameObject()
+		{
+			var instance = _pool.Spawn();
+
+			_pool.Dispose(disposeSampleEntity: false);
+
+			yield return null;
+
+			Assert.IsTrue(instance == null);
+			Assert.IsTrue(_sampleGo != null);
+		}
 	}
 }

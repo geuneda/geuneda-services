@@ -12,7 +12,7 @@
    - 빌드 직전 자동 갱신 훅은 없습니다. 스토어 빌드용(`prod`) 데이터가 필요하면 빌드 스크립트에서 `VersionEditorUtils.SetAndSaveInternalVersion(true)` 를 호출하세요. 메뉴 `Tools > Geuneda > Versioning > Refresh Version Data` 는 `dev` 로 다시 씁니다.
    - 파일 내용에 커밋 해시가 들어가 커밋마다 바뀌므로, 사용하는 프로젝트에서는 `version-data.txt`(와 `.meta`)를 gitignore 하는 것을 권장합니다. 파일이 없으면 에러 로그 없이 새로 만듭니다(v2.1.2).
 2. **런타임**: `[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]` 훅이 `LoadVersionData()` 를 호출해 `Resources.Load<TextAsset>("version-data")` 를 읽습니다. 씬의 `Awake` 보다 먼저 실행됩니다.
-3. **지연 로드 폴백**: 다른 어셈블리의 `SubsystemRegistration` 콜백이 먼저 실행되는 경우를 위해, `VersionInternal` / `Branch` / `Commit` / `BuildNumber` 는 아직 로드되지 않았으면 접근 시 `LoadVersionData()` 를 호출합니다.
+3. **지연 로드 폴백**: 다른 어셈블리의 `SubsystemRegistration` 콜백이 먼저 실행되는 경우를 위해, `VersionInternal` / `Branch` / `Commit` / `BuildNumber` 는 로드를 한 번도 시도하지 않았으면 접근 시 `LoadVersionData()` 를 호출합니다. 시도가 실패해도 다시 시도하지 않습니다(v2.1.4).
 
 기본 흐름에서는 로드 메서드를 직접 호출할 필요가 없습니다.
 
@@ -52,7 +52,9 @@ bool outdated = VersionServices.IsOutdatedVersion("1.2.0");
 | `VersionInternal` | `Application.version` 반환 |
 | `Branch`, `Commit`, `BuildNumber` | `string.Empty` 반환 |
 
-예외는 던지지 않고 `Debug.LogError` 를 남깁니다. 로드에 성공할 때까지 위 프로퍼티에 접근할 때마다 다시 로드를 시도하므로 에러 로그가 반복될 수 있습니다.
+예외는 던지지 않고 `Debug.LogError` 를 남깁니다. 프로퍼티 접근에 따른 지연 로드는 한 번만 시도하므로 에러 로그도 한 번만 남습니다(v2.1.4 이전에는 접근할 때마다 다시 시도해 로그가 반복됐습니다). 나중에 리소스가 생겼다면 `LoadVersionData()` 를 직접 호출해야 반영됩니다.
+
+- `Branch` / `Commit` 은 프로젝트가 git 저장소일 때만 채워집니다. git 저장소가 아니면 `version-data.txt` 는 생성되지만 두 값이 비어 있어 `string.Empty` 를 반환합니다.
 
 ## 주의사항
 

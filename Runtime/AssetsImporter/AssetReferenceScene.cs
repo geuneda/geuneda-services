@@ -6,15 +6,15 @@ using UnityEngine.AddressableAssets;
 namespace Geuneda.Services.AssetsImporter
 {
 	/// <summary>
-	/// Implementation of a <see cref="AssetReference"/> for scenes
+	/// 씬용 <see cref="AssetReference"/> 구현
 	/// </summary>
 	[System.Serializable]
 	public class AssetReferenceScene : AssetReference
 	{
 		/// <summary>
-		/// Construct a new AssetReference object.
+		/// 새 AssetReference 객체를 생성합니다.
 		/// </summary>
-		/// <param name="guid">The guid of the asset.</param>
+		/// <param name="guid">에셋의 guid.</param>
 		public AssetReferenceScene(string guid) : base(guid)
 		{
 		}
@@ -43,7 +43,7 @@ namespace Geuneda.Services.AssetsImporter
  
 #if UNITY_EDITOR
 		/// <summary>
-		/// Type-specific override of parent editorAsset.  Used by the editor to represent the asset referenced.
+		/// 부모 editorAsset 의 타입 특화 재정의입니다. 에디터에서 참조된 에셋을 표시할 때 사용합니다.
 		/// </summary>
 		public new UnityEditor.SceneAsset editorAsset => (UnityEditor.SceneAsset)base.editorAsset;
 #endif

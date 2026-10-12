@@ -10,9 +10,9 @@ using UnityEngine.UIElements;
 namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
-	/// Landing tab for the Services Explorer.
-	/// Renders a card grid with one card per service tab; each card shows the bound/ready
-	/// status and exposes an <c>Open</c> jump-link and the tab's primary CTA.
+	/// Services Explorer 의 첫 화면 탭입니다.
+	/// 서비스 탭마다 카드 하나씩 카드 그리드를 그립니다. 각 카드는 바인딩/준비 상태를 보여 주고
+	/// <c>Open</c> 이동 링크와 해당 탭의 주요 동작 버튼을 제공합니다.
 	/// </summary>
 	public class OverviewTab : ServiceTab
 	{
@@ -43,12 +43,12 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		{
 			_grid.Clear();
 
-			// ---- Tool tabs ----
+			// ---- 도구 탭 ----
 			_grid.Add(BuildVersioningCard());
 			_grid.Add(BuildAssetsImporterCard());
 			_grid.Add(BuildAddressableIdsCard());
 
-			// ---- Service tabs (runtime-bound) ----
+			// ---- 서비스 탭 (런타임 바인딩) ----
 			_grid.Add(BuildInstallerCard());
 			_grid.Add(BuildMessageBrokerCard());
 			_grid.Add(BuildTickCard());
@@ -60,7 +60,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			_grid.Add(BuildAssetResolverCard());
 		}
 
-		// ---- Tool cards ----
+		// ---- 도구 카드 ----
 
 		private VisualElement BuildVersioningCard()
 		{
@@ -94,7 +94,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			return card;
 		}
 
-		// ---- Service cards ----
+		// ---- 서비스 카드 ----
 
 		private VisualElement BuildInstallerCard()
 		{
@@ -213,7 +213,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			return card;
 		}
 
-		// ---- Helpers ----
+		// ---- 헬퍼 ----
 
 		private static bool VersionDataFileExists()
 		{

@@ -1,6 +1,7 @@
 using System.Reflection;
 using Geuneda.Services;
 using NUnit.Framework;
+using UnityEngine;
 
 // ReSharper disable once CheckNamespace
 
@@ -13,16 +14,23 @@ namespace GeunedaEditor.Services.Tests
 	/// Assets/Configs/Resources/version-data.txt to exist in the host project (written
 	/// automatically by VersionEditorUtils on every domain reload).
 	/// </summary>
+	/// <remarks>
+	/// Branch / Commit 은 프로젝트가 git 저장소일 때만 version-data 에 채워집니다. git 저장소가 아닌
+	/// 프로젝트에서는 해당 테스트가 리소스 값을 확인한 뒤 Inconclusive 로 끝납니다.
+	/// </remarks>
 	[TestFixture]
 	public class VersionServicesSyncLoadTest
 	{
 		private static readonly FieldInfo LoadedField =
 			typeof(VersionServices).GetField("_loaded", BindingFlags.NonPublic | BindingFlags.Static);
+		private static readonly FieldInfo LoadAttemptedField =
+			typeof(VersionServices).GetField("_loadAttempted", BindingFlags.NonPublic | BindingFlags.Static);
 
 		[SetUp]
 		public void ResetStaticState()
 		{
 			LoadedField.SetValue(null, false);
+			LoadAttemptedField.SetValue(null, false);
 		}
 
 		[Test]
@@ -36,6 +44,17 @@ namespace GeunedaEditor.Services.Tests
 			Assert.DoesNotThrow(() => { var _ = VersionServices.BuildNumber; });
 
 			Assert.IsTrue((bool)LoadedField.GetValue(null), "Accessor should auto-trigger LoadVersionData via EnsureLoaded");
+		}
+
+		[Test]
+		public void Accessor_AfterLoadAttempt_DoesNotReload()
+		{
+			// 리소스 로드에 실패한 직후 상태를 흉내 냅니다: 시도는 했지만 로드되지 않음
+			LoadAttemptedField.SetValue(null, true);
+
+			Assert.AreEqual(string.Empty, VersionServices.Branch);
+			Assert.AreEqual(string.Empty, VersionServices.Commit);
+			Assert.IsFalse((bool)LoadedField.GetValue(null), "EnsureLoaded should not retry after a load attempt");
 		}
 
 		[Test]
@@ -67,23 +86,41 @@ namespace GeunedaEditor.Services.Tests
 		[Test]
 		public void AfterLoad_Branch_ReturnsNonEmptyString()
 		{
+			var expected = ReadResourceVersionData();
+
+			if (string.IsNullOrEmpty(expected.BranchName))
+			{
+				Assert.Inconclusive("version-data 의 BranchName 이 비어 있습니다. git 저장소가 아닌 프로젝트에서는 " +
+					"VersionEditorUtils 가 브랜치를 기록하지 않으므로 이 테스트의 전제가 성립하지 않습니다.");
+			}
+
 			VersionServices.LoadVersionData();
 
 			var branch = VersionServices.Branch;
 
 			Assert.IsNotNull(branch);
 			Assert.IsNotEmpty(branch);
+			Assert.AreEqual(expected.BranchName, branch);
 		}
 
 		[Test]
 		public void AfterLoad_Commit_ReturnsNonEmptyString()
 		{
+			var expected = ReadResourceVersionData();
+
+			if (string.IsNullOrEmpty(expected.CommitHash))
+			{
+				Assert.Inconclusive("version-data 의 CommitHash 가 비어 있습니다. git 저장소가 아닌 프로젝트에서는 " +
+					"VersionEditorUtils 가 커밋을 기록하지 않으므로 이 테스트의 전제가 성립하지 않습니다.");
+			}
+
 			VersionServices.LoadVersionData();
 
 			var commit = VersionServices.Commit;
 
 			Assert.IsNotNull(commit);
 			Assert.IsNotEmpty(commit);
+			Assert.AreEqual(expected.CommitHash, commit);
 		}
 
 		[Test]
@@ -104,6 +141,27 @@ namespace GeunedaEditor.Services.Tests
 
 			Assert.IsNotNull(external);
 			Assert.IsNotEmpty(external);
+		}
+
+		/// <summary>
+		/// <see cref="VersionServices"/> 를 거치지 않고 version-data 리소스를 직접 읽습니다.
+		/// 리소스가 없으면 Inconclusive 로 끝냅니다.
+		/// </summary>
+		private static VersionServices.VersionData ReadResourceVersionData()
+		{
+			var textAsset = Resources.Load<TextAsset>(VersionServices.VersionDataFilename);
+
+			if (!textAsset)
+			{
+				Assert.Inconclusive($"Resources 에 '{VersionServices.VersionDataFilename}' 리소스가 없습니다. " +
+					"VersionEditorUtils 가 도메인 리로드 때 생성합니다.");
+			}
+
+			var data = JsonUtility.FromJson<VersionServices.VersionData>(textAsset.text);
+
+			Resources.UnloadAsset(textAsset);
+
+			return data;
 		}
 	}
 }

@@ -14,15 +14,15 @@ using Object = UnityEngine.Object;
 namespace Geuneda.Services
 {
 	/// <summary>
-	/// Service to extend the behaviour to load assets into the project based on it's own custom needs
+	/// 프로젝트의 필요에 맞게 에셋 로드 동작을 확장하는 서비스입니다
 	/// </summary>
 	public interface IAssetResolverService : IAssetLoader, ISceneLoader
 	{
 		/// <summary>
-		/// Requests the given <typeparamref name="TAsset"/> of the given <paramref name="id"/>.
-		/// If <paramref name="loadAsynchronously"/> is true then will load asynchronously.
-		/// It will also return the result in the provided <paramref name="onLoadCallback"/> when the loading is complete
-		/// and will instantiate the asset if the given <paramref name="instantiate"/> is true
+		/// 주어진 <paramref name="id"/> 의 <typeparamref name="TAsset"/> 을 요청합니다.
+		/// <paramref name="loadAsynchronously"/> 가 true 이면 비동기로 로드합니다.
+		/// 로드가 끝나면 결과를 <paramref name="onLoadCallback"/> 으로 돌려주고,
+		/// <paramref name="instantiate"/> 가 true 이면 에셋을 인스턴스화합니다
 		/// </summary>
 		UniTask<TAsset> RequestAsset<TId, TAsset>(TId id, bool loadAsynchronously = true, bool instantiate = true,
 												Action<TId, TAsset, bool> onLoadCallback = null)
@@ -30,7 +30,7 @@ namespace Geuneda.Services
 
 		/// <inheritdoc cref="RequestAsset{TId,TAsset}"/>
 		/// <remarks>
-		/// Enhances the behaviour to pass the given <paramref name="data"/> to the <paramref name="onLoadCallback"/>
+		/// 주어진 <paramref name="data"/> 를 <paramref name="onLoadCallback"/> 에 함께 넘깁니다
 		/// </remarks>
 		UniTask<TAsset> RequestAsset<TId, TAsset, TData>(TId id, TData data, bool loadAsynchronously = true,
 														bool instantiate = true,
@@ -38,8 +38,8 @@ namespace Geuneda.Services
 			where TAsset : Object;
 
 		/// <summary>
-		/// Loads asynchronously a <see cref="Scene"/> mapped with the given <paramref name="id"/> and the given info.
-		/// It will also return the result in the provided <paramref name="onLoadCallback"/> when the loading is complete
+		/// 주어진 <paramref name="id"/> 에 매핑된 <see cref="Scene"/> 을 주어진 정보로 비동기 로드합니다.
+		/// 로드가 끝나면 결과를 <paramref name="onLoadCallback"/> 으로 돌려줍니다
 		/// </summary>
 		UniTask<SceneInstance> LoadSceneAsync<TId>(TId id, LoadSceneMode loadMode = LoadSceneMode.Single,
 											bool activateOnLoad = true,
@@ -47,76 +47,76 @@ namespace Geuneda.Services
 
 
 		/// <summary>
-		/// Loads all assets previously added from <seealso cref="IAssetAdderService.AddConfigs{TId,TAsset}(AssetConfigsScriptableObject{TId,TAsset})"/>
-		/// Has the option from the params to <paramref name="loadAsynchronously"/> and have a <paramref name="onLoadCallback"/>
-		/// for each asset being loaded.
-		/// Returns the full list of assets loaded into memory.
+		/// <seealso cref="IAssetAdderService.AddConfigs{TId,TAsset}(AssetConfigsScriptableObject{TId,TAsset})"/> 로 추가한 에셋을 모두 로드합니다.
+		/// <paramref name="loadAsynchronously"/> 로 비동기 로드를 고를 수 있고, 에셋을 하나 로드할 때마다
+		/// <paramref name="onLoadCallback"/> 을 호출합니다.
+		/// 메모리에 로드한 에셋 전체 목록을 반환합니다.
 		/// </summary>
 		/// <remarks>
-		/// Will require to call <see cref="UnloadAssets{TId,TAsset}(bool,AssetConfigsScriptableObject{TId,TAsset})"/>
-		/// to clean the assets from memory again
+		/// 메모리에서 다시 정리하려면 <see cref="UnloadAssets{TId,TAsset}(bool,AssetConfigsScriptableObject{TId,TAsset})"/> 를
+		/// 호출해야 합니다
 		/// </remarks>
 		UniTask<List<Pair<TId, TAsset>>> LoadAllAssets<TId, TAsset>(bool loadAsynchronously = true,
 																	Action<TId, TAsset> onLoadCallback = null);
 
 		/// <summary>
-		/// Unloads asynchronously a <see cref="Scene"/> mapped with the given <paramref name="id"/>.
-		/// It will also return the result in the provided <paramref name="onUnloadCallback"/> when the loading is complete
+		/// 주어진 <paramref name="id"/> 에 매핑된 <see cref="Scene"/> 을 비동기로 언로드합니다.
+		/// 언로드가 끝나면 결과를 <paramref name="onUnloadCallback"/> 으로 돌려줍니다
 		/// </summary>
 		UniTask UnloadSceneAsync<TId>(TId id, Action<TId> onUnloadCallback = null);
 
 		/// <summary>
-		/// Unloads all the asset reference of the given <typeparamref name="TId"/> type.
-		/// If the given <paramref name="clearReferences"/> is true then will also removes any reference to the assets
+		/// <typeparamref name="TId"/> 타입의 에셋 참조를 모두 언로드합니다.
+		/// <paramref name="clearReferences"/> 가 true 이면 에셋 참조도 함께 제거합니다
 		/// </summary>
 		void UnloadAssets<TId, TAsset>(bool clearReferences);
 
 		/// <summary>
-		/// Unloads the asset reference of the given <typeparamref name="TId"/> from the given <paramref name="assetConfigs"/>.
-		/// If the given <paramref name="clearReferences"/> is true then will also removes any reference to the assets
+		/// 주어진 <paramref name="assetConfigs"/> 에 있는 <typeparamref name="TId"/> 에셋 참조를 언로드합니다.
+		/// <paramref name="clearReferences"/> 가 true 이면 에셋 참조도 함께 제거합니다
 		/// </summary>
 		void UnloadAssets<TId, TAsset>(bool clearReferences, AssetConfigsScriptableObject<TId, TAsset> assetConfigs);
 
 		/// <summary>
-		/// Unloads the asset reference of the given <typeparamref name="TId"/> type of the given <paramref name="ids"/>.
-		/// If the given <paramref name="clearReferences"/> is true then will also removes any reference to the assets
+		/// 주어진 <paramref name="ids"/> 에 해당하는 <typeparamref name="TId"/> 타입 에셋 참조를 언로드합니다.
+		/// <paramref name="clearReferences"/> 가 true 이면 에셋 참조도 함께 제거합니다
 		/// </summary>
 		void UnloadAssets<TId, TAsset>(bool clearReferences, params TId[] ids);
 	}
 
 	/// <inheritdoc />
 	/// <remarks>
-	/// It allows to add new asset references to the service in order to separate the behaviour of the service between getters and setters
+	/// 서비스의 조회 동작과 추가 동작을 나누기 위해, 새 에셋 참조를 서비스에 추가하는 기능을 따로 제공합니다
 	/// </remarks>
 	public interface IAssetAdderService : IAssetResolverService
 	{
 		/// <summary>
-		/// Adds the given <paramref name="configs"/> to the asset reference list with <typeparamref name="TId"/> as
-		/// the identifier type and <typeparamref name="TAsset"/> as asset type
+		/// 주어진 <paramref name="configs"/> 를 <typeparamref name="TId"/> 식별자 타입,
+		/// <typeparamref name="TAsset"/> 에셋 타입으로 에셋 참조 목록에 추가합니다
 		/// </summary>
 		void AddConfigs<TId, TAsset>(AssetConfigsScriptableObject<TId, TAsset> configs) => AddAssets(configs.AssetType, configs.Configs);
 
 		/// <summary>
-		/// Adds the given <paramref name="assets"/> to the asset reference list with <typeparamref name="TId"/> as
-		/// the identifier type and <paramref name="assetType"/> as asset type
+		/// 주어진 <paramref name="assets"/> 를 <typeparamref name="TId"/> 식별자 타입,
+		/// <paramref name="assetType"/> 에셋 타입으로 에셋 참조 목록에 추가합니다
 		/// </summary>
-		/// <typeparam name="TId">The identifier type</typeparam>
-		/// <param name="assetType">The asset type</param>
-		/// <param name="assets">The assets to add</param>
+		/// <typeparam name="TId">식별자 타입</typeparam>
+		/// <param name="assetType">에셋 타입</param>
+		/// <param name="assets">추가할 에셋</param>
 		void AddAssets<TId>(Type assetType, List<Pair<TId, AssetReference>> assets);
 
 		/// <summary>
-		/// Adds a single asset reference to the asset reference list with <typeparamref name="TId"/> as
-		/// the identifier type and <paramref name="assetType"/> as asset type
+		/// 에셋 참조 하나를 <typeparamref name="TId"/> 식별자 타입,
+		/// <paramref name="assetType"/> 에셋 타입으로 에셋 참조 목록에 추가합니다
 		/// </summary>
-		/// <typeparam name="TId">The identifier type</typeparam>
-		/// <param name="assetType">The asset type</param>
-		/// <param name="id">The identifier of the asset</param>
-		/// <param name="assetReference">The asset reference to add</param>
+		/// <typeparam name="TId">식별자 타입</typeparam>
+		/// <param name="assetType">에셋 타입</param>
+		/// <param name="id">에셋 식별자</param>
+		/// <param name="assetReference">추가할 에셋 참조</param>
 		void AddAsset<TId>(Type assetType, TId id, AssetReference assetReference);
 
 		/// <summary>
-		/// Adds the debug assets when errors occur
+		/// 오류가 났을 때 대신 쓸 디버그 에셋을 추가합니다
 		/// </summary>
 		void AddDebugConfigs(Sprite errorSprite = null, GameObject errorCube = null, Material errorMaterial = null, 
 			AudioClip errorClip = null);

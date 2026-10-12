@@ -12,8 +12,8 @@ using UnityEngine.Assertions;
 namespace Geuneda.Services.AddressableIds.Editor
 {
 	/// <summary>
-	/// Result returned by <see cref="AddressableIdsGeneratorUtils.Generate"/> for display in the
-	/// Services Explorer Addressable Ids tab.
+	/// Services Explorer 의 Addressable Ids 탭에 표시하려고 <see cref="AddressableIdsGeneratorUtils.Generate"/> 가
+	/// 반환하는 결과.
 	/// </summary>
 	internal readonly struct GenerationResult
 	{
@@ -30,9 +30,9 @@ namespace Geuneda.Services.AddressableIds.Editor
 	}
 
 	/// <summary>
-	/// Result returned by <see cref="AddressableIdsGeneratorUtils.Diff"/> describing how the current
-	/// Addressables state differs from the last-generation snapshot recorded on
-	/// <see cref="AddressableIdsEditorSettings"/>. Lists are sorted ordinally.
+	/// 현재 Addressables 상태가 <see cref="AddressableIdsEditorSettings"/> 에 기록된 마지막 생성 스냅샷과
+	/// 어떻게 다른지 설명하는 <see cref="AddressableIdsGeneratorUtils.Diff"/> 의 결과. 목록은 서수(ordinal) 순으로
+	/// 정렬됩니다.
 	/// </summary>
 	internal readonly struct DiffResult
 	{
@@ -70,9 +70,9 @@ namespace Geuneda.Services.AddressableIds.Editor
 	}
 
 	/// <summary>
-	/// Cheap, file-stat-only freshness probe returned by <see cref="AddressableIdsGeneratorUtils.ComputeFreshness"/>.
-	/// Compares the generated script's last-write-time against the latest write-time of
-	/// <c>AddressableAssetSettings</c> and each non-readonly group asset.
+	/// <see cref="AddressableIdsGeneratorUtils.ComputeFreshness"/> 가 반환하는, 파일 스탯만 쓰는 가벼운 최신 여부 검사 결과.
+	/// 생성된 스크립트의 마지막 수정 시각을 <c>AddressableAssetSettings</c> 와 읽기 전용이 아닌 각 그룹 에셋의
+	/// 가장 최근 수정 시각과 비교합니다.
 	/// </summary>
 	internal readonly struct FreshnessResult
 	{
@@ -94,17 +94,17 @@ namespace Geuneda.Services.AddressableIds.Editor
 	}
 
 	/// <summary>
-	/// Pure editor utility that generates the Addressable Ids C# script.
-	/// Used by <see cref="AddressableIdsTab"/> and the <c>AddressableIdsMenu</c> stubs.
-	/// Does not reference any <c>[CustomEditor]</c>, <c>[MenuItem]</c>, or Explorer types.
+	/// Addressable Ids C# 스크립트를 생성하는 순수 에디터 유틸리티입니다.
+	/// <see cref="AddressableIdsTab"/> 과 <c>AddressableIdsMenu</c> 스텁에서 사용합니다.
+	/// <c>[CustomEditor]</c>, <c>[MenuItem]</c>, Explorer 타입을 참조하지 않습니다.
 	/// </summary>
 	internal static class AddressableIdsGeneratorUtils
 	{
 		/// <summary>
-		/// Generates the Addressable Ids script using <paramref name="settings"/> and refreshes the AssetDatabase.
-		/// Records the generated address/label set on <paramref name="settings"/> via
-		/// <see cref="AddressableIdsEditorSettings.RecordGeneration"/> for later diffing.
-		/// Returns a <see cref="GenerationResult"/> describing the generated output.
+		/// <paramref name="settings"/> 로 Addressable Ids 스크립트를 생성하고 AssetDatabase 를 갱신합니다.
+		/// 나중에 비교할 수 있도록 생성한 주소/라벨 집합을 <see cref="AddressableIdsEditorSettings.RecordGeneration"/> 으로
+		/// <paramref name="settings"/> 에 기록합니다.
+		/// 생성 결과를 설명하는 <see cref="GenerationResult"/> 를 반환합니다.
 		/// </summary>
 		public static GenerationResult Generate(AddressableIdsEditorSettings settings)
 		{
@@ -121,11 +121,10 @@ namespace Geuneda.Services.AddressableIds.Editor
 		}
 
 		/// <summary>
-		/// Computes a diff between the current Addressables state and the last-generation snapshot
-		/// recorded on <paramref name="settings"/>. Runs the same <see cref="GetAssetList"/> +
-		/// <see cref="ProcessData"/> pipeline that <see cref="Generate"/> uses, but does not write any
-		/// files and does not call <c>AssetDatabase.Refresh</c>. Safe to call from the Services Explorer
-		/// on user demand.
+		/// 현재 Addressables 상태와 <paramref name="settings"/> 에 기록된 마지막 생성 스냅샷의 차이를 계산합니다.
+		/// <see cref="Generate"/> 와 같은 <see cref="GetAssetList"/> + <see cref="ProcessData"/> 파이프라인을 실행하지만
+		/// 파일을 쓰지 않고 <c>AssetDatabase.Refresh</c> 도 호출하지 않습니다. 사용자 요청 시 Services Explorer 에서
+		/// 호출해도 안전합니다.
 		/// </summary>
 		public static DiffResult Diff(AddressableIdsEditorSettings settings)
 		{
@@ -170,10 +169,9 @@ namespace Geuneda.Services.AddressableIds.Editor
 		}
 
 		/// <summary>
-		/// File-stat-only freshness check: compares the generated script's last-write-time against
-		/// <c>AddressableAssetSettings.asset</c> plus each non-readonly group asset. Worst case ~20
-		/// <see cref="File.GetLastWriteTime"/> calls and no Addressables entry enumeration, so it is
-		/// safe to call on every tab refresh.
+		/// 파일 스탯만 쓰는 최신 여부 검사: 생성된 스크립트의 마지막 수정 시각을 <c>AddressableAssetSettings.asset</c>
+		/// 과 읽기 전용이 아닌 각 그룹 에셋과 비교합니다. 최악의 경우에도 <see cref="File.GetLastWriteTime"/> 호출 약 20 회이고
+		/// Addressables 엔트리를 열거하지 않으므로 탭을 갱신할 때마다 호출해도 안전합니다.
 		/// </summary>
 		public static FreshnessResult ComputeFreshness(AddressableIdsEditorSettings settings)
 		{
@@ -218,9 +216,9 @@ namespace Geuneda.Services.AddressableIds.Editor
 		}
 
 		/// <summary>
-		/// Resolves the on-disk path the generator writes to (or would write to). Mirrors the
-		/// <c>SaveScript</c> resolution rule: prefer an existing script with the configured filename
-		/// anywhere under <c>Assets/</c>, fall back to <c>Assets/&lt;ScriptFilename&gt;.cs</c>.
+		/// 생성기가 쓰는(또는 쓸) 디스크 경로를 구합니다. <c>SaveScript</c> 의 규칙과 같습니다:
+		/// <c>Assets/</c> 아래 어디든 설정된 파일 이름의 기존 스크립트가 있으면 그것을 쓰고, 없으면
+		/// <c>Assets/&lt;ScriptFilename&gt;.cs</c> 를 씁니다.
 		/// </summary>
 		public static string ResolveScriptPath(AddressableIdsEditorSettings settings)
 		{
@@ -448,7 +446,7 @@ namespace Geuneda.Services.AddressableIds.Editor
 
 			for (var i = assetList.Count - 1; i > -1; --i)
 			{
-				// Empty label means generate everything.
+				// 라벨이 비어 있으면 전부 생성합니다.
 				if (!string.IsNullOrEmpty(settings.AddressableLabel))
 				{
 					foreach (var label in assetList[i].labels)
@@ -501,10 +499,9 @@ namespace Geuneda.Services.AddressableIds.Editor
 		}
 
 		/// <summary>
-		/// Resolves the enum-member name for a given Addressable <paramref name="address"/>, applying the
-		/// same <c>name_filetype</c> fallback that <see cref="GenerateAddressEnums"/> uses when the cleaned
-		/// name collides with one already in <paramref name="seenNames"/>. Sets <paramref name="collided"/>
-		/// to <c>true</c> when the fallback path was taken.
+		/// 주어진 Addressable <paramref name="address"/> 의 enum 멤버 이름을 구합니다. 정리한 이름이
+		/// <paramref name="seenNames"/> 에 이미 있으면 <see cref="GenerateAddressEnums"/> 와 같은 <c>name_filetype</c>
+		/// 대체 이름을 씁니다. 대체 이름을 썼으면 <paramref name="collided"/> 를 <c>true</c> 로 설정합니다.
 		/// </summary>
 		private static string ResolveSanitizedEnumName(string address, List<string> seenNames, out bool collided)
 		{
@@ -567,8 +564,8 @@ namespace Geuneda.Services.AddressableIds.Editor
 		}
 
 		/// <summary>
-		/// Returns the elements of <paramref name="left"/> that are not in <paramref name="right"/>.
-		/// Both inputs MUST be pre-sorted ordinally; output is also sorted ordinally.
+		/// <paramref name="left"/> 에는 있고 <paramref name="right"/> 에는 없는 요소를 반환합니다.
+		/// 두 입력은 반드시 서수(ordinal) 순으로 미리 정렬되어 있어야 하며, 출력도 서수 순으로 정렬됩니다.
 		/// </summary>
 		private static List<string> SortedSetDiff(IReadOnlyList<string> left, IReadOnlyList<string> right)
 		{

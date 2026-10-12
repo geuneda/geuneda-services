@@ -3,8 +3,8 @@ using UnityEngine.UIElements;
 namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
-	/// Displays all tick subscribers (Update / FixedUpdate / LateUpdate) of <see cref="ITickService"/>.
-	/// Provides bulk unsubscribe actions per list.
+	/// <see cref="ITickService"/> 의 모든 틱 구독자(Update / FixedUpdate / LateUpdate)를 표시합니다.
+	/// 목록별 일괄 구독 해제 동작을 제공합니다.
 	/// </summary>
 	public class TickTab : ServiceTab
 	{
@@ -44,9 +44,8 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 
 		protected override void Refresh()
 		{
-			// Hide tick subscriber lists in edit mode regardless of any leftover
-			// TickService instance kept alive by a static field. See ServiceTab
-			// OnExitingPlayMode() docs for the broader rationale.
+			// Edit 모드에서는 정적 필드에 남은 TickService 인스턴스가 있더라도 틱 구독자 목록을
+			// 숨깁니다. 자세한 이유는 ServiceTab.OnExitingPlayMode() 문서를 참고하세요.
 			if (!UnityEditor.EditorApplication.isPlaying)
 			{
 				ShowEmptyState();
@@ -71,9 +70,9 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			PopulateFoldout(_lateFoldout, "LateUpdate", tick.OnLateUpdateList);
 		}
 
-		// Forcibly clear all three tick subscriber lists synchronously when the user
-		// stops play mode. Belt-and-braces against bootstraps that fail to dispose
-		// ITickService / call MainInstaller.Clean() in OnDestroy.
+		// 사용자가 Play 모드를 멈추면 세 틱 구독자 목록을 모두 동기적으로 강제로 비웁니다.
+		// OnDestroy 에서 ITickService 를 해제하거나 MainInstaller.Clean() 을 호출하지 않는
+		// 부트스트랩에 대한 이중 안전장치입니다.
 		protected override void OnExitingPlayMode()
 		{
 			ShowEmptyState();

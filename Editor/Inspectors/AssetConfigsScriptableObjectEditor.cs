@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using Geuneda.Services.AssetsImporter;
 using Geuneda.Services.AddressableIds.Editor;
@@ -10,9 +9,9 @@ using UnityEngine.UIElements;
 namespace Geuneda.Services.Inspectors.Editor
 {
 	/// <summary>
-	/// UIToolkit custom inspector for all <see cref="AssetConfigsScriptableObject"/> subclasses.
-	/// Adds a diagnostics panel (duplicate keys, null / empty-GUID asset references) above the
-	/// default property fields, and a "Regenerate Addressable Ids" shortcut button at the bottom.
+	/// 모든 <see cref="AssetConfigsScriptableObject"/> 파생 클래스용 UIToolkit 커스텀 인스펙터입니다.
+	/// 기본 프로퍼티 필드 위에 진단 패널(중복 키, null / 빈 GUID 에셋 참조)을, 아래에
+	/// "Regenerate Addressable Ids" 바로가기 버튼을 추가합니다.
 	/// </summary>
 	[CustomEditor(typeof(AssetConfigsScriptableObject), editorForChildClasses: true)]
 	public class AssetConfigsScriptableObjectEditor : UnityEditor.Editor
@@ -24,7 +23,7 @@ namespace Geuneda.Services.Inspectors.Editor
 		{
 			var root = new VisualElement();
 
-			// ---- Diagnostics panel ----
+			// ---- 진단 패널 ----
 			_diagnosticsPanel = new VisualElement();
 			_diagnosticsPanel.style.marginBottom = 8;
 			_diagnosticsLabel = new Label();
@@ -33,10 +32,10 @@ namespace Geuneda.Services.Inspectors.Editor
 			_diagnosticsPanel.Add(_diagnosticsLabel);
 			root.Add(_diagnosticsPanel);
 
-			// ---- Default inspector (manual SerializedProperty iteration) ----
-			// We deliberately avoid `new InspectorElement(serializedObject)` here. Because
-			// it would re-resolve to this same editor (editorForChildClasses: true) and recurse
-			// infinitely → stack overflow on selection of any concrete subclass.
+			// ---- 기본 인스펙터 (SerializedProperty 수동 순회) ----
+			// 여기서는 일부러 `new InspectorElement(serializedObject)` 를 쓰지 않습니다. 이 에디터
+			// (editorForChildClasses: true)로 다시 해석되어 무한 재귀하므로, 구체 파생 클래스를
+			// 선택하면 스택 오버플로가 납니다.
 			var iterator = serializedObject.GetIterator();
 			if (iterator.NextVisible(enterChildren: true))
 			{
@@ -49,7 +48,7 @@ namespace Geuneda.Services.Inspectors.Editor
 			}
 			root.Bind(serializedObject);
 
-			// ---- Regenerate button ----
+			// ---- 재생성 버튼 ----
 			var spacer = new VisualElement();
 			spacer.style.height = 8;
 			root.Add(spacer);
@@ -57,27 +56,6 @@ namespace Geuneda.Services.Inspectors.Editor
 			var regenBtn = new Button(OnRegenerateIds) { text = "Regenerate Addressable Ids" };
 			regenBtn.style.height = 26;
 			root.Add(regenBtn);
-
-			// ---- Sample-scoped: AssetResolver Sample auto-setup shortcut ----
-			// Shown only when the inspected asset is the AssetResolver sample's SpriteConfigs.asset.
-			// Decoupled from the sample's editor assembly via menu-item invocation; if the sample
-			// or its editor scripts are absent, the menu will be missing and this button hides.
-			if (IsAssetResolverSampleConfigs())
-			{
-				var sampleSpacer = new VisualElement();
-				sampleSpacer.style.height = 6;
-				root.Add(sampleSpacer);
-
-				var sampleBtn = new Button(OnRefreshAssetResolverSample)
-				{
-					text = "Refresh AssetResolver Sample Addressables"
-				};
-				sampleBtn.style.height = 26;
-				sampleBtn.tooltip =
-					"Marks every PNG in this sample's Sprites/ folder as Addressable in a dedicated " +
-					"group, renames non-canonical files to Hero/Coin/Enemy, and wires SpriteConfigs.";
-				root.Add(sampleBtn);
-			}
 
 			RunDiagnostics();
 
@@ -99,7 +77,7 @@ namespace Geuneda.Services.Inspectors.Editor
 			var issues = new List<string>();
 			var configs = (AssetConfigsScriptableObject)target;
 
-			// Use reflection to read the generic Configs list
+			// 제네릭 Configs 리스트는 SerializedProperty 로 읽습니다
 			var configsProp = serializedObject.FindProperty("_configs");
 
 			if (configsProp == null || !configsProp.isArray)
@@ -188,30 +166,6 @@ namespace Geuneda.Services.Inspectors.Editor
 		private static void OnRegenerateIds()
 		{
 			AddressableIdsGeneratorUtils.Generate(AddressableIdsEditorSettings.instance);
-		}
-
-		private bool IsAssetResolverSampleConfigs()
-		{
-			var path = AssetDatabase.GetAssetPath(target);
-			if (string.IsNullOrEmpty(path))
-			{
-				return false;
-			}
-
-			// Match the sample's canonical layout regardless of the imported version folder.
-			return path.Replace('\\', '/').EndsWith("/Asset Resolver/SpriteConfigs.asset",
-				StringComparison.Ordinal);
-		}
-
-		private static void OnRefreshAssetResolverSample()
-		{
-			const string menuPath = "Tools/Geuneda/Samples/Asset Resolver/Refresh Addressables";
-			if (!EditorApplication.ExecuteMenuItem(menuPath))
-			{
-				Debug.LogWarning(
-					$"[AssetResolverSample] Menu '{menuPath}' is unavailable. Re-import the sample " +
-					"via Package Manager so its editor scripts compile.");
-			}
 		}
 	}
 }

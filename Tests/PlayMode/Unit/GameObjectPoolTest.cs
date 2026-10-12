@@ -109,6 +109,19 @@ namespace GeunedaEditor.Services.Tests
 		}
 
 		[UnityTest]
+		public IEnumerator Dispose_WithoutSampleDestroy_KeepsSample()
+		{
+			var instance = _pool.Spawn();
+
+			_pool.Dispose(false);
+
+			yield return null;
+
+			Assert.IsTrue(instance == null);
+			Assert.IsTrue(_sample != null);
+		}
+
+		[UnityTest]
 		public IEnumerator SpawnWithData_InvokesIPoolEntitySpawn()
 		{
 			var sampleWithData = new GameObject("SampleWithData");

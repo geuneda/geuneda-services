@@ -70,7 +70,7 @@ flowchart TD
 
 `PoolService`, `CommandService` 는 루트에 있으면서 하위 네임스페이스를 `using` 합니다.
 
-### Editor (`Geuneda.Services.Editor` 어셈블리, 파일명은 `Editor/GameLovers.Services.Editor.asmdef`)
+### Editor (`Editor/Geuneda.Services.Editor.asmdef`)
 
 | 폴더 | 네임스페이스 | 내용 |
 |------|--------------|------|
@@ -99,10 +99,10 @@ Editor 코드는 런타임 어셈블리에서 참조하지 않습니다.
 ### 런타임
 
 - **Installer**: 인터페이스만 바인딩(`ArgumentException`), 중복 바인딩도 `Dictionary.Add` 에서 `ArgumentException`, 미바인딩 `Resolve` 도 `ArgumentException`. `MainInstaller` 는 단일 `Bind<T>` 만 노출하고 `MainInstaller.Instance` 같은 것은 없습니다.
-- **MessageBroker**: 구독자 키는 `action.Target`(정적 메서드 거부, 객체당 타입별 핸들러 1개). 발행 중 변경은 `InvalidOperationException`. `Publish` 경로는 GC 할당이 없도록 구체 `Dictionary` 와 타입만 보관하는 방식으로 작성되어 있으니 인터페이스 타입이나 `IMessage` 박싱을 다시 들이지 마세요. `PublishSafe` 는 `ArrayPool<Delegate>` 를 쓰고 반납 시 배열을 비웁니다. `Publish` 에는 try/finally 가 없어 핸들러 예외 시 발행 중 플래그가 남습니다.
+- **MessageBroker**: 구독자 키는 `action.Target`(정적 메서드 거부, 객체당 타입별 핸들러 1개). 발행 중 변경은 `InvalidOperationException`. `Publish` 경로는 GC 할당이 없도록 구체 `Dictionary` 와 타입만 보관하는 방식으로 작성되어 있으니 인터페이스 타입이나 `IMessage` 박싱을 다시 들이지 마세요. `PublishSafe` 는 `ArrayPool<Delegate>` 를 쓰고 반납 시 배열을 비웁니다. `Publish` 는 진입 전 발행 상태를 지역 변수에 보관했다가 try/finally 로 되돌립니다(v2.1.4). 핸들러 예외에도 플래그가 남지 않고, 중첩 `Publish` 가 끝나도 바깥 발행 상태를 풀지 않습니다. `PublishSafe` 는 발행 중 플래그를 쓰지 않습니다.
 - **Tick**: 리스트를 역순 순회해 콜백 중 해제를 허용합니다. FixedUpdate 콜백에는 `Time.fixedTime` 을 넘깁니다(Update/LateUpdate 는 경과 시간).
 - **Coroutine**: `IAsyncCoroutine.OnComplete` 는 교체 시맨틱입니다. 에디터 전용 추적(`#if UNITY_EDITOR` 의 `ActiveAsyncCoroutines`)은 별도 `InternalCleanup` 이벤트를 씁니다. 추적을 `OnComplete(...)` 로 옮기면 사용자 콜백을 덮어쓰니 옮기지 마세요. `StopCoroutine(triggerOnComplete)` 는 v2.0.0 부터 인자를 따릅니다.
-- **Pool**: 타입당 풀 1개. `GameObjectPool`/`GameObjectPool<T>` 는 훅을 `GetComponent<>()` 로, `ObjectPool<T>` 는 직접 캐스팅으로 호출합니다. 풀 내부(`Stack<T>`, `SpawnedEntities`, `Clear()` 결과)를 순회하며 `.gameObject` 를 역참조하는 새 코드에는 `if (obj == null) continue;` 같은 Unity fake-null 가드가 필요합니다(외부에서 파괴된 항목이 있을 수 있음). `GameObjectPool.Dispose(bool)` 는 현재 인자와 관계없이 샘플에 `Object.Destroy` 를 호출합니다.
+- **Pool**: 타입당 풀 1개. `GameObjectPool`/`GameObjectPool<T>` 는 훅을 `GetComponent<>()` 로, `ObjectPool<T>` 는 직접 캐스팅으로 호출합니다. 풀 내부(`Stack<T>`, `SpawnedEntities`, `Clear()` 결과)를 순회하며 `.gameObject` 를 역참조하는 새 코드에는 `if (obj == null) continue;` 같은 Unity fake-null 가드가 필요합니다(외부에서 파괴된 항목이 있을 수 있음). `GameObjectPool.Dispose(bool)` / `GameObjectPool<T>.Dispose(bool)` 는 인자가 `true` 일 때만 샘플(GameObject)을 `Object.Destroy` 합니다(v2.1.4 수정).
 - **Data**: `PlayerPrefs` 키는 `typeof(T).Name`. `LoadData<T>` 는 `Activator.CreateInstance<T>()` 를 씁니다.
 - **RNG**: `NextNumber` 의 `index2` 는 링 {1..55} 에서 `index1` 과 간격 21 을 유지해야 합니다(v2.1.1 수정). 이 부분을 바꾸면 시드 시퀀스 호환성이 깨집니다.
 - **Command**: `ExecuteCommand` 는 `virtual` 이 아닙니다. `protected GameLogic` / `MessageBroker` 는 v0.15.1 에서 추가.
@@ -115,7 +115,8 @@ Editor 코드는 런타임 어셈블리에서 참조하지 않습니다.
 - 런타임은 Resources 의 `version-data` TextAsset 을 읽습니다(`VersionServices.VersionDataFilename`, 변경 불가).
 - `VersionEditorUtils` 는 `[InitializeOnLoadMethod]` 에서 `SetAndSaveInternalVersion(false)` 를 호출해 `version-data.txt` 를 씁니다. 내용이 같으면 쓰지 않고, 파일이 없으면 에러 없이 새로 만듭니다(v2.1.2). 빌드 전 자동 훅은 없습니다.
 - 쓰기 폴더: 기존 `Resources/version-data.txt` 위치를 우선 사용하고, 없으면 `VersioningEditorSettings.instance.ResourcesFolderPath`(기본 `Assets/Configs/Resources`, `Resources` 세그먼트 필수).
-- 런타임 로드: `SubsystemRegistration` 의 비공개 `Bootstrap` 이 `LoadVersionData()` 를 호출하고, 프로퍼티 getter 는 비공개 `EnsureLoaded()` 로 지연 로드합니다. 동기/비동기 로드는 비공개 `ApplyTextAsset` 으로 수렴합니다. 리소스가 없으면 폴백값과 `Debug.LogError`, 예외 없음.
+- 런타임 로드: `SubsystemRegistration` 의 비공개 `Bootstrap` 이 `LoadVersionData()` 를 호출하고, 프로퍼티 getter 는 비공개 `EnsureLoaded()` 로 지연 로드합니다. `EnsureLoaded()` 는 `_loadAttempted` 가 거짓일 때만 로드하므로 실패해도 재시도하지 않습니다(v2.1.4). `LoadVersionData()` / `LoadVersionDataAsync()` 를 직접 부르면 항상 다시 읽습니다. 동기/비동기 로드는 비공개 `ApplyTextAsset` 으로 수렴합니다. 리소스가 없으면 폴백값과 `Debug.LogError`, 예외 없음.
+- 테스트에서 `_loaded` 를 리플렉션으로 초기화할 때는 `_loadAttempted` 도 함께 초기화해야 지연 로드가 다시 실행됩니다. git 저장소가 아닌 프로젝트에서는 `version-data.txt` 의 `BranchName` / `CommitHash` 가 비어 있으므로, 이 값에 의존하는 테스트는 리소스를 직접 읽어 전제를 확인하고 `Assert.Inconclusive` 로 끝냅니다.
 - `IsOutdatedVersion` 은 세 부분 semver 를 가정하며 길이 검사가 없습니다(두 부분 입력 시 `IndexOutOfRangeException`). 호스트 에디터의 `Application.version` 으로 테스트할 때는 짧은 문자열에 `Assert.Inconclusive` 를 쓰세요.
 
 ### 에디터 관찰 (InternalsVisibleTo)
@@ -145,10 +146,8 @@ Editor 코드는 런타임 어셈블리에서 참조하지 않습니다.
 - `AssetsConfigsImporter<TId, TAsset, TScriptableObject>` 는 `where TId : Enum` 입니다. `Import`, `AddressableIdsGeneratorUtils.Generate` / `Diff` 는 `AssetDatabase` 가 필요해 자동화 테스트 대상이 아니며 메뉴나 Explorer 로 수동 검증합니다.
 - `ScriptableSingleton<T>` 설정 클래스에서 `[SerializeField]` 를 쓰려면 `using UnityEngine;` 이 필요합니다.
 - `AddressableIdsEditorSettings.asset` 은 Explorer 의 stale 비교 기준이 되는 마지막 생성 스냅샷을 담고 있어 프로젝트 공유 설정으로 다루는 것이 의도입니다.
-- `ServicesScaffolders` 는 `EndNameEditAction`(6.5 미만) / `AssetCreationEndAction`(`UNITY_6000_5_OR_NEWER`)으로 분기합니다(v2.1.3). 템플릿 위치는 `AssetDatabase.FindAssets("Geuneda.Services.Editor t:asmdef")` 로 찾는데, 실제 asmdef 파일명은 `GameLovers.Services.Editor.asmdef` 입니다. 스캐폴더나 asmdef 를 고칠 때 이 불일치를 확인하세요.
-- `AssetsImporterEditorSettings.AutoUpdateOnRefresh` 는 **Assets Importer** 탭에서 저장만 되며, 현재 이 값을 읽어 자동 임포트를 실행하는 코드는 없습니다.
-- `AssetConfigsScriptableObjectEditor` 에는 경로가 `/Asset Resolver/SpriteConfigs.asset` 으로 끝나는 에셋에만 보이는 샘플용 버튼(`Tools/Geuneda/Samples/Asset Resolver/Refresh Addressables` 메뉴 호출)이 남아 있습니다. 해당 샘플은 현재 패키지에 없습니다.
-
+- `ServicesScaffolders` 는 `EndNameEditAction`(6.5 미만) / `AssetCreationEndAction`(`UNITY_6000_5_OR_NEWER`)으로 분기합니다(v2.1.3). 템플릿 위치는 `AssetDatabase.FindAssets("Geuneda.Services.Editor t:asmdef")` 로 asmdef 를 찾고, 그 상위 폴더(패키지 루트)의 `Editor/Scaffolders/Templates~/` 를 봅니다. 이름 검색이라 `Geuneda.Services.Editor.Tests.asmdef` 도 걸리지만 그 위치에는 템플릿이 없어 건너뜁니다. `Editor/Geuneda.Services.Editor.asmdef` 의 파일명이나 위치를 바꾸면 스캐폴더가 템플릿을 찾지 못합니다.
+- `AssetsImporterEditorSettings.AutoUpdateOnRefresh` 가 켜져 있으면 `AssetsImporterEditorUtils` 의 `[DidReloadScripts]` 콜백이 `EditorApplication.delayCall` 로 `ImportAll()` 을 예약합니다(v2.1.4). Play 모드 진입 리로드(`isPlayingOrWillChangePlaymode`)에서는 예약하지 않습니다. `ImportAll()` 은 경로 없이 `Import()` 를 부르므로 생성기 임포터(`IAssetConfigsGeneratorImporter`)는 경고만 남기고 건너뜁니다. 생성기 임포터는 설정 타입이 아직 생성되지 않아 `ScriptableObjectType` 이 null 일 수 있으므로, `TryGetScriptableObject` 는 null 이나 `AssetConfigsScriptableObject` 가 아닌 타입을 Unity API 호출 전에 거부합니다(탐색이 중간에 멈추지 않게).
 ## 5. 코딩 표준
 
 - C# 9.0, 명시적 네임스페이스, 전역 using 없음

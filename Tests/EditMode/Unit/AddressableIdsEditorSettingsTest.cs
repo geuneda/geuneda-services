@@ -8,8 +8,8 @@ namespace GeunedaEditor.Services.Tests
 	[TestFixture]
 	public class AddressableIdsEditorSettingsTest
 	{
-		// AddressableIdsEditorSettings is a ScriptableSingleton persisted to ProjectSettings/;
-		// snapshot + restore so test mutations don't leak into the user's project.
+		// AddressableIdsEditorSettings 는 ProjectSettings/ 에 저장되는 ScriptableSingleton 이므로,
+		// 테스트에서 바꾼 값이 사용자 프로젝트에 남지 않도록 저장 후 복원한다.
 		private string _originalScriptFilename;
 		private string _originalNamespace;
 		private string _originalAddressableLabel;
@@ -139,7 +139,7 @@ namespace GeunedaEditor.Services.Tests
 			Assert.IsNull(error);
 		}
 
-		// ---- Setter normalization ----
+		// ---- Setter 정규화 ----
 
 		[Test]
 		public void ScriptFilename_SetterNormalizesAndPersists()

@@ -18,14 +18,14 @@ namespace GeunedaEditor.Services.Tests
 	/// </summary>
 	public class PerformanceTestSetup : IPrebuildSetup
 	{
-		// Mirrors Unity.PerformanceTesting.Runtime.Utils.PlayerPrefKeyRunJSON / PlayerPrefKeySettingsJSON.
-		// Both keys are reproduced here because Utils is `internal` to com.unity.test-framework.performance.
+		// Unity.PerformanceTesting.Runtime.Utils.PlayerPrefKeyRunJSON / PlayerPrefKeySettingsJSON 을 그대로 따른다.
+		// Utils 가 com.unity.test-framework.performance 의 `internal` 이라서 두 키를 여기에 다시 정의한다.
 		private const string PlayerPrefKeyRunJSON = "PT_Run";
 		private const string PlayerPrefKeySettingsJSON = "PT_Settings";
 
-		// Default RunSettings JSON. MeasurementCount = -1 is the package's "no override" sentinel —
-		// MethodMeasurement.SettingsOverride() early-returns when count < 0, preserving the per-test
-		// .WarmupCount(...) / .MeasurementCount(...) configuration.
+		// 기본 RunSettings JSON. MeasurementCount = -1 은 패키지의 "오버라이드 없음" 표식이다 —
+		// MethodMeasurement.SettingsOverride() 는 count < 0 이면 바로 반환하므로 테스트별
+		// .WarmupCount(...) / .MeasurementCount(...) 설정이 유지된다.
 		private const string DefaultRunSettingsJson = "{\"MeasurementCount\":-1}";
 
 		public void Setup()

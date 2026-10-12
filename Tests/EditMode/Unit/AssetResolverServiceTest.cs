@@ -48,7 +48,7 @@ namespace GeunedaEditor.Services.Tests
 				new Pair<int, AssetReference>(2, ref2)
 			});
 
-			// Both entries should now exist — verifiable via UnloadAssets without throwing
+			// 이제 두 항목이 모두 존재해야 한다 — UnloadAssets 가 예외 없이 동작하는지로 확인한다
 			Assert.DoesNotThrow(() => _service.UnloadAssets<int, Sprite>(false));
 		}
 
@@ -66,7 +66,7 @@ namespace GeunedaEditor.Services.Tests
 			_service.AddAsset<int>(typeof(Sprite), 1, assetRef);
 			_service.UnloadAssets<int, Sprite>(clearReferences: true);
 
-			// After clear, a second clear should warn (map entry removed)
+			// 정리 후 두 번째 정리는 경고를 내야 한다 (맵 항목이 제거됨)
 			LogAssert.Expect(LogType.Warning, new System.Text.RegularExpressions.Regex(".*"));
 			_service.UnloadAssets<int, Sprite>(clearReferences: false);
 		}
@@ -114,7 +114,7 @@ namespace GeunedaEditor.Services.Tests
 
 			Assert.DoesNotThrow(() => _service.UnloadAssets<int, Sprite>(clearReferences: true, 10, 20));
 
-			// The non-matching id 30 must still be resolvable — a second clear on the remaining map entries should not warn
+			// 일치하지 않은 id 30 은 여전히 조회할 수 있어야 한다 — 남은 맵 항목에 대한 두 번째 정리는 경고를 내지 않아야 한다
 			Assert.DoesNotThrow(() => _service.UnloadAssets<int, Sprite>(clearReferences: true, 30));
 		}
 
@@ -130,7 +130,7 @@ namespace GeunedaEditor.Services.Tests
 			IAssetAdderService adderService = _service;
 			Assert.DoesNotThrow(() => adderService.AddConfigs<int, Sprite>(so));
 
-			// Registered via the default interface method — subsequent unload should not warn
+			// 기본 인터페이스 메서드로 등록되었으므로 이후 언로드는 경고를 내지 않아야 한다
 			Assert.DoesNotThrow(() => _service.UnloadAssets<int, Sprite>(clearReferences: true));
 
 			UnityEngine.Object.DestroyImmediate(so);

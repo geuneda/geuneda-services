@@ -31,8 +31,8 @@ namespace GeunedaEditor.Services.Tests
 			public void OnSpawn(int data) => SpawnData = data;
 		}
 
-		// Hand-written fake — NSubstitute can't proxy IObjectPool<T> with self-referential
-		// generic args on Mono. See Tests/AGENTS.md §4.
+		// 직접 작성한 가짜 구현 — Mono 에서 NSubstitute 는 자기 참조 제네릭 인자를 가진
+		// IObjectPool<T> 를 프록시할 수 없다. Tests/AGENTS.md §4 를 참고한다.
 		private class FakeObjectPool<T> : IObjectPool<T> where T : class
 		{
 			public int DisposeCount;

@@ -148,8 +148,8 @@ namespace GeunedaEditor.Services.Tests
 			var instance = _pool.Spawn();
 			_pool.Despawn(instance);
 
-			// PostDespawnEntity reparented `instance` under `externalParent`, so destroying
-			// it cascades into both children while the pool still tracks `instance`.
+			// PostDespawnEntity 가 `instance` 를 `externalParent` 아래로 옮겼으므로, 이를 파괴하면
+			// 풀이 아직 `instance` 를 추적하는 상태에서 두 자식이 함께 파괴된다.
 			Object.Destroy(externalParent);
 			yield return null;
 

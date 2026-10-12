@@ -210,9 +210,9 @@ namespace GeunedaEditor.Services.Tests
 
 			Assert.AreSame(parent.transform, instance.transform.parent);
 
-			// Detach before destroying parent so the cascade does not also destroy the
-			// pooled instance (which the pool still tracks). Dispose-resilience to that
-			// pattern is covered by Dispose_AfterDespawnedInstanceDestroyedExternally_DoesNotThrow.
+			// 부모를 파괴하기 전에 분리해서, 연쇄 파괴로 (풀이 아직 추적 중인) 풀링된 인스턴스까지
+			// 파괴되지 않게 한다. 그런 상황에서 Dispose 가 견디는지는
+			// Dispose_AfterDespawnedInstanceDestroyedExternally_DoesNotThrow 에서 검증한다.
 			_sampleGo.transform.SetParent(null);
 			instance.transform.SetParent(null);
 
@@ -229,8 +229,8 @@ namespace GeunedaEditor.Services.Tests
 			var instance = _pool.Spawn();
 			_pool.Despawn(instance);
 
-			// PostDespawnEntity reparented `instance` under `externalParent`, so destroying
-			// it cascades into both children while the pool still tracks `instance`.
+			// PostDespawnEntity 가 `instance` 를 `externalParent` 아래로 옮겼으므로, 이를 파괴하면
+			// 풀이 아직 `instance` 를 추적하는 상태에서 두 자식이 함께 파괴된다.
 			Object.Destroy(externalParent);
 			yield return null;
 

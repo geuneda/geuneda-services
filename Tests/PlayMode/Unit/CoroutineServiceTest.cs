@@ -196,8 +196,8 @@ namespace GeunedaEditor.Services.Tests
 			Assert.AreEqual(99, received);
 		}
 
-		// Stopping via IAsyncCoroutine.StopCoroutine MUST flip IsCompleted/IsRunning so
-		// editor introspection (Services Explorer Coroutine tab) can drop stopped entries.
+		// IAsyncCoroutine.StopCoroutine 으로 중지하면 반드시 IsCompleted/IsRunning 이 바뀌어야
+		// 에디터 검사 도구(Services Explorer 의 Coroutine 탭)가 중지된 항목을 제거할 수 있다.
 		[UnityTest]
 		public IEnumerator AsyncCoroutineStop_FlipsCompletedAndRunning()
 		{
@@ -214,7 +214,7 @@ namespace GeunedaEditor.Services.Tests
 			yield return null;
 		}
 
-		// triggerOnComplete=true MUST invoke the user OnComplete callback.
+		// triggerOnComplete=true 이면 반드시 사용자 OnComplete 콜백을 호출해야 한다.
 		[UnityTest]
 		public IEnumerator AsyncCoroutineStop_TriggerOnCompleteTrue_InvokesUserCallback()
 		{
@@ -229,7 +229,7 @@ namespace GeunedaEditor.Services.Tests
 			yield return null;
 		}
 
-		// triggerOnComplete=false MUST suppress the user OnComplete callback.
+		// triggerOnComplete=false 이면 반드시 사용자 OnComplete 콜백을 호출하지 않아야 한다.
 		[UnityTest]
 		public IEnumerator AsyncCoroutineStop_TriggerOnCompleteFalse_SuppressesUserCallback()
 		{
@@ -244,9 +244,9 @@ namespace GeunedaEditor.Services.Tests
 			yield return null;
 		}
 
-		// User OnComplete callback registered AFTER editor tracking attaches must still fire.
-		// Regression guard for v2.0.0 bug where editor tracking lambda assigned via
-		// OnComplete(...) overwrote (or was overwritten by) user callbacks.
+		// 에디터 추적이 붙은 *이후에* 등록한 사용자 OnComplete 콜백도 호출되어야 한다.
+		// OnComplete(...) 로 할당한 에디터 추적 람다가 사용자 콜백을 덮어쓰던(또는 사용자 콜백에
+		// 덮어써지던) v2.0.0 버그의 회귀를 막는다.
 		[UnityTest]
 		public IEnumerator AsyncCoroutineOnComplete_RegisteredAfterCreation_FiresOnNaturalCompletion()
 		{
@@ -260,9 +260,9 @@ namespace GeunedaEditor.Services.Tests
 			Assert.IsTrue(asyncCoroutine.IsCompleted);
 		}
 
-		// StopCoroutine on an already-completed handle must be a no-op — the IsCompleted
-		// guard prevents the user OnComplete callback from re-firing and prevents IsRunning
-		// state from being clobbered. Pairs with AsyncCoroutineStop_CalledTwice_NoOps below.
+		// 이미 완료된 핸들에 대한 StopCoroutine 은 아무 동작도 하지 않아야 한다 — IsCompleted
+		// 가드가 사용자 OnComplete 콜백의 재호출과 IsRunning 상태가 덮어써지는 것을 막는다.
+		// 아래의 AsyncCoroutineStop_CalledTwice_NoOps 와 짝을 이룬다.
 		[UnityTest]
 		public IEnumerator AsyncCoroutineStop_AfterNaturalCompletion_NoOps()
 		{
@@ -282,9 +282,9 @@ namespace GeunedaEditor.Services.Tests
 			Assert.AreEqual(1, callbackInvocations);
 		}
 
-		// Two consecutive StopCoroutine calls on the same handle must collapse — the second
-		// is a no-op so the user OnComplete callback fires exactly once total. Without the
-		// IsCompleted guard, double-stop would fire OnComplete twice and confuse listeners.
+		// 같은 핸들에 StopCoroutine 을 연속 두 번 호출해도 한 번으로 처리되어야 한다 — 두 번째
+		// 호출은 아무 동작도 하지 않으므로 사용자 OnComplete 콜백은 총 정확히 한 번 호출된다.
+		// IsCompleted 가드가 없으면 이중 중지로 OnComplete 가 두 번 호출되어 리스너가 혼란을 겪는다.
 		[UnityTest]
 		public IEnumerator AsyncCoroutineStop_CalledTwice_NoOps()
 		{

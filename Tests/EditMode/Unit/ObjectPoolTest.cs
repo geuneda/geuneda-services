@@ -181,11 +181,11 @@ namespace GeunedaEditor.Services.Tests
 		[Test]
 		public void Despawn_WithCondition_DistinctMatchingEntities_AllDespawn()
 		{
-			// Regression: Despawn_WithCondition_AllMatching_DespawnsAll spawns the same _mockEntity
-			// twice (the SetUp factory returns a single instance), so SpawnedEntities.Remove matches
-			// by reference equality on duplicates. This test uses DISTINCT entities to confirm the
-			// iterate-while-mutating fix in ObjectPoolBase<T>.Despawn(bool, Func) also holds when
-			// each matching element is a separate reference.
+			// 회귀 테스트: Despawn_WithCondition_AllMatching_DespawnsAll 은 같은 _mockEntity 를
+			// 두 번 스폰하므로(SetUp 팩토리가 단일 인스턴스를 반환한다) SpawnedEntities.Remove 가
+			// 중복 항목을 참조 동등성으로 매칭한다. 이 테스트는 *서로 다른* 엔티티를 사용해,
+			// ObjectPoolBase<T>.Despawn(bool, Func) 의 순회 중 변경 수정이 일치하는 각 요소가
+			// 별개의 참조일 때도 유지되는지 확인한다.
 			var pool = new ObjectPool<IMockEntity>(0, () => Substitute.For<IMockEntity>());
 			var first = pool.Spawn();
 			var second = pool.Spawn();
@@ -198,8 +198,8 @@ namespace GeunedaEditor.Services.Tests
 		[Test]
 		public void Despawn_WithCondition_PartialMatch_NonMatchingSurvives()
 		{
-			// Confirms the iteration step-back after a successful despawn doesn't spuriously remove
-			// non-matching neighbours when only a subset of the spawned set matches the predicate.
+			// 스폰된 집합의 일부만 조건에 맞을 때, 디스폰 성공 후 순회 인덱스를 되돌리는 처리가
+			// 조건에 맞지 않는 이웃 항목을 잘못 제거하지 않는지 확인한다.
 			var pool = new ObjectPool<IMockEntity>(0, () => Substitute.For<IMockEntity>());
 			var target = pool.Spawn();
 			var keeper = pool.Spawn();

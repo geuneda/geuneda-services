@@ -10,9 +10,9 @@ using UnityEngine.TestTools;
 namespace GeunedaEditor.Services.Tests
 {
 	/// <summary>
-	/// Integration tests for <see cref="VersionServices"/> that exercise the async resource-loading
-	/// pipeline and all post-load property accessors.
-	/// Requires Assets/Configs/Resources/version-data.txt to exist in the project.
+	/// <see cref="VersionServices"/> 의 비동기 리소스 로드 파이프라인과 로드 이후의
+	/// 모든 속성 접근자를 검증하는 통합 테스트입니다.
+	/// 프로젝트에 Assets/Configs/Resources/version-data.txt 가 있어야 합니다.
 	/// </summary>
 	public class VersionServicesIntegrationTest
 	{

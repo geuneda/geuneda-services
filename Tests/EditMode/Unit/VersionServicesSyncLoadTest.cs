@@ -8,11 +8,11 @@ using UnityEngine;
 namespace GeunedaEditor.Services.Tests
 {
 	/// <summary>
-	/// EditMode unit coverage for <see cref="VersionServices.LoadVersionData"/> (synchronous).
-	/// The async sibling is covered in PlayMode/Integration/VersionServicesIntegrationTest.cs;
-	/// the sync path needs no Unity runtime, so it lives here. Requires
-	/// Assets/Configs/Resources/version-data.txt to exist in the host project (written
-	/// automatically by VersionEditorUtils on every domain reload).
+	/// <see cref="VersionServices.LoadVersionData"/> (동기)에 대한 EditMode 단위 테스트입니다.
+	/// 비동기 버전은 PlayMode/Integration/VersionServicesIntegrationTest.cs 에서 다루며,
+	/// 동기 경로는 Unity 런타임이 필요 없으므로 여기에 둡니다. 호스트 프로젝트에
+	/// Assets/Configs/Resources/version-data.txt 가 있어야 합니다 (도메인 리로드마다
+	/// VersionEditorUtils 가 자동으로 작성합니다).
 	/// </summary>
 	/// <remarks>
 	/// Branch / Commit 은 프로젝트가 git 저장소일 때만 version-data 에 채워집니다. git 저장소가 아닌

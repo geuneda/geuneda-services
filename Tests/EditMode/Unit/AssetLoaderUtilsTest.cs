@@ -30,12 +30,12 @@ namespace GeunedaEditor.Services.Tests
 
 			Assert.AreEqual(3, buckets.Length);
 
-			// Complete tasks out-of-order: 3, 1, 2
+			// 작업을 순서와 다르게 완료한다: 3, 1, 2
 			tcs3.SetResult(30);
 			tcs1.SetResult(10);
 			tcs2.SetResult(20);
 
-			// Each bucket resolves to the task that completed in that slot
+			// 각 버킷은 해당 순서에 완료된 작업으로 결정된다
 			Assert.IsTrue(buckets[0].IsCompleted);
 			Assert.AreEqual(30, buckets[0].Result.Result);
 			Assert.IsTrue(buckets[1].IsCompleted);

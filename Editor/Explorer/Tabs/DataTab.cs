@@ -77,13 +77,14 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 				var dataType = kvp.Key;
 				var data = kvp.Value;
 				var json = TrySerializeJson(data);
-				var prefsKey = dataType.Name;
+				var prefsKey = DataService.GetSaveKey(dataType);
 				var hasPrefs = PlayerPrefs.HasKey(prefsKey);
 
 				var container = new VisualElement();
 				container.style.marginBottom = 6;
 
-				var row = MakeRow(dataType.Name, hasPrefs ? "[saved]" : "[in-memory only]");
+				// 이름이 같은 타입을 구별할 수 있도록 저장 키(FullName)를 표시한다
+				var row = MakeRow(prefsKey, hasPrefs ? "[saved]" : "[in-memory only]");
 
 				var saveBtn = MakeRowButton("Save", () => OnSave(dataService, dataType));
 				row.Add(saveBtn);

@@ -6,6 +6,15 @@
 
 ## [Unreleased]
 
+**호환되지 않는 변경(다음 릴리스는 메이저 버전)**:
+- `DataService`의 `PlayerPrefs` 키를 `typeof(T).Name`에서 `typeof(T).FullName`으로 바꿨습니다. 네임스페이스나 감싸는 타입이 다른 같은 이름의 데이터 타입이 같은 키를 쓰던 충돌이 없어집니다.
+- `DataService`의 저장 형식을 평문 JSON에서 `{"version":n,"data":{...}}` 봉투로 바꿨습니다. 버전은 새 `[DataVersion(n)]` 속성 값(없으면 0)이며, `DataService.AddMigration<T>(fromVersion, migration)`으로 이전 버전 세이브를 한 단계씩 바꿀 수 있습니다.
+- 이전 버전이 저장한 세이브는 자동으로 옮기지 않습니다. 기존 프로젝트는 이전 버전에 고정하고 새 프로젝트부터 이 버전을 쓰세요.
+
+**새 기능**:
+- `DataService.LoadData<T>()`가 깨진 JSON, 다른 형식, 빠진 마이그레이션 등으로 저장값을 읽지 못해도 예외를 던지지 않습니다. 원문을 `{키}.corrupt`(`SaveCorruptBackup`으로 바꿀 수 있음)에 남기고 에러 로그와 `OnDataLoadFailed(key, rawData, exception)` 훅을 거쳐 새 인스턴스로 시작합니다(이전에는 예외로 부팅이 실패). 백업이나 훅이 예외를 던져도 복구는 계속됩니다. 저장된 버전이 더 새로우면 경고 후 알 수 있는 필드만 읽고, 원본을 지키도록 그 타입은 `AddOrReplaceData`로 교체하기 전까지 저장하지 않습니다(본문을 읽지 못한 경우 포함). 봉투 뒤에 다른 내용이 붙은 값도 읽지 못한 세이브로 처리합니다. 세이브를 읽을 때 `decimal` 정밀도와 날짜 형태 문자열이 바뀌지 않습니다.
+- `DataService.GetSaveKey(Type)`, `DataService.GetDataVersion(Type)`, `DataService.CorruptKeySuffix`를 추가했습니다. Services Explorer의 Data 탭도 새 키를 쓰고 행에 표시합니다.
+
 **수정**:
 - 풀 스택에 돌아간 객체가 풀 밖에서 파괴된 뒤 `GameObjectPool.Spawn()` / `GameObjectPool<T>.Spawn()`을 부르면 `MissingReferenceException`이 나던 문제를 수정했습니다. `ObjectPoolBase<T>`는 `T : class` 제약이라 `entity == null`이 참조 비교로 컴파일되어 파괴된 Unity 객체(fake null)를 걸러내지 못했습니다. 이제 `Despawn`과 같이 `Equals(null)`로도 확인해 파괴된 객체는 건너뛰고 다음 객체를 꺼내거나 새로 만듭니다.
 - 인스턴시에이터가 null을 돌려주면 `Spawn()`이 끝없이 다시 만들던 문제를 수정했습니다. 새로 만든 객체가 null이거나 파괴된 객체면 재시도하지 않고 `InvalidOperationException`을 던집니다.

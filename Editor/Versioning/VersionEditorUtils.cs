@@ -16,20 +16,22 @@ namespace Geuneda.Services.Versioning.Editor
 		private const string AssetsPath = "Assets";
 
 		/// <summary>
-		/// 앱 빌드 전에 내부 버전을 설정합니다. 빌드 번호는 현재 활성 빌드 타깃 기준입니다.
+		/// 내부 버전(브랜치, 커밋, 빌드 번호)을 기록합니다. 빌드 번호는 현재 활성 빌드 타깃 기준입니다.
 		/// </summary>
-		public static void SetAndSaveInternalVersion(bool isStoreBuild)
+		/// <remarks>
+		/// 환경(dev/qa/prod)은 기록하지 않습니다. 플레이어가 컴파일될 때의 환경 define 으로 런타임에 정해집니다(<c>Geuneda.Core.AppEnv</c>).
+		/// </remarks>
+		public static void SetAndSaveInternalVersion()
 		{
-			SetAndSaveInternalVersion(isStoreBuild, EditorUserBuildSettings.activeBuildTarget);
+			SetAndSaveInternalVersion(EditorUserBuildSettings.activeBuildTarget);
 		}
 
 		/// <summary>
-		/// <paramref name="buildTarget"/> 의 빌드 번호로 내부 버전을 설정합니다.
-		/// <paramref name="isStoreBuild"/> 가 true 면 빌드 타입을 <c>prod</c>, 아니면 <c>dev</c> 로 기록합니다.
+		/// <paramref name="buildTarget"/> 의 빌드 번호로 내부 버전을 기록합니다.
 		/// </summary>
-		public static void SetAndSaveInternalVersion(bool isStoreBuild, BuildTarget buildTarget)
+		public static void SetAndSaveInternalVersion(BuildTarget buildTarget)
 		{
-			var newVersionData = GenerateInternalVersionSuffix(isStoreBuild, buildTarget);
+			var newVersionData = GenerateInternalVersionSuffix(buildTarget);
 			var newVersionDataSerialized = JsonUtility.ToJson(newVersionData);
 			var oldVersionDataSerialized = LoadVersionDataSerializedSilent();
 			if (newVersionDataSerialized.Equals(oldVersionDataSerialized, StringComparison.Ordinal))
@@ -79,7 +81,7 @@ namespace Geuneda.Services.Versioning.Editor
 		[InitializeOnLoadMethod]
 		private static void OnEditorLoad()
 		{
-			SetAndSaveInternalVersion(false);
+			SetAndSaveInternalVersion();
 		}
 
 		/// <summary>
@@ -93,7 +95,7 @@ namespace Geuneda.Services.Versioning.Editor
 				: PlayerSettings.iOS.buildNumber;
 		}
 
-		private static VersionServices.VersionData GenerateInternalVersionSuffix(bool isStoreBuild, BuildTarget buildTarget)
+		private static VersionServices.VersionData GenerateInternalVersionSuffix(BuildTarget buildTarget)
 		{
 			var data = new VersionServices.VersionData();
 
@@ -138,7 +140,6 @@ namespace Geuneda.Services.Versioning.Editor
 			}
 
 			data.BuildNumber = GetBuildNumber(buildTarget);
-			data.BuildType = isStoreBuild ? "prod" : "dev";
 
 			return data;
 		}

@@ -10,6 +10,10 @@
 - `DataService`의 `PlayerPrefs` 키를 `typeof(T).Name`에서 `typeof(T).FullName`으로 바꿨습니다. 네임스페이스나 감싸는 타입이 다른 같은 이름의 데이터 타입이 같은 키를 쓰던 충돌이 없어집니다.
 - `DataService`의 저장 형식을 평문 JSON에서 `{"version":n,"data":{...}}` 봉투로 바꿨습니다. 버전은 새 `[DataVersion(n)]` 속성 값(없으면 0)이며, `DataService.AddMigration<T>(fromVersion, migration)`으로 이전 버전 세이브를 한 단계씩 바꿀 수 있습니다.
 - 이전 버전이 저장한 세이브는 자동으로 옮기지 않습니다. 기존 프로젝트는 이전 버전에 고정하고 새 프로젝트부터 이 버전을 쓰세요.
+- `com.geuneda.core`(0.1.0) 의존성을 추가했습니다. `Packages/manifest.json` 에 `https://github.com/geuneda/geuneda-core.git` 을 함께 넣어야 합니다.
+- 빌드 타입을 core 의 빌드 환경(`Geuneda.Core.AppEnv`)으로 바꿨습니다. `VersionServices.VersionData.BuildType` 필드를 없앴고, `VersionInternal`(`FormatInternalVersion`)은 끝에 항상 `AppEnv.Name`(`dev`/`qa`/`prod`)을 붙입니다. 예전 `version-data.txt` 의 `BuildType` 값은 읽을 때 무시됩니다.
+- 환경 이름은 이전처럼 define 이 없으면 에디터·개발 빌드는 `dev`, 릴리스 빌드는 `prod` 이고, 이제 `GEUNEDA_ENV_QA` 등 core 의 환경 define 으로 `qa` 를 포함해 바꿀 수 있습니다.
+- `VersionEditorUtils.SetAndSaveInternalVersion(bool isStoreBuild)` 를 `SetAndSaveInternalVersion()` 으로 바꿨습니다(빌드 타입 인자 제거). 빌드 대상을 정하는 `SetAndSaveInternalVersion(BuildTarget)` 을 추가했습니다.
 
 **새 기능**:
 - `DataService.LoadData<T>()`가 깨진 JSON, 다른 형식, 빠진 마이그레이션 등으로 저장값을 읽지 못해도 예외를 던지지 않습니다. 원문을 `{키}.corrupt`(`SaveCorruptBackup`으로 바꿀 수 있음)에 남기고 에러 로그와 `OnDataLoadFailed(key, rawData, exception)` 훅을 거쳐 새 인스턴스로 시작합니다(이전에는 예외로 부팅이 실패). 백업이나 훅이 예외를 던져도 복구는 계속됩니다. 저장된 버전이 더 새로우면 경고 후 알 수 있는 필드만 읽고, 원본을 지키도록 그 타입은 `AddOrReplaceData`로 교체하기 전까지 저장하지 않습니다(본문을 읽지 못한 경우 포함). 봉투 뒤에 다른 내용이 붙은 값도 읽지 못한 세이브로 처리합니다. 세이브를 읽을 때 `decimal` 정밀도와 날짜 형태 문자열이 바뀌지 않습니다.
@@ -21,8 +25,7 @@
 - `TickService` 콜백 안에서 아직 부르지 않은 앞쪽 구독(`Unsubscribe*`, `UnsubscribeAll*(subscriber)`)을 해제하면 현재 콜백이 같은 프레임에 두 번 불리던 문제를 수정했습니다. Update, LateUpdate, FixedUpdate 모두 해당합니다. 콜백 안에서 `UnsubscribeAll*()`로 같은 단계를 비운 뒤 그 단계에 새로 구독하면 그 콜백이 같은 순회에서 불리던 문제도 함께 고쳐, 그 단계의 다음 순회부터 불립니다. `UnsubscribeAll*(subscriber)`는 항목마다 지우지 않고 한 번에 압축해 지웁니다.
 - 도메인 리로드를 끈 Enter Play Mode에서 `MainInstaller`의 정적 바인딩이 이전 플레이 세션 것으로 남아, 같은 타입을 다시 `Bind`하면 `ArgumentException`이 나던 문제를 수정했습니다. `RuntimeInitializeLoadType.SubsystemRegistration`에서 바인딩을 비웁니다(이전 세션 객체는 Dispose하지 않음). 그 시점에 바인딩하는 코드는 지워질 수 있으므로 `AfterAssembliesLoaded` 이후에 바인딩하세요.
 - `VersionServices.IsOutdatedVersion`이 세 부분이 아닌 버전("1.2")이나 접미사가 붙은 버전("1.2.3-rc")에서 `IndexOutOfRangeException`/`FormatException`을 던지던 문제를 수정했습니다. 빠진 부분은 0으로 보고 각 부분의 앞쪽 숫자만 비교하며, Major를 읽을 수 없거나 어느 부분이 `int` 범위를 넘으면 경고 로그를 남기고 `false`를 반환합니다. 두 버전을 직접 비교하는 `IsOutdatedVersion(string currentVersion, string otherVersion)`을 추가했습니다.
-- 빌드 타입이 자동으로 `prod`가 되지 않던 문제를 수정했습니다. 플레이어 빌드 직전에 `VersionBuildProcessor`가 개발 빌드가 아니면 `prod`로 `version-data`를 다시 쓰고, 빌드가 성공하면 후처리에서, 실패·취소되면 빌드가 끝난 뒤 첫 에디터 업데이트에서 `dev`로 되돌립니다. `VersionEditorUtils.SetAndSaveInternalVersion(bool, BuildTarget)` 오버로드를 추가했습니다.
-- Android 빌드의 `BuildNumber`에 iOS 빌드 번호가 들어가던 문제를 수정했습니다. Android는 `PlayerSettings.Android.bundleVersionCode`를 기록합니다.
+- Android 빌드의 `BuildNumber`에 iOS 빌드 번호가 들어가던 문제를 수정했습니다. 플레이어 빌드 직전에 `VersionBuildProcessor`가 빌드 대상 플랫폼의 빌드 번호(Android는 `PlayerSettings.Android.bundleVersionCode`)로 `version-data`를 다시 쓰고, 빌드가 성공하면 후처리에서, 실패·취소되면 빌드가 끝난 뒤 첫 에디터 업데이트에서 활성 빌드 타깃 값으로 되돌립니다.
 - `TickService` 콜백 하나가 예외를 던지면 같은 프레임의 나머지 구독자가 모두 건너뛰어지던 문제를 수정했습니다. 예외는 `Debug.LogException`으로 남기고 나머지를 계속 부릅니다.
 
 ## [2.1.4] - 2026-10-12

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Globalization;
 using System.Threading.Tasks;
+using Geuneda.Core;
 using UnityEngine;
 
 // ReSharper disable once CheckNamespace
@@ -22,7 +23,6 @@ namespace Geuneda.Services
 		{
 			public string CommitHash;
 			public string BranchName;
-			public string BuildType;
 			public string BuildNumber;
 		}
 
@@ -32,7 +32,7 @@ namespace Geuneda.Services
 		public static string VersionExternal => Application.version;
 
 		/// <summary>
-		/// 내부 버전 (M.m.p-b.branch.commit). <see cref="Bootstrap"/> 훅이 아직 실행되지 않았다면
+		/// 내부 버전 (M.m.p-b.branch.commit.env). env 는 <see cref="AppEnv.Name"/> 입니다. <see cref="Bootstrap"/> 훅이 아직 실행되지 않았다면
 		/// 최초 접근 시 지연 로드됩니다(<see cref="Bootstrap"/>의 remarks 참고). <c>version-data</c>
 		/// 리소스가 없거나 파싱에 실패하면 <see cref="Application.version"/>으로 폴백합니다.
 		/// </summary>
@@ -268,18 +268,11 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// VersionData를 앱의 전체 내부 버전 문자열로 포맷합니다.
+		/// VersionData를 앱의 전체 내부 버전 문자열로 포맷합니다. 끝에 이 빌드의 환경 이름(<see cref="AppEnv.Name"/>)을 붙입니다.
 		/// </summary>
 		public static string FormatInternalVersion(VersionData data)
 		{
-			var version = $"{Application.version}-{data.BuildNumber}.{data.BranchName}.{data.CommitHash}";
-
-			if (!string.IsNullOrEmpty(data.BuildType))
-			{
-				version += $".{data.BuildType}";
-			}
-
-			return version;
+			return $"{Application.version}-{data.BuildNumber}.{data.BranchName}.{data.CommitHash}.{AppEnv.Name}";
 		}
 
 		private static void EnsureLoaded()

@@ -6,6 +6,7 @@
         "UnityEditor.TestRunner",
         "Geuneda.Services",
         "Geuneda.Services.Editor",
+        "Geuneda.Core",
         "Geuneda.GameData",
         "Unity.PerformanceTesting",
         "GUID:9e24947de15b9834991c9d8411ea37cf",

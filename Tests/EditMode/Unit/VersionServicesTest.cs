@@ -1,4 +1,5 @@
 using System.Text.RegularExpressions;
+using Geuneda.Core;
 using Geuneda.Services;
 using NUnit.Framework;
 using UnityEngine;
@@ -44,37 +45,18 @@ namespace GeunedaEditor.Services.Tests
 		}
 
 		[Test]
-		public void FormatInternalVersion_WithBuildType_IncludesBuildType()
+		public void FormatInternalVersion_EndsWithEnvironmentName()
 		{
 			var data = new VersionServices.VersionData
 			{
 				CommitHash = "abc",
 				BranchName = "main",
-				BuildType = "debug",
 				BuildNumber = "1"
 			};
-			var result = VersionServices.FormatInternalVersion(data);
-			
-			Assert.That(result.Contains("debug"), Is.True);
-			Assert.That(result.Contains("abc"), Is.True);
-			Assert.That(result.Contains("main"), Is.True);
-			Assert.That(result.Contains("1"), Is.True);
-		}
 
-		[Test]
-		public void FormatInternalVersion_WithoutBuildType_OmitsBuildType()
-		{
-			var data = new VersionServices.VersionData
-			{
-				CommitHash = "abc",
-				BranchName = "main",
-				BuildType = "",
-				BuildNumber = "1"
-			};
 			var result = VersionServices.FormatInternalVersion(data);
-			
-			Assert.That(result.EndsWith("."), Is.False);
-			Assert.That(result.Contains("abc"), Is.True);
+
+			Assert.AreEqual($"{Application.version}-1.main.abc.{AppEnv.Name}", result);
 		}
 
 		[Test]

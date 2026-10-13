@@ -10,11 +10,12 @@ Unity Package Manager 의 `+` > `Add package from git URL` 에서 아래 URL 을
 https://github.com/geuneda/geuneda-services.git
 ```
 
-`com.geuneda.gamedata` 와 `com.cysharp.unitask` 는 Unity 레지스트리에 없어 자동으로 설치되지 않습니다. 함께 추가하세요.
+`com.geuneda.core`, `com.geuneda.gamedata`, `com.cysharp.unitask` 는 Unity 레지스트리에 없어 자동으로 설치되지 않습니다. 함께 추가하세요.
 
 ```json
 {
   "dependencies": {
+    "com.geuneda.core": "https://github.com/geuneda/geuneda-core.git",
     "com.geuneda.gamedata": "https://github.com/geuneda/geuneda-gamedata.git",
     "com.geuneda.services": "https://github.com/geuneda/geuneda-services.git",
     "com.cysharp.unitask": "https://github.com/Cysharp/UniTask.git?path=src/UniTask/Assets/Plugins/UniTask"
@@ -126,6 +127,7 @@ public class HealthView : MonoBehaviour
 
 | 패키지 | 버전 | 용도 |
 |--------|------|------|
+| `com.geuneda.core` | 0.1.0 | 빌드 환경 `AppEnv`(내부 버전 문자열의 환경 이름) |
 | `com.geuneda.gamedata` | 1.0.0 | `floatP`(RNG), `Pair<,>`(에셋 설정). Newtonsoft.Json(`com.unity.nuget.newtonsoft-json`)도 이 패키지를 통해 들어옵니다(`DataService` 가 사용) |
 | `com.unity.addressables` | 1.21.20 | 에셋/씬 로딩 |
 | `com.cysharp.unitask` | 2.5.10 | 에셋 로딩 비동기 API |

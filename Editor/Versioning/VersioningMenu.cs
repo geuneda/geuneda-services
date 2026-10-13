@@ -11,11 +11,11 @@ namespace Geuneda.Services.Versioning.Editor
 	internal static class VersioningMenu
 	{
 		/// <summary>
-		/// 현재 git 상태로 <c>version-data.txt</c> 를 다시 생성합니다(스토어 빌드 아님).
+		/// 현재 git 상태와 활성 빌드 타깃의 빌드 번호로 <c>version-data.txt</c> 를 다시 생성합니다.
 		/// 도메인 리로드 때의 동작과 같으며, 전체 리로드 없이 브랜치를 바꾼 뒤에 유용합니다.
 		/// </summary>
 		[MenuItem("Tools/Geuneda/Versioning/Refresh Version Data", priority = 100)]
-		private static void Refresh() => VersionEditorUtils.SetAndSaveInternalVersion(false);
+		private static void Refresh() => VersionEditorUtils.SetAndSaveInternalVersion();
 
 		[MenuItem("Tools/Geuneda/Versioning/Open in Explorer", priority = 200)]
 		private static void Open() => ServicesExplorerWindow.OpenOnTab<VersioningTab>();

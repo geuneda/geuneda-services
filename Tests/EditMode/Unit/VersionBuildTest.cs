@@ -12,7 +12,7 @@ using UnityEngine.TestTools;
 namespace GeunedaEditor.Services.Tests
 {
 	/// <summary>
-	/// 빌드 시 기록하는 내부 버전 값(빌드 타입, 플랫폼별 빌드 번호)과 빌드 전후 기록·복원을 검증합니다.
+	/// 빌드 시 기록하는 내부 버전 값(플랫폼별 빌드 번호)과 빌드 전후 기록·복원을 검증합니다.
 	/// </summary>
 	[TestFixture]
 	public class VersionBuildTest
@@ -22,19 +22,6 @@ namespace GeunedaEditor.Services.Tests
 		{
 			// 테스트가 빌드용 값을 기록했더라도 에디터 값으로 돌려 둔다
 			VersionBuildProcessor.RestoreEditorVersion();
-		}
-
-		[Test]
-		public void IsStoreBuild_ReleaseBuild_IsTrue()
-		{
-			Assert.IsTrue(VersionBuildProcessor.IsStoreBuild(BuildOptions.None));
-		}
-
-		[Test]
-		public void IsStoreBuild_DevelopmentBuild_IsFalse()
-		{
-			Assert.IsFalse(VersionBuildProcessor.IsStoreBuild(BuildOptions.Development));
-			Assert.IsFalse(VersionBuildProcessor.IsStoreBuild(BuildOptions.Development | BuildOptions.AllowDebugging));
 		}
 
 		[Test]
@@ -51,48 +38,54 @@ namespace GeunedaEditor.Services.Tests
 		}
 
 		[Test]
-		public void PrepareForBuild_ReleaseAndroid_WritesProdAndAndroidBuildNumberThenRestoreWritesDev()
+		public void SetAndSaveInternalVersion_DoesNotWriteBuildType()
 		{
-			VersionBuildProcessor.PrepareForBuild(BuildOptions.None, BuildTarget.Android);
+			VersionEditorUtils.SetAndSaveInternalVersion();
 
-			var built = ReadVersionData();
-
-			Assert.AreEqual("prod", built.BuildType);
-			Assert.AreEqual(VersionEditorUtils.GetBuildNumber(BuildTarget.Android), built.BuildNumber);
-
-			VersionBuildProcessor.RestoreEditorVersion();
-
-			var restored = ReadVersionData();
-
-			Assert.AreEqual("dev", restored.BuildType);
-			Assert.AreEqual(VersionEditorUtils.GetBuildNumber(EditorUserBuildSettings.activeBuildTarget), restored.BuildNumber);
+			// 환경은 런타임에 AppEnv 로 정해지므로 version-data 에 기록하지 않는다
+			StringAssert.DoesNotContain("BuildType", VersionEditorUtils.LoadVersionDataSerializedSync());
 		}
 
 		[Test]
-		public void PrepareForBuild_DevelopmentBuild_WritesDev()
+		public void PrepareForBuild_Android_WritesAndroidBuildNumberThenRestoreWritesActiveTarget()
 		{
-			VersionBuildProcessor.PrepareForBuild(BuildOptions.Development, BuildTarget.iOS);
+			VersionBuildProcessor.PrepareForBuild(BuildTarget.Android);
 
-			var built = ReadVersionData();
+			Assert.AreEqual(VersionEditorUtils.GetBuildNumber(BuildTarget.Android), ReadVersionData().BuildNumber);
 
-			Assert.AreEqual("dev", built.BuildType);
-			Assert.AreEqual(VersionEditorUtils.GetBuildNumber(BuildTarget.iOS), built.BuildNumber);
+			VersionBuildProcessor.RestoreEditorVersion();
+
+			Assert.AreEqual(VersionEditorUtils.GetBuildNumber(EditorUserBuildSettings.activeBuildTarget), ReadVersionData().BuildNumber);
+		}
+
+		[Test]
+		public void PrepareForBuild_iOS_WritesIosBuildNumber()
+		{
+			VersionBuildProcessor.PrepareForBuild(BuildTarget.iOS);
+
+			Assert.AreEqual(VersionEditorUtils.GetBuildNumber(BuildTarget.iOS), ReadVersionData().BuildNumber);
 		}
 
 		[UnityTest]
-		public IEnumerator PrepareForBuild_NoPostprocess_RestoresDevOnNextEditorUpdate()
+		public IEnumerator PrepareForBuild_NoPostprocess_RestoresOnNextEditorUpdate()
 		{
 			// 빌드가 실패하거나 취소되면 후처리가 불리지 않는다. 빌드 중이 아닌 에디터 업데이트에서 되돌아와야 한다
-			VersionBuildProcessor.PrepareForBuild(BuildOptions.None, BuildTarget.Android);
+			var editorNumber = VersionEditorUtils.GetBuildNumber(EditorUserBuildSettings.activeBuildTarget);
+			var buildTarget = EditorUserBuildSettings.activeBuildTarget == BuildTarget.Android ? BuildTarget.iOS : BuildTarget.Android;
+			var buildNumber = VersionEditorUtils.GetBuildNumber(buildTarget);
 
-			Assert.AreEqual("prod", ReadVersionData().BuildType);
+			Assume.That(buildNumber, Is.Not.EqualTo(editorNumber), "빌드 대상과 활성 타깃의 빌드 번호가 같으면 복원을 구분할 수 없습니다");
 
-			for (var i = 0; i < 10 && ReadVersionData().BuildType != "dev"; i++)
+			VersionBuildProcessor.PrepareForBuild(buildTarget);
+
+			Assert.AreEqual(buildNumber, ReadVersionData().BuildNumber);
+
+			for (var i = 0; i < 10 && ReadVersionData().BuildNumber != editorNumber; i++)
 			{
 				yield return null;
 			}
 
-			Assert.AreEqual("dev", ReadVersionData().BuildType);
+			Assert.AreEqual(editorNumber, ReadVersionData().BuildNumber);
 		}
 
 		private static VersionServices.VersionData ReadVersionData()

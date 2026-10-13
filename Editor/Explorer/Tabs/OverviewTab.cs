@@ -68,7 +68,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			var card = MakeCard("Versioning", versionDataExists ? "version-data.txt present" : "version-data.txt missing", versionDataExists);
 			var actions = GetActionsRow(card);
 			actions.Add(MakeOpenButton<VersioningTab>());
-			actions.Add(new Button(() => Versioning.Editor.VersionEditorUtils.SetAndSaveInternalVersion(false)) { text = "Refresh" });
+			actions.Add(new Button(() => Versioning.Editor.VersionEditorUtils.SetAndSaveInternalVersion()) { text = "Refresh" });
 			return card;
 		}
 

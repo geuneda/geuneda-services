@@ -4,9 +4,9 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [유의적 버전](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
-## [Unreleased]
+## [3.0.0] - 2026-10-13
 
-**호환되지 않는 변경(다음 릴리스는 메이저 버전)**:
+**호환되지 않는 변경**(옮기는 방법은 [MIGRATION.md](MIGRATION.md)):
 - `DataService`의 `PlayerPrefs` 키를 `typeof(T).Name`에서 `typeof(T).FullName`으로 바꿨습니다. 네임스페이스나 감싸는 타입이 다른 같은 이름의 데이터 타입이 같은 키를 쓰던 충돌이 없어집니다.
 - `DataService`의 저장 형식을 평문 JSON에서 `{"version":n,"data":{...}}` 봉투로 바꿨습니다. 버전은 새 `[DataVersion(n)]` 속성 값(없으면 0)이며, `DataService.AddMigration<T>(fromVersion, migration)`으로 이전 버전 세이브를 한 단계씩 바꿀 수 있습니다.
 - 이전 버전이 저장한 세이브는 자동으로 옮기지 않습니다. 기존 프로젝트는 이전 버전에 고정하고 새 프로젝트부터 이 버전을 쓰세요.

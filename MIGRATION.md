@@ -1,4 +1,17 @@
-# 마이그레이션 가이드: v1.x → v2.x
+# 마이그레이션 가이드
+
+버전별 전체 변경은 [CHANGELOG.md](CHANGELOG.md) 를 참고하세요. 기존 프로젝트를 이전 메이저에 고정하려면 manifest 의 URL 끝에 태그를 붙입니다(예: `https://github.com/geuneda/geuneda-services.git#v2.1.4`).
+
+## v2.x → v3.0 (호환성 파괴)
+
+1. **core 의존성**: `Packages/manifest.json` 에 `"com.geuneda.core": "https://github.com/geuneda/geuneda-core.git"` 를 추가합니다.
+2. **세이브 형식**: `DataService` 가 `{"version":n,"data":{...}}` 봉투로 저장하고, PlayerPrefs 키가 `typeof(T).Name` 에서 `typeof(T).FullName` 으로 바뀌었습니다. v2.x 세이브는 자동으로 옮기지 않으므로, 출시한 게임은 v2.x 에 고정하거나 직접 옮기는 코드를 둡니다. 새 세이브 스키마는 `[DataVersion(n)]` 과 `AddMigration<T>` 로 단계별로 옮깁니다.
+3. **빌드 타입**: `VersionServices.VersionData.BuildType` 이 없어졌습니다. 내부 버전 끝의 환경 이름은 core 의 `AppEnv.Name`(`GEUNEDA_ENV_DEV`/`QA`/`PROD` define)입니다. `VersionEditorUtils.SetAndSaveInternalVersion(bool)` 은 `SetAndSaveInternalVersion()` / `SetAndSaveInternalVersion(BuildTarget)` 으로 바꿉니다.
+4. 그 밖의 동작 변경(틱 콜백 중 해제, 버전 비교, 풀 Spawn)은 CHANGELOG 의 3.0.0 항목을 봅니다.
+
+---
+
+# v1.x → v2.x
 
 v2.0.0 에서 `com.geuneda.assetsimporter` 가 이 패키지에 통합되었고, 일부 타입의 네임스페이스와 폴더 구조가 바뀌었습니다. v1.x 에서 올리는 경우 아래 순서로 확인하세요. 버전별 전체 변경은 [CHANGELOG.md](CHANGELOG.md) 를 참고하세요.
 

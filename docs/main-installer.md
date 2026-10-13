@@ -67,7 +67,8 @@ installer.Bind<IMessageBrokerService>(new MessageBrokerService())
 ## 주의사항
 
 - `MainInstaller.Clean()` 은 바인딩만 지우고 `Dispose()` 를 호출하지 않습니다. `TickService`, `CoroutineService`, `PoolService` 처럼 정리가 필요한 서비스는 `CleanDispose<T>()` 로 먼저 정리하세요.
-- `MainInstaller` 는 정적 상태라 도메인 리로드를 끈 에디터(Enter Play Mode Options)에서는 이전 플레이 세션의 바인딩이 남을 수 있습니다. 부트스트랩의 `OnDestroy` 등에서 `Clean()` 을 호출하세요.
+- `MainInstaller` 는 정적 상태지만, 플레이 세션이 시작될 때(`RuntimeInitializeLoadType.SubsystemRegistration`) 바인딩을 비우므로 도메인 리로드를 끈 에디터(Enter Play Mode Options)에서도 이전 세션의 바인딩이 남지 않습니다(Unreleased). 이전 세션의 객체는 `Dispose` 하지 않고 참조만 버립니다. 정리가 필요한 서비스는 세션이 끝날 때 `CleanDispose<T>()` 로 직접 정리하세요.
+- 같은 이유로 `SubsystemRegistration` 콜백에서 바인딩하면 지워질 수 있습니다(어셈블리 간 실행 순서가 정해져 있지 않음). 바인딩은 `AfterAssembliesLoaded` 이후(씬 로드, `Awake` 등)에 하세요.
 - 에디터의 Services Explorer 는 `MainInstaller` 에 바인딩된 서비스만 표시합니다.
 
 ## 예외

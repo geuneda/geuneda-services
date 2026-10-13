@@ -112,6 +112,9 @@ namespace Geuneda.Services
 		private readonly List<TickData> _onLateUpdateList = new List<TickData>();
 
 		private int _tickDataIdRef;
+		// 지금 순회 중인 구독 리스트와 위치. 콜백 안에서 해제되어 리스트가 당겨지면 위치도 함께 당겨 같은 항목을 두 번 부르지 않는다
+		private List<TickData> _iteratingList;
+		private int _iterationIndex;
 
 		internal IReadOnlyList<TickData> OnUpdateList => _onUpdateList;
 		internal IReadOnlyList<TickData> OnFixedUpdateList => _onFixedUpdateList;
@@ -140,9 +143,9 @@ namespace Geuneda.Services
 				Object.Destroy(_tickObject.gameObject);
 			}
 
-			_onUpdateList.Clear();
-			_onFixedUpdateList.Clear();
-			_onLateUpdateList.Clear();
+			ClearList(_onUpdateList);
+			ClearList(_onFixedUpdateList);
+			ClearList(_onLateUpdateList);
 		}
 
 		/// <inheritdoc />
@@ -197,76 +200,55 @@ namespace Geuneda.Services
 		/// <inheritdoc />
 		public void UnsubscribeOnUpdate(Action<float> action)
 		{
-			for (int i = 0; i < _onUpdateList.Count; i++)
-			{
-				if (_onUpdateList[i].Action == action && action.Target == _onUpdateList[i].Subscriber)
-				{
-					_onUpdateList.RemoveAt(i);
-					return;
-				}
-			}
+			RemoveFirst(_onUpdateList, action);
 		}
 
 		/// <inheritdoc />
 		public void UnsubscribeOnFixedUpdate(Action<float> action)
 		{
-			for (int i = 0; i < _onFixedUpdateList.Count; i++)
-			{
-				if (_onFixedUpdateList[i].Action == action && action.Target == _onFixedUpdateList[i].Subscriber)
-				{
-					_onFixedUpdateList.RemoveAt(i);
-					return;
-				}
-			}
+			RemoveFirst(_onFixedUpdateList, action);
 		}
 
 		/// <inheritdoc />
 		public void UnsubscribeOnLateUpdate(Action<float> action)
 		{
-			for (int i = 0; i < _onLateUpdateList.Count; i++)
-			{
-				if (_onLateUpdateList[i].Action == action && action.Target == _onLateUpdateList[i].Subscriber)
-				{
-					_onLateUpdateList.RemoveAt(i);
-					return;
-				}
-			}
+			RemoveFirst(_onLateUpdateList, action);
 		}
 
 		/// <inheritdoc />
 		public void UnsubscribeAllOnUpdate()
 		{
-			_onUpdateList.Clear();
+			ClearList(_onUpdateList);
 		}
 
 		/// <inheritdoc />
 		public void UnsubscribeAllOnUpdate(object subscriber)
 		{
-			_onUpdateList.RemoveAll(data => data.Subscriber == subscriber);
+			RemoveBySubscriber(_onUpdateList, subscriber);
 		}
 
 		/// <inheritdoc />
 		public void UnsubscribeAllOnFixedUpdate()
 		{
-			_onFixedUpdateList.Clear();
+			ClearList(_onFixedUpdateList);
 		}
 
 		/// <inheritdoc />
 		public void UnsubscribeAllOnFixedUpdate(object subscriber)
 		{
-			_onFixedUpdateList.RemoveAll(data => data.Subscriber == subscriber);
+			RemoveBySubscriber(_onFixedUpdateList, subscriber);
 		}
 
 		/// <inheritdoc />
 		public void UnsubscribeAllOnLateUpdate()
 		{
-			_onLateUpdateList.Clear();
+			ClearList(_onLateUpdateList);
 		}
 
 		/// <inheritdoc />
 		public void UnsubscribeAllOnLateUpdate(object subscriber)
 		{
-			_onLateUpdateList.RemoveAll(data => data.Subscriber == subscriber);
+			RemoveBySubscriber(_onLateUpdateList, subscriber);
 		}
 
 		/// <inheritdoc />
@@ -302,16 +284,29 @@ namespace Geuneda.Services
 				return;
 			}
 
-			// 반복 중 안전한 변경을 위해 역순으로 순회
-			for (int i = _onFixedUpdateList.Count - 1; i >= 0; i--)
-			{
-				// 이전 액션에 의해 항목이 제거된 경우 건너뜀
-				if (i >= _onFixedUpdateList.Count)
-				{
-					continue;
-				}
+			var previousList = _iteratingList;
+			var previousIndex = _iterationIndex;
 
-				_onFixedUpdateList[i].Action(Time.fixedTime);
+			_iteratingList = _onFixedUpdateList;
+
+			try
+			{
+				// 역순으로 순회한다. 콜백 안에서 이 단계에 새로 구독한 항목은 뒤에 붙으므로 이 단계의 다음 순회부터 불린다
+				for (_iterationIndex = _onFixedUpdateList.Count - 1; _iterationIndex >= 0; _iterationIndex--)
+				{
+					// 콜백이 항목을 지워 리스트가 짧아진 경우
+					if (_iterationIndex >= _onFixedUpdateList.Count)
+					{
+						continue;
+					}
+
+					Invoke(_onFixedUpdateList[_iterationIndex].Action, Time.fixedTime);
+				}
+			}
+			finally
+			{
+				_iteratingList = previousList;
+				_iterationIndex = previousIndex;
 			}
 		}
 
@@ -332,34 +327,134 @@ namespace Geuneda.Services
 				return;
 			}
 
-			// 반복 중 안전한 변경을 위해 역순으로 순회
-			for (int i = list.Count - 1; i >= 0; i--)
+			var previousList = _iteratingList;
+			var previousIndex = _iterationIndex;
+
+			_iteratingList = list;
+
+			try
 			{
-				// 이전 액션에 의해 항목이 제거된 경우 건너뜀
-				if (i >= list.Count)
+				// 역순으로 순회한다. 콜백 안에서 이 단계에 새로 구독한 항목은 뒤에 붙으므로 이 단계의 다음 순회부터 불린다
+				for (_iterationIndex = list.Count - 1; _iterationIndex >= 0; _iterationIndex--)
 				{
+					// 콜백이 항목을 지워 리스트가 짧아진 경우
+					if (_iterationIndex >= list.Count)
+					{
+						continue;
+					}
+
+					var tickData = list[_iterationIndex];
+					var time = tickData.RealTime ? Time.realtimeSinceStartup : Time.time;
+
+					if (time < tickData.LastTickTime + tickData.DeltaTime)
+					{
+						continue;
+					}
+
+					var deltaTime = time - tickData.LastTickTime;
+
+					Invoke(tickData.Action, deltaTime);
+
+					// 콜백 안에서 앞쪽 항목이 해제되면 _iterationIndex 도 함께 당겨지므로, 이 위치에 현재 항목이 남아 있는지 확인한다
+					if (_iterationIndex < list.Count && list[_iterationIndex] == tickData)
+					{
+						var overFlow = tickData.DeltaTime == 0 ? 0 : deltaTime % tickData.DeltaTime;
+						tickData.LastTickTime = tickData.TimeOverflowToNextTick ? time - overFlow : time;
+						list[_iterationIndex] = tickData;
+					}
+				}
+			}
+			finally
+			{
+				_iteratingList = previousList;
+				_iterationIndex = previousIndex;
+			}
+		}
+
+		// 콜백 하나가 예외를 던져도 같은 프레임의 나머지 구독자는 계속 부른다
+		private static void Invoke(Action<float> action, float time)
+		{
+			try
+			{
+				action(time);
+			}
+			catch (Exception e)
+			{
+				Debug.LogException(e);
+			}
+		}
+
+		private void RemoveFirst(List<TickData> list, Action<float> action)
+		{
+			for (int i = 0; i < list.Count; i++)
+			{
+				if (list[i].Action == action && action.Target == list[i].Subscriber)
+				{
+					RemoveAt(list, i);
+					return;
+				}
+			}
+		}
+
+		// 남길 항목을 앞으로 모으고 끝을 한 번에 지운다(할당 없이 O(N)). 순회 중이면 현재 위치 앞에서 빠진 수만큼 위치를 당긴다
+		private void RemoveBySubscriber(List<TickData> list, object subscriber)
+		{
+			var isIterating = list == _iteratingList;
+			var removedBeforeCursor = 0;
+			var write = 0;
+
+			for (var read = 0; read < list.Count; read++)
+			{
+				var tickData = list[read];
+
+				if (tickData.Subscriber == subscriber)
+				{
+					if (isIterating && read < _iterationIndex)
+					{
+						removedBeforeCursor++;
+					}
+
 					continue;
 				}
 
-				var tickData = list[i];
-				var time = tickData.RealTime ? Time.realtimeSinceStartup : Time.time;
-
-				if (time < tickData.LastTickTime + tickData.DeltaTime)
+				if (write != read)
 				{
-					continue;
+					list[write] = tickData;
 				}
 
-				var deltaTime = time - tickData.LastTickTime;
+				write++;
+			}
 
-				tickData.Action(deltaTime);
+			if (write < list.Count)
+			{
+				list.RemoveRange(write, list.Count - write);
+			}
 
-				// 항목이 여전히 존재하고 구독 해제되지 않았는지 확인
-				if (i < list.Count && list[i] == tickData)
-				{
-					var overFlow = tickData.DeltaTime == 0 ? 0 : deltaTime % tickData.DeltaTime;
-					tickData.LastTickTime = tickData.TimeOverflowToNextTick ? time - overFlow : time;
-					list[i] = tickData;
-				}
+			if (isIterating)
+			{
+				_iterationIndex -= removedBeforeCursor;
+			}
+		}
+
+		private void RemoveAt(List<TickData> list, int index)
+		{
+			list.RemoveAt(index);
+
+			// 순회 중인 리스트에서 아직 부르지 않은 앞쪽 항목이 빠지면 현재 항목이 한 칸 당겨지므로 위치도 당긴다
+			if (list == _iteratingList && index < _iterationIndex)
+			{
+				_iterationIndex--;
+			}
+		}
+
+		private void ClearList(List<TickData> list)
+		{
+			list.Clear();
+
+			// 순회 중이었다면 남은 순회를 끝낸다. 콜백이 이어서 이 단계에 새로 구독해도 그 항목은 이 단계의 다음 순회부터 불린다
+			if (list == _iteratingList)
+			{
+				_iterationIndex = 0;
 			}
 		}
 

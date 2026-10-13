@@ -14,7 +14,10 @@ Unity 의 Update / FixedUpdate / LateUpdate 콜백을 한곳에서 순수 C# 객
   - `SubscribeOnFixedUpdate`: 인자는 경과 시간이 아니라 **`Time.fixedTime`(절대 시각)** 입니다. 고정 델타가 필요하면 `Time.fixedDeltaTime` 을 직접 읽으세요.
 - `deltaTime > 0` 이면 최소 그 간격이 지났을 때만 호출합니다(호출 빈도 제한). `timeOverflowToNextTick: true` 는 초과분을 다음 틱으로 넘겨 드리프트를 줄입니다.
 - `realTime: true` 는 `Time.realtimeSinceStartup`(timeScale 영향 없음), 기본값 `false` 는 `Time.time` 을 씁니다.
-- 구독 리스트는 역순으로 순회하므로 콜백 안에서 구독 해제해도 안전합니다. 같은 프레임의 호출 순서는 구독 역순입니다.
+- 같은 프레임의 호출 순서는 구독 역순(나중에 구독한 것이 먼저)입니다.
+- 콜백 안에서 구독 해제해도 안전합니다. 아직 부르지 않은 구독을 해제하면 그 프레임에 불리지 않고, 다른 구독자가 두 번 불리지도 않습니다(`UnsubscribeAll*` 포함).
+- 콜백 안에서 지금 순회 중인 단계(같은 리스트)에 새로 구독하면 그 단계의 다음 순회부터 불립니다(Update 는 다음 프레임, FixedUpdate 는 다음 고정 단계). 다른 단계에 구독하면 같은 프레임에도 불릴 수 있습니다. 예를 들어 Update 콜백에서 `SubscribeOnLateUpdate` 한 콜백은 그 프레임의 LateUpdate 에서 불립니다.
+- 콜백 하나가 예외를 던지면 `Debug.LogException` 으로 남기고 같은 프레임의 나머지 구독자를 계속 부릅니다. 던진 콜백의 마지막 호출 시각도 갱신되므로 `deltaTime` 간격은 그대로 지켜집니다.
 
 ## 사용 예
 

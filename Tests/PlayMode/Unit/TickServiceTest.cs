@@ -1,8 +1,12 @@
+using System;
 using System.Collections;
+using System.Collections.Generic;
+using System.Text.RegularExpressions;
 using Geuneda.Services;
 using NUnit.Framework;
 using UnityEngine;
 using UnityEngine.TestTools;
+using Object = UnityEngine.Object;
 
 // ReSharper disable once CheckNamespace
 
@@ -96,6 +100,156 @@ namespace GeunedaEditor.Services.Tests
 			yield return null;
 
 			Assert.AreEqual(1, callCount);
+		}
+
+		[UnityTest]
+		public IEnumerator UnsubscribeOnUpdate_EarlierSubscriberDuringCallback_CurrentCalledOncePerFrame()
+		{
+			var earlierCalls = 0;
+			var currentFrames = new List<int>();
+			Action<float> earlier = dt => earlierCalls++;
+
+			// 역순으로 순회하므로 나중에 구독한 current 가 먼저 불리고, 아직 부르지 않은 earlier 를 해제한다
+			_tickService.SubscribeOnUpdate(earlier);
+			_tickService.SubscribeOnUpdate(dt =>
+			{
+				currentFrames.Add(Time.frameCount);
+				_tickService.UnsubscribeOnUpdate(earlier);
+			});
+
+			yield return null;
+			yield return null;
+
+			Assert.AreEqual(0, earlierCalls);
+			Assert.IsNotEmpty(currentFrames);
+			CollectionAssert.AllItemsAreUnique(currentFrames);
+		}
+
+		[UnityTest]
+		public IEnumerator UnsubscribeOnFixedUpdate_EarlierSubscriberDuringCallback_CurrentCalledOncePerStep()
+		{
+			var earlierCalls = 0;
+			var currentSteps = new List<float>();
+			Action<float> earlier = time => earlierCalls++;
+
+			_tickService.SubscribeOnFixedUpdate(earlier);
+			_tickService.SubscribeOnFixedUpdate(time =>
+			{
+				currentSteps.Add(time);
+				_tickService.UnsubscribeOnFixedUpdate(earlier);
+			});
+
+			yield return new WaitForFixedUpdate();
+			yield return new WaitForFixedUpdate();
+
+			Assert.AreEqual(0, earlierCalls);
+			Assert.IsNotEmpty(currentSteps);
+			CollectionAssert.AllItemsAreUnique(currentSteps);
+		}
+
+		[UnityTest]
+		public IEnumerator UnsubscribeAllBySubscriber_EarlierSubscriptionsDuringCallback_CurrentCalledOncePerFrame()
+		{
+			var subscriber = new TickSubscriber();
+			var currentFrames = new List<int>();
+
+			_tickService.SubscribeOnUpdate(subscriber.OnTick);
+			_tickService.SubscribeOnUpdate(subscriber.OnTick);
+			_tickService.SubscribeOnUpdate(dt =>
+			{
+				currentFrames.Add(Time.frameCount);
+				_tickService.UnsubscribeAll(subscriber);
+			});
+
+			yield return null;
+			yield return null;
+
+			Assert.AreEqual(0, subscriber.CallCount);
+			Assert.IsNotEmpty(currentFrames);
+			CollectionAssert.AllItemsAreUnique(currentFrames);
+		}
+
+		[UnityTest]
+		public IEnumerator UnsubscribeAllBySubscriber_InterleavedWithOthersDuringCallback_KeptSubscribersCalledOncePerFrame()
+		{
+			var subscriber = new TickSubscriber();
+			var firstKeptFrames = new List<int>();
+			var secondKeptFrames = new List<int>();
+			var currentFrames = new List<int>();
+
+			// [A, K1, A, K2, current] 순서로 구독한다. current 가 먼저 불려 앞쪽의 A 두 개를 지운다
+			_tickService.SubscribeOnUpdate(subscriber.OnTick);
+			_tickService.SubscribeOnUpdate(dt => firstKeptFrames.Add(Time.frameCount));
+			_tickService.SubscribeOnUpdate(subscriber.OnTick);
+			_tickService.SubscribeOnUpdate(dt => secondKeptFrames.Add(Time.frameCount));
+			_tickService.SubscribeOnUpdate(dt =>
+			{
+				currentFrames.Add(Time.frameCount);
+				_tickService.UnsubscribeAllOnUpdate(subscriber);
+			});
+
+			yield return null;
+			yield return null;
+
+			Assert.AreEqual(0, subscriber.CallCount);
+			Assert.IsNotEmpty(currentFrames);
+			CollectionAssert.AllItemsAreUnique(currentFrames);
+			CollectionAssert.AreEqual(currentFrames, firstKeptFrames);
+			CollectionAssert.AreEqual(currentFrames, secondKeptFrames);
+		}
+
+		[UnityTest]
+		public IEnumerator UnsubscribeAllOnUpdate_ThenSubscribeDuringCallback_NewSubscriberStartsNextFrame()
+		{
+			var clearFrame = -1;
+			var newFrames = new List<int>();
+
+			_tickService.SubscribeOnUpdate(dt => { });
+			_tickService.SubscribeOnUpdate(dt =>
+			{
+				if (clearFrame >= 0)
+				{
+					return;
+				}
+
+				clearFrame = Time.frameCount;
+				_tickService.UnsubscribeAllOnUpdate();
+				_tickService.SubscribeOnUpdate(newDt => newFrames.Add(Time.frameCount));
+			});
+
+			yield return null;
+			yield return null;
+
+			Assert.GreaterOrEqual(clearFrame, 0);
+			CollectionAssert.DoesNotContain(newFrames, clearFrame);
+			Assert.IsNotEmpty(newFrames);
+		}
+
+		[UnityTest]
+		public IEnumerator SubscribeOnUpdate_CallbackThrows_OtherSubscribersStillCalledSameFrame()
+		{
+			var otherCalls = 0;
+			var thrown = false;
+
+			// 나중에 구독한 쪽이 먼저 불리므로 예외를 던지는 콜백 뒤에 other 가 불린다
+			_tickService.SubscribeOnUpdate(dt => otherCalls++);
+			_tickService.SubscribeOnUpdate(dt =>
+			{
+				if (thrown)
+				{
+					return;
+				}
+
+				thrown = true;
+				throw new InvalidOperationException("tick boom");
+			});
+
+			LogAssert.Expect(LogType.Exception, new Regex("tick boom"));
+
+			yield return null;
+
+			Assert.IsTrue(thrown);
+			Assert.GreaterOrEqual(otherCalls, 1);
 		}
 
 		private class TickSubscriber

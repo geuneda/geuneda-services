@@ -9,6 +9,8 @@
 **수정**:
 - 풀 스택에 돌아간 객체가 풀 밖에서 파괴된 뒤 `GameObjectPool.Spawn()` / `GameObjectPool<T>.Spawn()`을 부르면 `MissingReferenceException`이 나던 문제를 수정했습니다. `ObjectPoolBase<T>`는 `T : class` 제약이라 `entity == null`이 참조 비교로 컴파일되어 파괴된 Unity 객체(fake null)를 걸러내지 못했습니다. 이제 `Despawn`과 같이 `Equals(null)`로도 확인해 파괴된 객체는 건너뛰고 다음 객체를 꺼내거나 새로 만듭니다.
 - 인스턴시에이터가 null을 돌려주면 `Spawn()`이 끝없이 다시 만들던 문제를 수정했습니다. 새로 만든 객체가 null이거나 파괴된 객체면 재시도하지 않고 `InvalidOperationException`을 던집니다.
+- `TickService` 콜백 안에서 아직 부르지 않은 앞쪽 구독(`Unsubscribe*`, `UnsubscribeAll*(subscriber)`)을 해제하면 현재 콜백이 같은 프레임에 두 번 불리던 문제를 수정했습니다. Update, LateUpdate, FixedUpdate 모두 해당합니다. 콜백 안에서 `UnsubscribeAll*()`로 같은 단계를 비운 뒤 그 단계에 새로 구독하면 그 콜백이 같은 순회에서 불리던 문제도 함께 고쳐, 그 단계의 다음 순회부터 불립니다. `UnsubscribeAll*(subscriber)`는 항목마다 지우지 않고 한 번에 압축해 지웁니다.
+- `TickService` 콜백 하나가 예외를 던지면 같은 프레임의 나머지 구독자가 모두 건너뛰어지던 문제를 수정했습니다. 예외는 `Debug.LogException`으로 남기고 나머지를 계속 부릅니다.
 
 ## [2.1.4] - 2026-10-12
 

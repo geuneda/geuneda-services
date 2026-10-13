@@ -113,11 +113,12 @@ Editor 코드는 런타임 어셈블리에서 참조하지 않습니다.
 ### 버전 데이터 파이프라인
 
 - 런타임은 Resources 의 `version-data` TextAsset 을 읽습니다(`VersionServices.VersionDataFilename`, 변경 불가).
-- `VersionEditorUtils` 는 `[InitializeOnLoadMethod]` 에서 `SetAndSaveInternalVersion(false)` 를 호출해 `version-data.txt` 를 씁니다. 내용이 같으면 쓰지 않고, 파일이 없으면 에러 없이 새로 만듭니다(v2.1.2). 빌드 전 자동 훅은 없습니다.
+- `VersionEditorUtils` 는 `[InitializeOnLoadMethod]` 에서 `SetAndSaveInternalVersion(false)` 를 호출해 `version-data.txt` 를 씁니다. 내용이 같으면 쓰지 않고, 파일이 없으면 에러 없이 새로 만듭니다(v2.1.2). 플레이어 빌드에서는 `VersionBuildProcessor` 가 빌드 직전에 빌드용 값을 쓰고, 성공 후처리 또는 빌드가 끝난 뒤 첫 에디터 업데이트에서 `dev` 로 되돌립니다.
 - 쓰기 폴더: 기존 `Resources/version-data.txt` 위치를 우선 사용하고, 없으면 `VersioningEditorSettings.instance.ResourcesFolderPath`(기본 `Assets/Configs/Resources`, `Resources` 세그먼트 필수).
 - 런타임 로드: `SubsystemRegistration` 의 비공개 `Bootstrap` 이 `LoadVersionData()` 를 호출하고, 프로퍼티 getter 는 비공개 `EnsureLoaded()` 로 지연 로드합니다. `EnsureLoaded()` 는 `_loadAttempted` 가 거짓일 때만 로드하므로 실패해도 재시도하지 않습니다(v2.1.4). `LoadVersionData()` / `LoadVersionDataAsync()` 를 직접 부르면 항상 다시 읽습니다. 동기/비동기 로드는 비공개 `ApplyTextAsset` 으로 수렴합니다. 리소스가 없으면 폴백값과 `Debug.LogError`, 예외 없음.
 - 테스트에서 `_loaded` 를 리플렉션으로 초기화할 때는 `_loadAttempted` 도 함께 초기화해야 지연 로드가 다시 실행됩니다. git 저장소가 아닌 프로젝트에서는 `version-data.txt` 의 `BranchName` / `CommitHash` 가 비어 있으므로, 이 값에 의존하는 테스트는 리소스를 직접 읽어 전제를 확인하고 `Assert.Inconclusive` 로 끝냅니다.
-- `IsOutdatedVersion` 은 세 부분 semver 를 가정하며 길이 검사가 없습니다(두 부분 입력 시 `IndexOutOfRangeException`). 호스트 에디터의 `Application.version` 으로 테스트할 때는 짧은 문자열에 `Assert.Inconclusive` 를 쓰세요.
+- `IsOutdatedVersion` 은 `Major[.Minor[.Patch]]` 를 받고 빠진 부분은 0, 각 부분은 앞쪽 ASCII 숫자만 비교합니다. Major 를 읽을 수 없거나 어느 부분이 `int` 범위를 넘으면 경고 후 `false` 입니다(넘친 값을 0 으로 읽으면 비교가 뒤집힘). 비교 로직 테스트는 `IsOutdatedVersion(currentVersion, otherVersion)` 오버로드로 합니다.
+- 빌드 타입과 빌드 번호는 `VersionBuildProcessor`(빌드 전 `prod`/`dev` 와 대상 플랫폼 빌드 번호, 빌드 후 `dev` 로 복원)가 씁니다. 빌드 번호 소스를 바꾸면 `VersionEditorUtils.GetBuildNumber` 와 `VersionBuildTest` 를 함께 고치세요.
 
 ### 에디터 관찰 (InternalsVisibleTo)
 

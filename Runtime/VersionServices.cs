@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.Threading.Tasks;
 using UnityEngine;
 
@@ -178,33 +179,92 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// 제공된 버전이 로컬 앱 버전보다 최신인지 확인합니다
+		/// 제공된 버전이 로컬 앱 버전(<see cref="VersionExternal"/>)보다 최신인지 확인합니다
 		/// </summary>
+		/// <remarks><see cref="IsOutdatedVersion(string, string)"/> 의 규칙을 따릅니다.</remarks>
 		public static bool IsOutdatedVersion(string version)
 		{
-			var appVersion = VersionExternal.Split('.');
-			var otherVersion = version.Split('.');
+			return IsOutdatedVersion(VersionExternal, version);
+		}
 
-			var majorApp = int.Parse(appVersion[0]);
-			var majorOther = int.Parse(otherVersion[0]);
-
-			var minorApp = int.Parse(appVersion[1]);
-			var minorOther = int.Parse(otherVersion[1]);
-
-			var patchApp = int.Parse(appVersion[2]);
-			var patchOther = int.Parse(otherVersion[2]);
-
-			if (majorApp != majorOther)
+		/// <summary>
+		/// <paramref name="otherVersion"/> 이 <paramref name="currentVersion"/> 보다 최신인지 확인합니다
+		/// </summary>
+		/// <remarks>
+		/// <c>Major[.Minor[.Patch]]</c> 형식을 받으며 빠진 부분은 0 으로 봅니다. 각 부분은 앞쪽 숫자만 비교하고
+		/// 그 뒤의 접미사(<c>1.2.3-rc</c>, <c>1.2.3+42</c>)와 나머지 부분은 무시합니다. 그래서 <c>1.2.3-rc</c> 와 <c>1.2.3</c> 은 같다고 봅니다.
+		/// 어느 쪽이든 Major 숫자를 읽을 수 없거나 어느 부분의 숫자가 <see cref="int"/> 범위를 넘으면 경고 로그를 남기고 <c>false</c> 를 반환합니다.
+		/// </remarks>
+		public static bool IsOutdatedVersion(string currentVersion, string otherVersion)
+		{
+			if (!TryParseVersion(currentVersion, out var current) || !TryParseVersion(otherVersion, out var other))
 			{
-				return majorOther > majorApp;
+				Debug.LogWarning($"Cannot compare versions '{currentVersion}' and '{otherVersion}'. Expected Major[.Minor[.Patch]].");
+				return false;
 			}
 
-			if (minorApp != minorOther)
+			if (current.Major != other.Major)
 			{
-				return minorOther > minorApp;
+				return other.Major > current.Major;
 			}
 
-			return patchOther > patchApp;
+			if (current.Minor != other.Minor)
+			{
+				return other.Minor > current.Minor;
+			}
+
+			return other.Patch > current.Patch;
+		}
+
+		private static bool TryParseVersion(string version, out (int Major, int Minor, int Patch) result)
+		{
+			result = default;
+
+			if (string.IsNullOrWhiteSpace(version))
+			{
+				return false;
+			}
+
+			var parts = version.Trim().Split('.');
+			var numbers = new int[3];
+
+			for (var i = 0; i < numbers.Length && i < parts.Length; i++)
+			{
+				var part = parts[i];
+				var digitCount = 0;
+
+				while (digitCount < part.Length && part[digitCount] >= '0' && part[digitCount] <= '9')
+				{
+					digitCount++;
+				}
+
+				if (digitCount == 0)
+				{
+					// Major 를 읽을 수 없으면 비교할 수 없다. 그 뒤 부분이 숫자로 시작하지 않으면 거기서 끝낸다(나머지는 0)
+					if (i == 0)
+					{
+						return false;
+					}
+
+					break;
+				}
+
+				// 숫자가 int 범위를 넘으면 0 으로 읽어 비교가 뒤집히지 않도록 어느 위치든 비교할 수 없는 버전으로 본다
+				if (!int.TryParse(part.Substring(0, digitCount), NumberStyles.None, CultureInfo.InvariantCulture, out numbers[i]))
+				{
+					return false;
+				}
+
+				// 접미사가 붙은 부분(예: "3-rc")이면 그 뒤 부분은 접미사의 일부이므로 읽지 않는다
+				if (digitCount < part.Length)
+				{
+					break;
+				}
+			}
+
+			result = (numbers[0], numbers[1], numbers[2]);
+
+			return true;
 		}
 
 		/// <summary>

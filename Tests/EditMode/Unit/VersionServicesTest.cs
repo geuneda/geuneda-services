@@ -1,6 +1,8 @@
+using System.Text.RegularExpressions;
 using Geuneda.Services;
 using NUnit.Framework;
 using UnityEngine;
+using UnityEngine.TestTools;
 
 // ReSharper disable once CheckNamespace
 
@@ -9,68 +11,36 @@ namespace GeunedaEditor.Services.Tests
 	[TestFixture]
 	public class VersionServicesTest
 	{
-		/// <summary>
-		/// VersionServices.IsOutdatedVersion에서 추출한 테스트 가능한 버전 비교 로직입니다.
-		/// IsOutdatedVersion은 Application.version(EditMode에서 읽기 전용)을 사용하므로,
-		/// 유닛 테스트를 가능하게 하기 위해 비교 로직을 여기에 추출했습니다.
-		/// </summary>
-		private static bool IsOutdatedVersionTestable(string appVersion, string otherVersion)
-		{
-			var appVersionParts = appVersion.Split('.');
-			var otherVersionParts = otherVersion.Split('.');
-
-			var majorApp = int.Parse(appVersionParts[0]);
-			var majorOther = int.Parse(otherVersionParts[0]);
-
-			var minorApp = int.Parse(appVersionParts[1]);
-			var minorOther = int.Parse(otherVersionParts[1]);
-
-			var patchApp = int.Parse(appVersionParts[2]);
-			var patchOther = int.Parse(otherVersionParts[2]);
-
-			if (majorApp != majorOther)
-			{
-				return majorOther > majorApp;
-			}
-
-			if (minorApp != minorOther)
-			{
-				return minorOther > minorApp;
-			}
-
-			return patchOther > patchApp;
-		}
-
 		[Test]
 		public void IsOutdatedVersion_NewerMajor_ReturnsTrue()
 		{
-			Assert.That(IsOutdatedVersionTestable("1.0.0", "2.0.0"), Is.True);
+			Assert.IsTrue(VersionServices.IsOutdatedVersion("1.0.0", "2.0.0"));
 		}
 
 		[Test]
 		public void IsOutdatedVersion_NewerMinor_ReturnsTrue()
 		{
-			Assert.That(IsOutdatedVersionTestable("1.1.0", "1.2.0"), Is.True);
+			Assert.IsTrue(VersionServices.IsOutdatedVersion("1.1.0", "1.2.0"));
 		}
 
 		[Test]
 		public void IsOutdatedVersion_NewerPatch_ReturnsTrue()
 		{
-			Assert.That(IsOutdatedVersionTestable("1.1.1", "1.1.2"), Is.True);
+			Assert.IsTrue(VersionServices.IsOutdatedVersion("1.1.1", "1.1.2"));
 		}
 
 		[Test]
 		public void IsOutdatedVersion_SameVersion_ReturnsFalse()
 		{
-			Assert.That(IsOutdatedVersionTestable("1.1.1", "1.1.1"), Is.False);
+			Assert.IsFalse(VersionServices.IsOutdatedVersion("1.1.1", "1.1.1"));
 		}
 
 		[Test]
 		public void IsOutdatedVersion_OlderVersion_ReturnsFalse()
 		{
-			Assert.That(IsOutdatedVersionTestable("2.0.0", "1.0.0"), Is.False);
-			Assert.That(IsOutdatedVersionTestable("1.2.0", "1.1.0"), Is.False);
-			Assert.That(IsOutdatedVersionTestable("1.1.2", "1.1.1"), Is.False);
+			Assert.IsFalse(VersionServices.IsOutdatedVersion("2.0.0", "1.0.0"));
+			Assert.IsFalse(VersionServices.IsOutdatedVersion("1.2.0", "1.1.0"));
+			Assert.IsFalse(VersionServices.IsOutdatedVersion("1.1.2", "1.1.1"));
 		}
 
 		[Test]
@@ -110,14 +80,51 @@ namespace GeunedaEditor.Services.Tests
 		[Test]
 		public void IsOutdatedVersion_DirectInvocation_AgreesWithLocalVersion()
 		{
-			var current = Application.version;
+			Assert.IsFalse(VersionServices.IsOutdatedVersion(Application.version));
+		}
 
-			if (string.IsNullOrEmpty(current) || current.Split('.').Length < 3)
-			{
-				Assert.Inconclusive($"Application.version='{current}' is not a 3-part Major.Minor.Patch string; the production parser requires three parts.");
-			}
+		[TestCase("1.2", "1.2.1", true)]
+		[TestCase("1.2.1", "1.2", false)]
+		[TestCase("1", "1.0.0", false)]
+		[TestCase("1", "1.1", true)]
+		public void IsOutdatedVersion_MissingParts_TreatedAsZero(string current, string other, bool expected)
+		{
+			Assert.AreEqual(expected, VersionServices.IsOutdatedVersion(current, other));
+		}
 
-			Assert.IsFalse(VersionServices.IsOutdatedVersion(current));
+		[TestCase("1.2.3", "1.2.3-rc", false)]
+		[TestCase("1.2.3-rc", "1.2.3", false)]
+		[TestCase("1.2.3", "1.3.0-beta.2", true)]
+		[TestCase("1.2.3", "1.2.4+42", true)]
+		[TestCase("1.2-rc.9", "1.2.1", true)]
+		[TestCase(" 1.2.3 ", "1.2.3", false)]
+		public void IsOutdatedVersion_Suffixes_ComparesLeadingNumbersOnly(string current, string other, bool expected)
+		{
+			Assert.AreEqual(expected, VersionServices.IsOutdatedVersion(current, other));
+		}
+
+		[TestCase("1.2.2147483646", "1.2.2147483647", true)]
+		[TestCase("1.2.2147483647", "1.2.2147483646", false)]
+		[TestCase("1.2147483647.0", "1.2147483647.0", false)]
+		public void IsOutdatedVersion_IntMaxValueParts_Compared(string current, string other, bool expected)
+		{
+			Assert.AreEqual(expected, VersionServices.IsOutdatedVersion(current, other));
+		}
+
+		[TestCase("1.2.3", "abc")]
+		[TestCase("1.2.3", "")]
+		[TestCase("1.2.3", null)]
+		[TestCase("v1.2.3", "1.2.4")]
+		[TestCase("1.2.3", "99999999999.0.0")]
+		[TestCase("1.2.2147483648", "1.2.1")]
+		[TestCase("1.2.1", "1.2.2147483648")]
+		[TestCase("1.2147483648.0", "1.0.0")]
+		[TestCase("1.0.0", "1.2147483648.0")]
+		public void IsOutdatedVersion_Unparsable_LogsWarningAndReturnsFalse(string current, string other)
+		{
+			LogAssert.Expect(LogType.Warning, new Regex("Cannot compare versions"));
+
+			Assert.IsFalse(VersionServices.IsOutdatedVersion(current, other));
 		}
 	}
 }

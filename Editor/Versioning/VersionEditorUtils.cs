@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Globalization;
 using System.IO;
 using UnityEditor;
 using UnityEngine;
@@ -15,11 +16,20 @@ namespace Geuneda.Services.Versioning.Editor
 		private const string AssetsPath = "Assets";
 
 		/// <summary>
-		/// 앱 빌드 전에 내부 버전을 설정합니다.
+		/// 앱 빌드 전에 내부 버전을 설정합니다. 빌드 번호는 현재 활성 빌드 타깃 기준입니다.
 		/// </summary>
 		public static void SetAndSaveInternalVersion(bool isStoreBuild)
 		{
-			var newVersionData = GenerateInternalVersionSuffix(isStoreBuild);
+			SetAndSaveInternalVersion(isStoreBuild, EditorUserBuildSettings.activeBuildTarget);
+		}
+
+		/// <summary>
+		/// <paramref name="buildTarget"/> 의 빌드 번호로 내부 버전을 설정합니다.
+		/// <paramref name="isStoreBuild"/> 가 true 면 빌드 타입을 <c>prod</c>, 아니면 <c>dev</c> 로 기록합니다.
+		/// </summary>
+		public static void SetAndSaveInternalVersion(bool isStoreBuild, BuildTarget buildTarget)
+		{
+			var newVersionData = GenerateInternalVersionSuffix(isStoreBuild, buildTarget);
 			var newVersionDataSerialized = JsonUtility.ToJson(newVersionData);
 			var oldVersionDataSerialized = LoadVersionDataSerializedSilent();
 			if (newVersionDataSerialized.Equals(oldVersionDataSerialized, StringComparison.Ordinal))
@@ -72,7 +82,18 @@ namespace Geuneda.Services.Versioning.Editor
 			SetAndSaveInternalVersion(false);
 		}
 
-		private static VersionServices.VersionData GenerateInternalVersionSuffix(bool isStoreBuild)
+		/// <summary>
+		/// 빌드 타깃의 빌드 번호를 반환합니다. Android 는 <see cref="PlayerSettings.Android.bundleVersionCode"/>,
+		/// 그 밖에는 이전과 같이 <see cref="PlayerSettings.iOS.buildNumber"/> 입니다.
+		/// </summary>
+		internal static string GetBuildNumber(BuildTarget buildTarget)
+		{
+			return buildTarget == BuildTarget.Android
+				? PlayerSettings.Android.bundleVersionCode.ToString(CultureInfo.InvariantCulture)
+				: PlayerSettings.iOS.buildNumber;
+		}
+
+		private static VersionServices.VersionData GenerateInternalVersionSuffix(bool isStoreBuild, BuildTarget buildTarget)
 		{
 			var data = new VersionServices.VersionData();
 
@@ -116,7 +137,7 @@ namespace Geuneda.Services.Versioning.Editor
 				}
 			}
 
-			data.BuildNumber = PlayerSettings.iOS.buildNumber;
+			data.BuildNumber = GetBuildNumber(buildTarget);
 			data.BuildType = isStoreBuild ? "prod" : "dev";
 
 			return data;

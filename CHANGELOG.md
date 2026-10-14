@@ -4,6 +4,25 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [유의적 버전](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
+## [5.0.0] - 2026-10-14
+
+**호환되지 않는 변경**(옮기는 방법은 [MIGRATION.md](MIGRATION.md)):
+- `ITimeManipulator.SetInitialTime(DateTime)` 을 `SetServerTime(DateTime)` 으로 바꿨습니다. 넣은 값이 지금 이 순간의 서버 시각이 되고 `IsServerTime` 이 true 가 됩니다.
+- `DateTime` 을 받는 메서드(`SetServerTime`, `UnixTimeFromDateTimeUtc`, `UnityTimeFromDateTimeUtc`)는 `Kind` 가 `Unspecified` 면 `ArgumentException` 입니다. `Local` 은 UTC 로 바꿉니다. 이전에는 `Unspecified` 를 로컬 시각으로 보고 `ToUniversalTime()` 해서 시간대만큼 어긋났습니다(감사 Ti2).
+- 현재 시각의 기준이 `DateTime.Now`(로컬)와 `Time.realtimeSinceStartup` 에서 `DateTime.UtcNow` 와 core 의 단조 시계(`MonotonicClock`)로 바뀌었습니다. 서비스를 만든 뒤 기기 시계를 바꿔도 현재 시각이 바뀌지 않고, 일광 절약 시간 전환으로 1시간 틀어지던 문제가 없습니다.
+- `ITimeService` 에 `IsServerTime` 과 `TimeAdjusted` 이벤트가 추가되어, 이 인터페이스를 직접 구현한 클래스는 두 멤버를 구현해야 합니다.
+- `com.geuneda.core` 의존성을 0.4.0 으로 올렸습니다.
+
+**새 기능**:
+- `IsServerTime`: 서버 시각 기준인지. `TimeAdjusted(TimeSpan delta)`: `SetServerTime`·`AddTime` 으로 현재 시각이 바뀐 양(처리기 예외는 로그만 남기고 격리).
+- `TimeService(IMonotonicClock clock)` 생성자: 테스트에서 가짜 시계로 시간 흐름을 정확히 제어. 서버 동기화 패키지(`com.geuneda.servertime`)와 같은 시계를 씁니다.
+- `DateTimeUtcNow`, `UnixTimeNow`, `IsServerTime` 을 다른 스레드에서 읽어도 됩니다(기준점을 불변 객체로 교체).
+- Services Explorer 의 Time 탭에 `IsServerTime` 과 기준점(UTC)을 표시하고, `SetInitialTime` 대신 `SetServerTime` 을 씁니다(입력은 UTC 로 봄).
+
+**수정**:
+- `AddTime` 오프셋을 틱 단위로 더합니다. 이전에는 `DateTime.AddSeconds` 가 밀리초로 반올림했습니다.
+- Services Explorer 의 Time 탭이 플레이를 멈춘 뒤(도메인 리로드를 꺼 바인딩이 남은 경우 포함)에도 이전 시간 서비스의 상태와 조작 UI 를 보이던 문제. 에디트 모드와 플레이 종료 때 상태를 비우고 조작·Reset 을 막습니다.
+
 ## [4.0.0] - 2026-10-14
 
 **호환되지 않는 변경**(옮기는 방법은 [MIGRATION.md](MIGRATION.md)):

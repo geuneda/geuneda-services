@@ -6,7 +6,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
 	/// <see cref="ITimeService"/> 의 모든 시간 값을 실시간으로 표시합니다.
-	/// 서비스가 <see cref="ITimeManipulator"/> 로 바인딩되어 있으면 AddTime 과 SetInitialTime 조작을 보여 줍니다.
+	/// 서비스가 <see cref="ITimeManipulator"/> 로 바인딩되어 있으면 AddTime 과 SetServerTime 조작을 보여 줍니다.
 	/// </summary>
 	public class TimeTab : ServiceTab
 	{
@@ -14,15 +14,17 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		protected override int RefreshIntervalMs => 500;
 
 		private Label _utcLabel;
+		private Label _serverLabel;
 		private Label _unityLabel;
 		private Label _scaleLabel;
 		private Label _unixLabel;
 		private Label _extraLabel;
-		private Label _initialLabel;
+		private Label _anchorLabel;
 		private Slider _addTimeSlider;
 		private FloatField _addTimeField;
-		private TextField _setInitialField;
+		private TextField _setServerField;
 		private VisualElement _manipulatorSection;
+		private Button _resetButton;
 
 		protected override void BuildUi()
 		{
@@ -32,11 +34,12 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			scroll.Add(MakeSectionLabel("Live Values"));
 
 			_utcLabel = MakeValueRow(scroll, "DateTimeUtcNow");
+			_serverLabel = MakeValueRow(scroll, "IsServerTime");
 			_unityLabel = MakeValueRow(scroll, "UnityTimeNow");
 			_scaleLabel = MakeValueRow(scroll, "UnityScaleTimeNow");
 			_unixLabel = MakeValueRow(scroll, "UnixTimeNow");
 			_extraLabel = MakeValueRow(scroll, "ExtraTime (offset)");
-			_initialLabel = MakeValueRow(scroll, "InitialTime");
+			_anchorLabel = MakeValueRow(scroll, "Anchor (UTC)");
 
 			_manipulatorSection = new VisualElement();
 			_manipulatorSection.style.marginTop = 8;
@@ -67,33 +70,41 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			addRow.Add(applyAddBtn);
 			_manipulatorSection.Add(addRow);
 
-			var setInitialRow = new VisualElement();
-			setInitialRow.style.flexDirection = FlexDirection.Row;
-			setInitialRow.style.alignItems = Align.Center;
-			setInitialRow.style.marginBottom = 4;
+			var setServerRow = new VisualElement();
+			setServerRow.style.flexDirection = FlexDirection.Row;
+			setServerRow.style.alignItems = Align.Center;
+			setServerRow.style.marginBottom = 4;
 
-			var setLabel = new Label("SetInitialTime (UTC): ");
+			var setLabel = new Label("SetServerTime (UTC): ");
 			setLabel.style.minWidth = 120;
-			setInitialRow.Add(setLabel);
+			setServerRow.Add(setLabel);
 
-			_setInitialField = new TextField { value = DateTime.UtcNow.ToString("o") };
-			_setInitialField.style.flexGrow = 1;
-			setInitialRow.Add(_setInitialField);
+			_setServerField = new TextField { value = DateTime.UtcNow.ToString("o") };
+			_setServerField.style.flexGrow = 1;
+			setServerRow.Add(_setServerField);
 
-			var applyInitBtn = new Button(OnSetInitialTime) { text = "Apply" };
-			setInitialRow.Add(applyInitBtn);
-			_manipulatorSection.Add(setInitialRow);
+			var applyServerBtn = new Button(OnSetServerTime) { text = "Apply" };
+			setServerRow.Add(applyServerBtn);
+			_manipulatorSection.Add(setServerRow);
 
 		scroll.Add(_manipulatorSection);
 		Add(scroll);
 
 		var bar = MakeActionBar();
-		bar.Add(MakePrimaryButton("Reset Time", OnResetTime));
+		_resetButton = MakePrimaryButton("Reset Time", OnResetTime);
+		bar.Add(_resetButton);
 		Add(bar);
 	}
 
 		protected override void Refresh()
 		{
+			// Edit 모드에서는 정적 바인딩에 이전 플레이의 시간 서비스가 남아 있어도(도메인 리로드 끔) 상태와 조작을 숨깁니다
+			if (!UnityEditor.EditorApplication.isPlaying)
+			{
+				ShowUnboundState();
+				return;
+			}
+
 			var service = TryResolve<ITimeService>();
 
 			if (service == null)
@@ -103,34 +114,49 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 
 			if (service == null)
 			{
-				_utcLabel.text = "ITimeService not bound";
-				_unityLabel.text = "";
-				_scaleLabel.text = "";
-				_unixLabel.text = "";
-				_extraLabel.text = "";
-				_initialLabel.text = "";
-				_manipulatorSection.style.display = DisplayStyle.None;
+				ShowUnboundState();
 				return;
 			}
 
 			_utcLabel.text = service.DateTimeUtcNow.ToString("yyyy-MM-dd HH:mm:ss UTC");
+			_serverLabel.text = service.IsServerTime ? "true (server)" : "false (device clock at startup)";
 			_unityLabel.text = $"{service.UnityTimeNow:F3} s";
 			_scaleLabel.text = $"{service.UnityScaleTimeNow:F3} s";
 			_unixLabel.text = service.UnixTimeNow.ToString();
 
 			var isManipulator = TryResolve<ITimeManipulator>() != null;
 			_manipulatorSection.style.display = isManipulator ? DisplayStyle.Flex : DisplayStyle.None;
+			_resetButton.SetEnabled(isManipulator);
 
 			if (service is TimeService ts)
 			{
 				_extraLabel.text = $"{ts.ExtraTime:F3} s";
-				_initialLabel.text = ts.InitialTime.ToString("yyyy-MM-dd HH:mm:ss");
+				_anchorLabel.text = ts.AnchorUtc.ToString("yyyy-MM-dd HH:mm:ss.fff UTC");
 			}
 			else
 			{
 				_extraLabel.text = "—";
-				_initialLabel.text = "—";
+				_anchorLabel.text = "—";
 			}
+		}
+
+		// 플레이를 멈추면 이전 서비스의 서버 시각 상태와 조작 UI 를 바로 비웁니다
+		protected override void OnExitingPlayMode()
+		{
+			ShowUnboundState();
+		}
+
+		private void ShowUnboundState()
+		{
+			_utcLabel.text = "ITimeService not bound";
+			_serverLabel.text = "";
+			_unityLabel.text = "";
+			_scaleLabel.text = "";
+			_unixLabel.text = "";
+			_extraLabel.text = "";
+			_anchorLabel.text = "";
+			_manipulatorSection.style.display = DisplayStyle.None;
+			_resetButton.SetEnabled(false);
 		}
 
 		private static Label MakeValueRow(VisualElement parent, string labelText)
@@ -177,7 +203,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			Refresh();
 		}
 
-		private void OnSetInitialTime()
+		private void OnSetServerTime()
 		{
 			var manipulator = TryResolve<ITimeManipulator>();
 
@@ -186,15 +212,16 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 				return;
 			}
 
-			if (DateTime.TryParse(_setInitialField.value, null,
-				System.Globalization.DateTimeStyles.RoundtripKind, out var dt))
+			// 입력은 UTC 로 보고, 오프셋이 붙어 있으면 UTC 로 바꿉니다
+			if (DateTime.TryParse(_setServerField.value, System.Globalization.CultureInfo.InvariantCulture,
+				System.Globalization.DateTimeStyles.AssumeUniversal | System.Globalization.DateTimeStyles.AdjustToUniversal, out var dt))
 			{
-				manipulator.SetInitialTime(dt);
+				manipulator.SetServerTime(dt);
 				Refresh();
 			}
 			else
 			{
-				Debug.LogWarning($"[ServicesExplorer] Invalid DateTime string: {_setInitialField.value}");
+				Debug.LogWarning($"[ServicesExplorer] Invalid DateTime string: {_setServerField.value}");
 			}
 		}
 	}

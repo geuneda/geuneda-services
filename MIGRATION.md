@@ -2,6 +2,25 @@
 
 버전별 전체 변경은 [CHANGELOG.md](CHANGELOG.md) 를 참고하세요. 기존 프로젝트를 이전 메이저에 고정하려면 manifest 의 URL 끝에 태그를 붙입니다(예: `https://github.com/geuneda/geuneda-services.git#v2.1.4`).
 
+## v4.x → v5.0 (호환성 파괴)
+
+시간 서비스를 단조 시계 기준점으로 바꿨습니다. 서버 시간 동기화는 새 패키지 `com.geuneda.servertime` 이 맡습니다. 기존 프로젝트는 v4.x 에 고정합니다(`#v4.0.0`).
+
+1. **core 의존성**: `com.geuneda.core` 0.4.0 이상이 필요합니다(`MonotonicClock`).
+2. **서버 시각 넣기**: `SetInitialTime(serverTime)` 을 `SetServerTime(serverTime)` 으로 바꿉니다. 직접 서버 응답 시각을 넣던 코드는 왕복 지연 보정과 재동기화를 해 주는 servertime 의 `ServerTimeSync` 로 옮기는 것을 권합니다.
+
+   ```csharp
+   // v4
+   timeService.SetInitialTime(response.ServerTime);
+   // v5
+   timeService.SetServerTime(DateTime.SpecifyKind(response.ServerTime, DateTimeKind.Utc));
+   ```
+
+3. **DateTime Kind**: `Kind` 가 `Unspecified` 인 값(예: 오프셋 없는 문자열을 `DateTime.Parse` 한 값, `new DateTime(y, m, d)`)을 넘기면 `ArgumentException` 입니다. UTC 값이면 `DateTime.SpecifyKind(value, DateTimeKind.Utc)` 로 표시하거나 `DateTimeStyles.AdjustToUniversal | DateTimeStyles.AssumeUniversal` 로 파싱합니다. 예전처럼 로컬로 보던 값이면 `SpecifyKind(value, DateTimeKind.Local)` 입니다.
+4. **값 차이**: 이전에는 `Unspecified` 를 로컬 시각으로 보고 UTC 로 바꿔 시간대만큼 어긋났습니다. 그 어긋남에 맞춰 보정하던 코드가 있으면 지웁니다.
+5. **직접 구현**: `ITimeService` 를 직접 구현한 클래스는 `IsServerTime` 과 `event Action<TimeSpan> TimeAdjusted` 를 추가합니다.
+6. **테스트**: 시간 흐름을 제어하려면 `new TimeService(fakeClock)` 에 `Elapsed` 를 정하는 `IMonotonicClock` 가짜를 넘깁니다.
+
 ## v3.x → v4.0 (호환성 파괴)
 
 RNG 서비스를 PCG32 로 바꿨습니다. 같은 시드의 수열이 달라지므로 시드 기반 리플레이·저장된 RNG 상태가 있는 출시 게임은 v3.x 에 고정합니다(`#v3.0.0`).

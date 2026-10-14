@@ -56,6 +56,7 @@ NSubstitute 4.4.0(내장 Castle.Core DynamicProxy)은 타입 인자가 **자기 
 
 - NUnit 클래식 모델만 사용합니다: `Assert.AreEqual`, `Assert.AreSame`, `Assert.IsTrue`, `Assert.Throws<T>`, `Assert.DoesNotThrow` 등.
 - 기존 테스트에는 제약 모델(`Assert.That(...)`)을 쓰지 않습니다.
+- 예외: GC 할당 검사는 Unity 전용 제약(`UnityEngine.TestTools.Constraints` 의 `Is.AllocatingGCMemory()` / `Is.Not.AllocatingGCMemory()`)이라 `Assert.That` 으로 씁니다. Mono 에서는 `GC.GetAllocatedBytesForCurrentThread` 가 항상 0이라 클래식 Assert 로는 확인할 수 없습니다. 같은 테스트에서 검사가 할당을 잡는지도 먼저 확인합니다.
 
 ## 7. 성능 테스트
 

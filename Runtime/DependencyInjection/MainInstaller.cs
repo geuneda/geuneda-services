@@ -11,6 +11,7 @@ namespace Geuneda.Services
 	/// 바인딩은 static 이라 도메인 리로드를 끈 Enter Play Mode 에서도 이전 플레이 세션의 바인딩이 남지 않도록
 	/// <see cref="RuntimeInitializeLoadType.SubsystemRegistration"/> 시점에 비웁니다. 그 시점에 바인딩하는 코드는 지워질 수 있으므로
 	/// 바인딩은 <see cref="RuntimeInitializeLoadType.AfterAssembliesLoaded"/> 이후(씬 로드, <c>Awake</c> 등)에 하세요.
+	/// <see cref="BindingChanged"/> 처리기도 같은 시점에 함께 버립니다.
 	/// </remarks>
 	public static class MainInstaller
 	{
@@ -18,15 +19,23 @@ namespace Geuneda.Services
 
 		internal static Installer InstallerInstance => _installer;
 
+		/// <inheritdoc cref="Installer.BindingChanged"/>
+		public static event Action<Type> BindingChanged
+		{
+			add => _installer.BindingChanged += value;
+			remove => _installer.BindingChanged -= value;
+		}
+
 		/// <summary>
-		/// 플레이 세션이 시작될 때 이전 세션의 바인딩을 비웁니다. 도메인 리로드가 꺼져 있으면 static 필드가 초기화되지 않아
-		/// 이전 세션에서 바인딩한(이미 파괴된 오브젝트를 가진) 서비스가 남고, 같은 타입을 다시 <see cref="Bind{T}"/> 하면 예외가 납니다.
-		/// 이전 세션의 객체는 정리되었을 수 있으므로 Dispose 하지 않고 참조만 버립니다.
+		/// 플레이 세션이 시작될 때 이전 세션의 바인딩과 <see cref="BindingChanged"/> 처리기를 비웁니다. 도메인 리로드가 꺼져 있으면
+		/// static 필드가 초기화되지 않아 이전 세션에서 바인딩한(이미 파괴된 오브젝트를 가진) 서비스가 남고, 같은 타입을 다시
+		/// <see cref="Bind{T}"/> 하면 예외가 납니다. 이전 세션의 객체는 정리되었을 수 있으므로 Dispose 하지 않고 참조만 버리며,
+		/// 이전 세션의 처리기도 호출하지 않습니다.
 		/// </summary>
 		[RuntimeInitializeOnLoadMethod(RuntimeInitializeLoadType.SubsystemRegistration)]
 		private static void ResetOnSubsystemRegistration()
 		{
-			_installer.Clean();
+			_installer.Reset();
 		}
 
 		/// <inheritdoc cref="IInstaller.Bind{T}"/>

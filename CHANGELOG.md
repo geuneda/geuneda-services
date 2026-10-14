@@ -4,6 +4,15 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [유의적 버전](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
+## [5.1.0] - 2026-10-14
+
+**새 기능**:
+- `Installer.BindingChanged` / `MainInstaller.BindingChanged`(`event Action<Type>`): 바인딩이 추가되거나 지워진 뒤 인터페이스 타입과 함께 발생합니다. 서비스보다 먼저 만들어지는 화면이나 서비스 교체를 따라가야 하는 쪽이 구독합니다(예: gamesystems 레드닷). `Bind<T, T1, T2>` 는 인터페이스마다, `Clean()` 은 모두 지운 뒤 타입마다 발생하고, 예외로 실패한 인터페이스 바인딩과 지운 것이 없는 `Clean<T>()` 은 발생하지 않습니다(다중 인터페이스 `Bind` 가 뒤쪽에서 실패해도 앞서 성공한 바인딩과 그 알림은 그대로입니다).
+  - 처리기 예외는 로그로 남기고 나머지 처리기를 계속 부릅니다(호출자에게 전파 안 함).
+  - 일반 이벤트와 달리 += / -= 가 처리기 배열을 새로 만들지 않아 구독자가 많아도 가비지가 없습니다.
+  - `MainInstaller` 의 처리기는 플레이 세션 시작(`SubsystemRegistration`) 때 바인딩과 함께 알림 없이 버립니다.
+- `IInstaller` 인터페이스는 바뀌지 않았습니다.
+
 ## [5.0.0] - 2026-10-14
 
 **호환되지 않는 변경**(옮기는 방법은 [MIGRATION.md](MIGRATION.md)):

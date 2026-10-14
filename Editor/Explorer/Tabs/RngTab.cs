@@ -1,10 +1,11 @@
+using Geuneda.Core;
 using UnityEngine;
 using UnityEngine.UIElements;
 
 namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
-	/// <see cref="IRngService"/> 의 현재 상태를 표시합니다: Seed, Counter, 다음에 나올 값(항상 미리 보기),
+	/// <see cref="IRngService"/> 의 현재 상태를 표시합니다: Seed, Stream, Count, 다음에 나올 32비트 값(항상 미리 보기),
 	/// 개수를 정할 수 있는 Peek-N 미리 보기 목록, 그리고 결정적 카운터를 되감거나 앞으로 감는 조작.
 	/// </summary>
 	public class RngTab : ServiceTab
@@ -13,11 +14,12 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		protected override int RefreshIntervalMs => 500;
 
 		private const string PeekTooltip =
-			"Preview the next N values WITHOUT advancing the RNG counter. " +
-			"The live RNG state is unaffected — running game logic that calls Next/Range will still produce these same values in this order.";
+			"Preview the next N raw 32-bit outputs WITHOUT advancing the RNG count. " +
+			"The live RNG state is unaffected — running game logic that calls NextUInt will still produce these same values in this order. " +
+			"Range/NextFloat map these outputs (Range may occasionally consume more than one).";
 
 		private const string RestoreTooltip =
-			"Set the RNG counter to a specific draw index, replaying the deterministic stream from that point. " +
+			"Set the RNG count (number of 32-bit outputs consumed) to a specific index, replaying the deterministic stream from that point. " +
 			"Use 0 to rewind to the very start. Future-pointing values fast-forward the RNG to a point that hasn't been drawn yet.";
 
 		private const int PeekMin = 1;
@@ -25,13 +27,14 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		private const int RestoreSliderMax = 1000;
 
 		private Label _seedLabel;
+		private Label _streamLabel;
 		private Label _counterLabel;
 		private Label _nextValueLabel;
 		private VisualElement _peekList;
 		private SliderInt _peekSlider;
 		private IntegerField _peekCountField;
 		private SliderInt _restoreSlider;
-		private IntegerField _restoreCountField;
+		private UnsignedLongField _restoreCountField;
 
 		protected override void BuildUi()
 		{
@@ -48,9 +51,17 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			seedRow.Add(_seedLabel);
 			scroll.Add(seedRow);
 
+			var streamRow = new VisualElement();
+			streamRow.AddToClassList("row");
+			streamRow.Add(new Label("Stream") { style = { width = 120 } });
+			_streamLabel = new Label("—");
+			_streamLabel.AddToClassList("row-value");
+			streamRow.Add(_streamLabel);
+			scroll.Add(streamRow);
+
 			var counterRow = new VisualElement();
 			counterRow.AddToClassList("row");
-			counterRow.Add(new Label("Counter") { style = { width = 120 } });
+			counterRow.Add(new Label("Count") { style = { width = 120 } });
 			_counterLabel = new Label("—");
 			_counterLabel.AddToClassList("row-value");
 			counterRow.Add(_counterLabel);
@@ -61,7 +72,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			nextRow.Add(new Label("Next value") { style = { width = 120 } });
 			_nextValueLabel = new Label("—");
 			_nextValueLabel.AddToClassList("row-value");
-			_nextValueLabel.tooltip = "The exact int value the next Next/Range call will return. Updated on every refresh and on every Peek-N click.";
+			_nextValueLabel.tooltip = "The exact 32-bit value the next NextUInt call will return. Updated on every refresh and on every Peek-N click.";
 			nextRow.Add(_nextValueLabel);
 			scroll.Add(nextRow);
 
@@ -111,7 +122,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			scroll.Add(MakeSectionLabel("Rewind / fast-forward counter"));
 
 			var restoreInfo = new Label(
-				"Sets the RNG counter to a specific draw index. The next Next/Range call resumes the deterministic stream from that index. Useful for save/replay scenarios.");
+				"Sets the RNG count to a specific output index. The next NextUInt/NextFloat/Range call resumes the deterministic stream from that index. Useful for save/replay scenarios.");
 			restoreInfo.AddToClassList("tab-empty-label");
 			restoreInfo.style.whiteSpace = WhiteSpace.Normal;
 			restoreInfo.style.marginBottom = 2;
@@ -127,24 +138,24 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			restoreRow.Add(restoreLabel);
 
 			// 슬라이더 0..1000 은 일반적인 저장/리플레이 구간을 다룹니다. 더 큰 카운터가 필요하면
-			// 옆의 IntegerField 에 직접 입력하면 됩니다.
+			// 옆의 UnsignedLongField 에 직접 입력하면 됩니다.
 			_restoreSlider = new SliderInt(0, RestoreSliderMax) { value = 0, tooltip = RestoreTooltip };
 			_restoreSlider.style.flexGrow = 1;
 			_restoreSlider.style.minWidth = 100;
 			restoreRow.Add(_restoreSlider);
 
-			_restoreCountField = new IntegerField { value = 0, tooltip = RestoreTooltip };
+			_restoreCountField = new UnsignedLongField { value = 0, tooltip = RestoreTooltip };
 			_restoreCountField.style.width = 80;
 			restoreRow.Add(_restoreCountField);
 
 			_restoreCountField.RegisterValueChangedCallback(e =>
 			{
-				if (e.newValue >= 0 && e.newValue <= RestoreSliderMax)
+				if (e.newValue <= RestoreSliderMax)
 				{
-					_restoreSlider.SetValueWithoutNotify(e.newValue);
+					_restoreSlider.SetValueWithoutNotify((int)e.newValue);
 				}
 			});
-			_restoreSlider.RegisterValueChangedCallback(e => _restoreCountField.SetValueWithoutNotify(e.newValue));
+			_restoreSlider.RegisterValueChangedCallback(e => _restoreCountField.SetValueWithoutNotify((ulong)e.newValue));
 
 			var restoreBtn = new Button(OnRestore) { text = "Set counter", tooltip = RestoreTooltip };
 			restoreBtn.AddToClassList("row-btn");
@@ -178,8 +189,9 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			}
 
 			_seedLabel.text = rng.Data.Seed.ToString();
-			_counterLabel.text = rng.Counter.ToString();
-			_nextValueLabel.text = rng.Peek.ToString();
+			_streamLabel.text = rng.Data.Stream.ToString();
+			_counterLabel.text = rng.Data.Count.ToString();
+			_nextValueLabel.text = CreateGeneratorAtCurrentCount(rng.Data).NextUInt().ToString();
 		}
 
 		// 사용자가 Play 모드를 멈추면 모든 RNG 상태 위젯을 강제로 비웁니다. 사용하는 쪽 부트스트랩이
@@ -193,6 +205,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		private void ShowUnboundState()
 		{
 			_seedLabel.text = "not bound";
+			_streamLabel.text = "—";
 			_counterLabel.text = "—";
 			_nextValueLabel.text = "—";
 			_peekList.Clear();
@@ -202,7 +215,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		{
 			_peekList.Clear();
 
-			var rng = TryResolve<IRngService>() as RngService;
+			var rng = TryResolve<IRngService>();
 
 			if (rng == null)
 			{
@@ -211,17 +224,17 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			}
 
 			var count = Mathf.Clamp(_peekCountField.value, PeekMin, PeekMax);
-			var stateCopy = RngService.CopyRngState(((RngData)rng.Data).State);
-			var startCount = rng.Counter;
+			// 서비스와 같은 시드·스트림·위치의 복사본이라 서비스 상태는 그대로입니다
+			var generator = CreateGeneratorAtCurrentCount(rng.Data);
 
 			for (var i = 0; i < count; i++)
 			{
-				var val = RngService.Range(0, int.MaxValue, stateCopy, false);
-				var row = MakeRow($"[#{startCount + i}]", val.ToString());
+				var index = generator.Position;
+				var row = MakeRow($"[#{index}]", generator.NextUInt().ToString());
 				_peekList.Add(row);
 			}
 
-			_nextValueLabel.text = rng.Peek.ToString();
+			_nextValueLabel.text = CreateGeneratorAtCurrentCount(rng.Data).NextUInt().ToString();
 		}
 
 		private void OnRestore()
@@ -250,6 +263,15 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			_restoreSlider.SetValueWithoutNotify(0);
 			rng.Restore(0);
 			Refresh();
+		}
+
+		private static Pcg32 CreateGeneratorAtCurrentCount(IRngData data)
+		{
+			var generator = new Pcg32(data.Seed, data.Stream);
+
+			generator.Advance(data.Count);
+
+			return generator;
 		}
 	}
 }

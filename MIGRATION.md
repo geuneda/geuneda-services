@@ -2,6 +2,27 @@
 
 버전별 전체 변경은 [CHANGELOG.md](CHANGELOG.md) 를 참고하세요. 기존 프로젝트를 이전 메이저에 고정하려면 manifest 의 URL 끝에 태그를 붙입니다(예: `https://github.com/geuneda/geuneda-services.git#v2.1.4`).
 
+## v3.x → v4.0 (호환성 파괴)
+
+RNG 서비스를 PCG32 로 바꿨습니다. 같은 시드의 수열이 달라지므로 시드 기반 리플레이·저장된 RNG 상태가 있는 출시 게임은 v3.x 에 고정합니다(`#v3.0.0`).
+
+1. **core 의존성**: `com.geuneda.core` 0.3.0 이상이 필요합니다(`Pcg32`). manifest 의 core URL 이 최신을 가리키면 그대로 둡니다.
+2. **상태 데이터**: `RngData` 는 `Seed`, `Stream`, `Count`(`ulong`) 세 필드입니다. `State` 배열을 저장하던 코드는 지우고, 세 값을 저장합니다. 시드 타입이 `int` 에서 `ulong` 이라 `int` 변수는 `(ulong)seed` 로 넘깁니다.
+3. **API 이름**:
+
+   | v3 | v4 |
+   |----|----|
+   | `rng.Next` | `rng.NextUInt()`(0 ~ 2^32-1). 음이 아닌 `int` 가 필요하면 `rng.Range(0, int.MaxValue)` |
+   | `rng.Nextfloat` | `rng.NextFloat()`(이제 [0, 1)). 예전처럼 큰 범위가 필요하면 `rng.Range(floatP.Zero, floatP.MaxValue)`(두 경계를 모두 floatP 로. `floatP` 와 `int` 는 서로 암시적으로 바뀌어 `Range(0, floatP.MaxValue)` 는 오버로드가 모호함) |
+   | `rng.Peek`, `rng.Peekfloat` | `rng.PeekRange(...)`, 또는 `Pcg32` 복사본 |
+   | `rng.Counter` | `rng.Data.Count` |
+   | `rng.Restore(int)` | `rng.Restore(ulong)` |
+   | `RngService.CreateRngData(int seed)` | `RngService.CreateRngData(ulong seed, ulong stream = 0)` |
+   | `RngService.GenerateRngState`, `CopyRngState`, `Restore(int, int)`, `Range(..., int[] state, ...)` | core 의 `Pcg32`(`new Pcg32(seed, stream)`, `Advance(count)`, 복사로 미리 보기) |
+
+4. **예외**: 잘못된 범위는 `ArgumentOutOfRangeException` 입니다. `IndexOutOfRangeException` 을 잡던 코드는 바꿉니다.
+5. **값 범위**: `Range(int, int, true)` 가 이제 max 를 돌려주고, 음수 범위가 고르게 나옵니다. 예전 편향에 맞춰 조정한 확률 표는 다시 확인합니다.
+
 ## v2.x → v3.0 (호환성 파괴)
 
 1. **core 의존성**: `Packages/manifest.json` 에 `"com.geuneda.core": "https://github.com/geuneda/geuneda-core.git"` 를 추가합니다.
@@ -110,6 +131,6 @@ v2.0.0 부터 `UnloadAsset` 은 `Resources.UnloadUnusedAssets()` 나 `GC.Collect
 - 코루틴: `ICoroutineService`, `CoroutineService`, `IAsyncCoroutine`, `IAsyncCoroutine<T>`
 - 데이터: `IDataService`, `IDataProvider`, `DataService`
 - 시간: `ITimeService`, `ITimeManipulator`, `TimeService`
-- RNG: `IRngService`, `RngService`, `RngData`, `IRngData`
+- RNG: `IRngService`, `RngService`, `RngData`, `IRngData`(v4.0 에서 멤버가 바뀜, 위 v3.x → v4.0 참고)
 - 버전: `VersionServices`, `VersionServices.VersionData`
 - 구체 클래스: `PoolService`, `CommandService<>`

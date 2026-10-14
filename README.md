@@ -127,7 +127,7 @@ public class HealthView : MonoBehaviour
 
 | 패키지 | 버전 | 용도 |
 |--------|------|------|
-| `com.geuneda.core` | 0.1.0 | 빌드 환경 `AppEnv`(내부 버전 문자열의 환경 이름) |
+| `com.geuneda.core` | 0.3.0 | 빌드 환경 `AppEnv`(내부 버전 문자열의 환경 이름), RNG 생성기 `Pcg32` |
 | `com.geuneda.gamedata` | 1.0.0 | `floatP`(RNG), `Pair<,>`(에셋 설정). Newtonsoft.Json(`com.unity.nuget.newtonsoft-json`)도 이 패키지를 통해 들어옵니다(`DataService` 가 사용) |
 | `com.unity.addressables` | 1.21.20 | 에셋/씬 로딩 |
 | `com.cysharp.unitask` | 2.5.10 | 에셋 로딩 비동기 API |

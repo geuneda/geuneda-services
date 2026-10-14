@@ -4,6 +4,28 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [유의적 버전](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
+## [4.0.0] - 2026-10-14
+
+**호환되지 않는 변경**(옮기는 방법은 [MIGRATION.md](MIGRATION.md)):
+- `RngService` 의 생성기를 Knuth 감산 생성기에서 core 의 `Pcg32`(PCG32 XSH-RR)로 바꿨습니다. 같은 시드라도 수열이 다르고, 이전 버전에서 저장한 RNG 상태와 리플레이 데이터는 호환되지 않습니다.
+- `RngData`/`IRngData` 를 `Seed`, `Stream`, `Count`(모두 `ulong`)로 바꿨습니다. 상태 배열 `State` 가 없어지고 스트림 번호가 생겼습니다. `Count` 는 쓴 32비트 출력 수입니다(범위 함수가 드물게 하나 더 씀).
+- `IRngService` 를 정리했습니다. `Next`/`Nextfloat`/`Peek`/`Peekfloat` 프로퍼티와 `Counter` 를 없애고 `NextUInt()`, `NextFloat()`(이제 [0, 1)), `Data.Count` 를 씁니다. `Restore(int)` 는 `Restore(ulong)` 입니다.
+- 정적 헬퍼 `GenerateRngState`, `CopyRngState`, `Restore(int, int)`, `Range(..., int[] state, ...)` 를 없앴습니다. 상태를 직접 다루려면 core 의 `Pcg32` 를 씁니다. `CreateRngData(int)` 는 `CreateRngData(ulong seed, ulong stream = 0)` 입니다.
+- 잘못된 범위의 예외가 `IndexOutOfRangeException` 에서 `ArgumentOutOfRangeException` 으로 바뀌었습니다. floatP 범위는 NaN·무한대 경계도 거절합니다.
+- `com.geuneda.core` 의존성을 0.3.0 으로 올렸습니다.
+
+**새 기능**:
+- 스트림: `CreateRngData(seed, stream)`. 시드가 같아도 스트림이 다르면 다른 수열입니다(스트림 번호는 SplitMix64 로 섞음, 스트림 공간 2^63).
+- `Restore(count)` 가 과거·미래 모두 O(log n) 입니다(이전에는 시드부터 count 번 재생).
+- `RngData` 필드를 바깥에서 바꾸면(세이브 불러오기) 다음 호출부터 그 상태를 씁니다.
+- Services Explorer 의 RNG 탭에 Stream 을 표시하고, 다음 값과 Peek-N 목록은 32비트 출력을 보여 줍니다. 카운터 입력이 `ulong` 입니다.
+
+**수정**:
+- `Range(int, int)` 의 음수 범위 편향을 없앴습니다. 이전에는 floatP 로 계산해 0 방향으로 잘라내서 `Range(-50, 50)` 에서 0 이 약 2%, -50 이 거의 0% 였습니다. 이제 Lemire 방식으로 모든 값이 같은 확률입니다.
+- `Range(int, int, maxInclusive: true)` 가 max 를 돌려줍니다. 이전에는 사실상 돌려주지 않았습니다.
+- `Range(floatP, floatP)` 가 범위 폭이 `floatP.MaxValue` 를 넘어도(예: `-MaxValue ~ MaxValue`) 무한대를 내지 않고, max 미포함이면 반올림으로 max 가 나와도 max 바로 아래 값을 돌려줘 max 를 돌려주지 않습니다. floatP 범위는 출력을 정확히 하나 씁니다.
+- `PeekRange` 가 호출마다 상태 배열(`int[56]`)을 할당하던 것을 없앴습니다.
+
 ## [3.0.0] - 2026-10-13
 
 **호환되지 않는 변경**(옮기는 방법은 [MIGRATION.md](MIGRATION.md)):

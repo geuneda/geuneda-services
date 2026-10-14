@@ -197,7 +197,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 		{
 			var svc = TryResolve<IRngService>();
 			var bound = svc != null;
-			var card = MakeCard("RNG", bound ? $"bound (counter={svc.Counter})" : "not bound", bound);
+			var card = MakeCard("RNG", bound ? $"bound (count={svc.Data.Count})" : "not bound", bound);
 			var actions = GetActionsRow(card);
 			actions.Add(MakeOpenButton<RngTab>());
 			return card;

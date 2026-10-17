@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using Geuneda.Core;
 using UnityEngine;
 using Object = UnityEngine.Object;
 
@@ -105,6 +106,8 @@ namespace Geuneda.Services
 	/// <inheritdoc cref="ITickService"/>
 	public class TickService : ITickService
 	{
+		private static readonly ModuleLogger Logger = new ModuleLogger("Geuneda.Services.Tick");
+
 		private readonly TickServiceMonoBehaviour _tickObject;
 
 		private readonly List<TickData> _onUpdateList = new List<TickData>();
@@ -380,7 +383,7 @@ namespace Geuneda.Services
 			}
 			catch (Exception e)
 			{
-				Debug.LogException(e);
+				Logger.Error(e, "A tick callback threw");
 			}
 		}
 

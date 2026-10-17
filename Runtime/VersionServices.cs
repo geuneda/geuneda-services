@@ -84,6 +84,8 @@ namespace Geuneda.Services
 			}
 		}
 
+		private static readonly ModuleLogger Logger = new ModuleLogger("Geuneda.Services.Version");
+
 		private static VersionData _versionData;
 		private static bool _loaded;
 		// 리소스가 없을 때 프로퍼티에 접근할 때마다 다시 로드해 에러 로그가 반복되지 않도록 로드 시도 여부를 따로 기록한다.
@@ -129,7 +131,7 @@ namespace Geuneda.Services
 			}
 			catch (Exception e)
 			{
-				Debug.LogError($"Error loading version data: {e.Message}");
+				Logger.Error($"Error loading version data: {e.Message}");
 				_loaded = false;
 			}
 		}
@@ -158,7 +160,7 @@ namespace Geuneda.Services
 			}
 			catch (Exception e)
 			{
-				Debug.LogError($"Error loading version data: {e.Message}");
+				Logger.Error($"Error loading version data: {e.Message}");
 				_loaded = false;
 			}
 		}
@@ -167,7 +169,7 @@ namespace Geuneda.Services
 		{
 			if (!textAsset)
 			{
-				Debug.LogError($"Could not {(asyncContext ? "async " : string.Empty)}load version data from Resources.");
+				Logger.Error($"Could not {(asyncContext ? "async " : string.Empty)}load version data from Resources.");
 				_loaded = false;
 				return;
 			}
@@ -199,7 +201,7 @@ namespace Geuneda.Services
 		{
 			if (!TryParseVersion(currentVersion, out var current) || !TryParseVersion(otherVersion, out var other))
 			{
-				Debug.LogWarning($"Cannot compare versions '{currentVersion}' and '{otherVersion}'. Expected Major[.Minor[.Patch]].");
+				Logger.Warning($"Cannot compare versions '{currentVersion}' and '{otherVersion}'. Expected Major[.Minor[.Patch]].");
 				return false;
 			}
 

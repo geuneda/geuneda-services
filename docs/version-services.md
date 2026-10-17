@@ -57,7 +57,7 @@ bool newer = VersionServices.IsOutdatedVersion("1.2", "1.2.1-rc"); // true
 | `VersionInternal` | `Application.version` 반환 |
 | `Branch`, `Commit`, `BuildNumber` | `string.Empty` 반환 |
 
-예외는 던지지 않고 `Debug.LogError` 를 남깁니다. 프로퍼티 접근에 따른 지연 로드는 한 번만 시도하므로 에러 로그도 한 번만 남습니다(v2.1.4 이전에는 접근할 때마다 다시 시도해 로그가 반복됐습니다). 나중에 리소스가 생겼다면 `LoadVersionData()` 를 직접 호출해야 반영됩니다.
+예외는 던지지 않고 `Geuneda.Services.Version` 로거로 Error 를 남깁니다. 프로퍼티 접근에 따른 지연 로드는 한 번만 시도하므로 에러 로그도 한 번만 남습니다(v2.1.4 이전에는 접근할 때마다 다시 시도해 로그가 반복됐습니다). 나중에 리소스가 생겼다면 `LoadVersionData()` 를 직접 호출해야 반영됩니다.
 
 - `Branch` / `Commit` 은 프로젝트가 git 저장소일 때만 채워집니다. git 저장소가 아니면 `version-data.txt` 는 생성되지만 두 값이 비어 있어 `string.Empty` 를 반환합니다.
 

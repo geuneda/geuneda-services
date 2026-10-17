@@ -4,6 +4,12 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [유의적 버전](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
+## [5.2.0] - 2026-10-17
+
+**변경**:
+- 런타임 로그를 core 의 `ModuleLogger` 로 옮겼습니다. 메시지 앞에 모듈 이름이 붙습니다: `[Geuneda.Services.Data]`(`DataService`), `[Geuneda.Services.Version]`(`VersionServices`), `[Geuneda.Services.AssetResolver]`(`AssetResolverService`), `[Geuneda.Services.Tick]`(`TickService`). 에디터 도구(Explorer, 임포터, 버전 저장)의 로그는 그대로 `Debug.Log*` 입니다.
+- 예외만 남기던 곳은 무엇이 실패했는지 적은 Error 줄을 먼저 남기고 예외를 남깁니다. `LogAssert.Expect(LogType.Exception, ...)` 로 이 로그를 기대하던 테스트는 그 앞에 `LogType.Error` 기대를 추가해야 합니다. 해당 위치: `DataService` 의 원문 백업 실패와 `OnDataLoadFailed` 예외, `TickService` 의 콜백 예외.
+
 ## [5.1.0] - 2026-10-14
 
 **새 기능**:

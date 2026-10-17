@@ -459,6 +459,7 @@ namespace GeunedaEditor.Services.Tests
 
 			if (backupFails)
 			{
+				LogAssert.Expect(LogType.Error, new Regex(@"\[Geuneda\.Services\.Data\] Could not back up the unreadable save data"));
 				LogAssert.Expect(LogType.Exception, new Regex("backup failed"));
 				LogAssert.Expect(LogType.Error, new Regex("could not be backed up"));
 			}
@@ -490,6 +491,7 @@ namespace GeunedaEditor.Services.Tests
 
 			if (backupFails)
 			{
+				LogAssert.Expect(LogType.Error, new Regex(@"\[Geuneda\.Services\.Data\] Could not back up the unreadable save data"));
 				LogAssert.Expect(LogType.Exception, new Regex("backup failed"));
 				LogAssert.Expect(LogType.Error, new Regex("could not be backed up"));
 			}
@@ -515,6 +517,7 @@ namespace GeunedaEditor.Services.Tests
 			PlayerPrefs.SetString(DataService.GetSaveKey(typeof(PersistentData)), "{ not json");
 
 			LogAssert.Expect(LogType.Error, new Regex("raw data was kept"));
+			LogAssert.Expect(LogType.Error, new Regex(@"\[Geuneda\.Services\.Data\] OnDataLoadFailed threw"));
 			LogAssert.Expect(LogType.Exception, new Regex("hook failed"));
 			var loaded = service.LoadData<PersistentData>();
 
@@ -530,6 +533,7 @@ namespace GeunedaEditor.Services.Tests
 			var key = DataService.GetSaveKey(typeof(PersistentData));
 			PlayerPrefs.SetString(key, "{ not json");
 
+			LogAssert.Expect(LogType.Error, new Regex(@"\[Geuneda\.Services\.Data\] Could not back up the unreadable save data"));
 			LogAssert.Expect(LogType.Exception, new Regex("backup failed"));
 			LogAssert.Expect(LogType.Error, new Regex("could not be backed up"));
 			var loaded = service.LoadData<PersistentData>();

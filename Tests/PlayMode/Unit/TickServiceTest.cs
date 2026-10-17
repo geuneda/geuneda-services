@@ -244,6 +244,7 @@ namespace GeunedaEditor.Services.Tests
 				throw new InvalidOperationException("tick boom");
 			});
 
+			LogAssert.Expect(LogType.Error, new Regex(@"\[Geuneda\.Services\.Tick\] A tick callback threw"));
 			LogAssert.Expect(LogType.Exception, new Regex("tick boom"));
 
 			yield return null;

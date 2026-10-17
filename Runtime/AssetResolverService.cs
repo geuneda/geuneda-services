@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using Geuneda.Core;
 using Geuneda.DataExtensions;
 using Geuneda.Services.AssetsImporter;
 using UnityEngine;
@@ -125,6 +126,8 @@ namespace Geuneda.Services
 	/// <inheritdoc cref="IAssetResolverService" />
 	public class AssetResolverService : AddressablesAssetLoader, IAssetAdderService
 	{
+		private static readonly ModuleLogger Logger = new ModuleLogger("Geuneda.Services.AssetResolver");
+
 		private readonly IDictionary<Type, IDictionary<Type, IDictionary>> _assetMap =
 			new Dictionary<Type, IDictionary<Type, IDictionary>>();
 
@@ -255,7 +258,7 @@ namespace Geuneda.Services
 
 			if (asset == null || assetReference.Asset == null)
 			{
-				Debug.LogWarning($"The given id '{id.ToString()}' is loading an empty asset '{typeof(TAsset)}' type");
+				Logger.Warning($"The given id '{id.ToString()}' is loading an empty asset '{typeof(TAsset)}' type");
 			}
 
 			onLoadCallback?.Invoke(id, asset, data, instantiate);
@@ -268,7 +271,7 @@ namespace Geuneda.Services
 		{
 			if (!TryGetAssetReference<TId, Scene>(id, out var assetReference))
 			{
-				Debug.LogWarning($"The {nameof(AssetResolverService)} does not have the config to unload the scene with the given {id} " +
+				Logger.Warning($"The {nameof(AssetResolverService)} does not have the config to unload the scene with the given {id} " +
 					$"id of {typeof(TId)} type. Use the {nameof(AddAssets)} method to add it.");
 				return;
 			}
@@ -283,7 +286,7 @@ namespace Geuneda.Services
 		{
 			if (!TryGetDictionary<TId, TAsset>(out var dictionary))
 			{
-				Debug.LogWarning($"The {nameof(AssetResolverService)} does not have the '{typeof(TAsset)}' " +
+				Logger.Warning($"The {nameof(AssetResolverService)} does not have the '{typeof(TAsset)}' " +
 					$"asset list for the '{typeof(TId)}' type. Use the {nameof(AddAssets)} method to add it.");
 				return;
 			}
@@ -308,7 +311,7 @@ namespace Geuneda.Services
 		{
 			if (!TryGetDictionary<TId, TAsset>(out var dictionary))
 			{
-				Debug.LogWarning($"The {nameof(AssetResolverService)} does not have the '{typeof(TAsset)}' " +
+				Logger.Warning($"The {nameof(AssetResolverService)} does not have the '{typeof(TAsset)}' " +
 					$"asset list for the '{typeof(TId)}' type. Use the {nameof(AddAssets)} method to add it.");
 				return;
 			}
@@ -337,7 +340,7 @@ namespace Geuneda.Services
 		{
 			if(!TryGetDictionary<TId, TAsset>(out var dictionary))
 			{
-				Debug.LogWarning($"The {nameof(AssetResolverService)} does not have the '{typeof(TAsset)}' " +
+				Logger.Warning($"The {nameof(AssetResolverService)} does not have the '{typeof(TAsset)}' " +
 					$"asset list for the '{typeof(TId)}' type. Use the {nameof(AddAssets)} method to add it.");
 				return;
 			}

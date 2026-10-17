@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.IO;
 using System.Reflection;
+using Geuneda.Core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using UnityEngine;
@@ -80,6 +81,8 @@ namespace Geuneda.Services
 
 		private const string VersionProperty = "version";
 		private const string DataProperty = "data";
+
+		private static readonly ModuleLogger Logger = new ModuleLogger("Geuneda.Services.Data");
 
 		// 타입이 정해진 역직렬화에서도 날짜 형태 문자열을 DateTime 으로 바꾸지 않는다
 		private static readonly JsonSerializerSettings ReadSettings = new JsonSerializerSettings
@@ -266,8 +269,8 @@ namespace Geuneda.Services
 				return false;
 			}
 
-			Debug.LogWarning($"Save data '{GetSaveKey(type)}' was loaded from a newer version and is not saved, to keep the original. " +
-			                 "Replace it with AddOrReplaceData to overwrite.");
+			Logger.Warning($"Save data '{GetSaveKey(type)}' was loaded from a newer version and is not saved, to keep the original. " +
+			               "Replace it with AddOrReplaceData to overwrite.");
 
 			return true;
 		}
@@ -284,10 +287,10 @@ namespace Geuneda.Services
 			}
 			catch (Exception backupException)
 			{
-				Debug.LogException(backupException);
+				Logger.Error(backupException, $"Could not back up the unreadable save data '{key}'");
 			}
 
-			Debug.LogError(backedUp
+			Logger.Error(backedUp
 				? $"Failed to load save data '{key}'. The raw data was kept in '{key}{CorruptKeySuffix}' and a new instance is used.\n{error}"
 				: $"Failed to load save data '{key}' and the raw data could not be backed up. A new instance is used.\n{error}");
 
@@ -297,7 +300,7 @@ namespace Geuneda.Services
 			}
 			catch (Exception hookException)
 			{
-				Debug.LogException(hookException);
+				Logger.Error(hookException, $"{nameof(OnDataLoadFailed)} threw for '{key}'");
 			}
 		}
 
@@ -326,8 +329,8 @@ namespace Geuneda.Services
 					if (savedVersion > currentVersion)
 					{
 						isNewerVersion = true;
-						Debug.LogWarning($"Save data '{GetSaveKey(type)}' has version {savedVersion}, newer than {currentVersion}. " +
-						                 "Unknown fields are ignored and this type is not saved until replaced.");
+						Logger.Warning($"Save data '{GetSaveKey(type)}' has version {savedVersion}, newer than {currentVersion}. " +
+						               "Unknown fields are ignored and this type is not saved until replaced.");
 					}
 
 					// 마이그레이션이 없으면 토큰을 거치지 않고 타입으로 바로 읽어 숫자 정밀도와 문자열을 그대로 둔다

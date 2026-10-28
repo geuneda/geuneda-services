@@ -492,8 +492,9 @@ namespace Geuneda.Services.AddressableIds.Editor
 				var name = ResolveSanitizedEnumName(assetList[i].address, addedNames, out _);
 				addedNames.Add(name);
 
+				// 이름이 겹친 주소는 접미사를 붙여 구별한 이름을 써야 같은 멤버가 두 번 생기지 않는다
 				stringBuilder.Append("\t\t");
-				stringBuilder.Append(GetCleanName(assetList[i].address, true));
+				stringBuilder.Append(name);
 				stringBuilder.Append(i + 1 == assetList.Count ? "\n" : ",\n");
 			}
 		}

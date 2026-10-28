@@ -4,6 +4,22 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [유의적 버전](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
+## [5.3.0] - 2026-10-28
+
+**추가**:
+- `DataService` 가 저장소를 바꿔 끼울 수 있는 `IDataStorage`(`HasKey`, `Read`, `Write`, `Delete`)로 저장합니다. `new DataService()` 는 지금처럼 `PlayerPrefs` 에 저장하는 `PlayerPrefsDataStorage` 를 쓰므로 기존 세이브는 그대로 읽힙니다. `new DataService(storage, keyPrefix)` 로 저장소와 키 접두사를 정합니다.
+- `FileDataStorage`: 키마다 `{키}.json` 파일을 `Application.persistentDataPath`(또는 지정한 폴더)에 저장합니다. 임시 파일에 먼저 쓴 뒤 바꿔치기하므로 쓰는 도중 끊겨도 마지막으로 완전히 쓴 값이 남습니다. 파일 이름으로 쓸 수 없는 키는 `ArgumentException`.
+- `BrowserLocalDataStorage`: WebGL 플레이어에서 브라우저 `localStorage` 에 저장합니다. 페이지 출처 단위라 업로드마다 빌드 경로가 바뀌는 호스트에서도 세이브가 유지됩니다. 쓰기는 동기이고, 에디터와 다른 플랫폼에서는 생성 시 `PlatformNotSupportedException`, 브라우저가 저장소를 막았으면 `InvalidOperationException`, 쓰기를 거부하면 `IOException` 을 던집니다.
+- 키 접두사: `new DataService(storage, "Profile1")` 처럼 주면 타입마다 `{접두사}.{FullName}` 키로 저장해 프로필이나 모드별로 세이브를 나눌 수 있습니다. 접두사가 없으면 키는 `FullName` 그대로입니다. 실제 키는 `DataService.GetStorageKey(Type)` 으로 읽습니다(`OnDataSaved`, `OnDataLoadFailed`, `SaveCorruptBackup` 에도 이 키가 전달됨).
+
+**변경**:
+- `SaveCorruptBackup` 의 기본 구현이 `PlayerPrefs` 가 아니라 서비스의 저장소에 `{키}.corrupt` 로 백업합니다.
+- `SaveAllData` 가 타입마다 저장소에 쓰므로 기본 저장소에서는 타입마다 `PlayerPrefs.Save()` 가 호출됩니다(이전에는 끝에 한 번).
+- Services Explorer 의 Data 탭이 저장 여부 확인과 삭제(`Del Saved`)를 `PlayerPrefs` 가 아니라 바인딩된 서비스의 저장소로 합니다.
+
+**수정**:
+- Addressable ID enum 생성기가 정리(sanitize)한 이름이 같은 주소 둘을 만나면 같은 멤버를 두 번 내보내 생성된 코드가 컴파일되지 않던 문제를 수정했습니다. 이미 계산하던 `_파일형식` 접미사 이름을 멤버 이름에 씁니다.
+
 ## [5.2.0] - 2026-10-17
 
 **변경**:

@@ -6,7 +6,6 @@ using System.Reflection;
 using Geuneda.Core;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
-using UnityEngine;
 
 // ReSharper disable once CheckNamespace
 
@@ -35,17 +34,17 @@ namespace Geuneda.Services
 	public interface IDataService : IDataProvider
 	{
 		/// <summary>
-		/// 게임의 <typeparamref name="T"/> 데이터를 디스크에 저장합니다
+		/// 게임의 <typeparamref name="T"/> 데이터를 저장소에 저장합니다
 		/// </summary>
 		void SaveData<T>() where T : class;
 
 		/// <summary>
-		/// 모든 게임 데이터를 디스크에 저장합니다
+		/// 모든 게임 데이터를 저장소에 저장합니다
 		/// </summary>
 		void SaveAllData();
 
 		/// <summary>
-		/// 디스크에서 게임의 <typeparamref name="T"/> 데이터를 로드하여 반환합니다.
+		/// 저장소에서 게임의 <typeparamref name="T"/> 데이터를 로드하여 반환합니다.
 		/// 저장된 값이 없거나 읽을 수 없으면 새 인스턴스를 반환하며 예외를 던지지 않습니다.
 		/// </summary>
 		T LoadData<T>() where T : class;
@@ -59,7 +58,9 @@ namespace Geuneda.Services
 	/// <inheritdoc />
 	/// <remarks>
 	/// <para>
-	/// 데이터는 PlayerPrefs 에 타입의 <see cref="Type.FullName"/> 키로 <c>{"version":n,"data":{...}}</c> 형식의 JSON 으로 저장합니다.
+	/// 데이터는 <see cref="IDataStorage"/>(기본 <see cref="PlayerPrefsDataStorage"/>)에 타입의 <see cref="Type.FullName"/> 키로
+	/// <c>{"version":n,"data":{...}}</c> 형식의 JSON 으로 저장합니다. 키 접두사를 주면 <c>{접두사}.{FullName}</c> 키를 써서
+	/// 접두사가 다른 서비스가 같은 저장소에서 세이브를 따로 가집니다(<see cref="GetStorageKey"/>).
 	/// 버전은 데이터 타입의 <see cref="DataVersionAttribute"/> 값(없으면 0)입니다.
 	/// </para>
 	/// <para>
@@ -75,7 +76,7 @@ namespace Geuneda.Services
 	public class DataService : IDataService
 	{
 		/// <summary>
-		/// 읽지 못한 세이브의 원문을 남겨 두는 PlayerPrefs 키의 접미사
+		/// 읽지 못한 세이브의 원문을 남겨 두는 저장소 키의 접미사
 		/// </summary>
 		public const string CorruptKeySuffix = ".corrupt";
 
@@ -95,8 +96,33 @@ namespace Geuneda.Services
 			new Dictionary<(Type Type, int FromVersion), Func<JToken, JToken>>();
 		// 더 새 버전 세이브를 읽어 저장하지 않는 타입
 		private readonly HashSet<Type> _newerVersionTypes = new HashSet<Type>();
+		private readonly IDataStorage _storage;
+		private readonly string _keyPrefix;
 
 		internal IReadOnlyDictionary<Type, object> DataEntries => (IReadOnlyDictionary<Type, object>)_data;
+
+		// Explorer 의 Data 탭이 저장 여부 확인과 삭제에 쓴다
+		internal IDataStorage Storage => _storage;
+
+		/// <summary>
+		/// <see cref="PlayerPrefsDataStorage"/> 에 접두사 없이 저장하는 서비스를 만듭니다
+		/// </summary>
+		public DataService() : this(new PlayerPrefsDataStorage())
+		{
+		}
+
+		/// <summary>
+		/// <paramref name="storage"/> 에 저장하는 서비스를 만듭니다.
+		/// <paramref name="keyPrefix"/> 를 주면 타입마다 <c>{접두사}.{FullName}</c> 키를 써서 프로필이나 모드별로 세이브를 나눌 수 있습니다
+		/// </summary>
+		/// <param name="storage">직렬화한 문자열을 읽고 쓰는 저장소</param>
+		/// <param name="keyPrefix">저장소 키 앞에 붙일 접두사. null 이거나 비어 있으면 붙이지 않음</param>
+		/// <exception cref="ArgumentNullException"><paramref name="storage"/> 가 null 인 경우</exception>
+		public DataService(IDataStorage storage, string keyPrefix = null)
+		{
+			_storage = storage ?? throw new ArgumentNullException(nameof(storage));
+			_keyPrefix = keyPrefix;
+		}
 
 		/// <inheritdoc />
 		public bool HasData<T>() where T : class
@@ -121,11 +147,7 @@ namespace Geuneda.Services
 				return;
 			}
 
-			var key = GetSaveKey(type);
-
-			PlayerPrefs.SetString(key, Serialize(type, data));
-			PlayerPrefs.Save();
-			OnDataSaved(key, data, type);
+			Save(type, data);
 		}
 
 		/// <inheritdoc />
@@ -138,21 +160,16 @@ namespace Geuneda.Services
 					continue;
 				}
 
-				var key = GetSaveKey(data.Key);
-
-				PlayerPrefs.SetString(key, Serialize(data.Key, data.Value));
-				OnDataSaved(key, data.Value, data.Key);
+				Save(data.Key, data.Value);
 			}
-			
-			PlayerPrefs.Save();
 		}
 
 		/// <inheritdoc />
 		public T LoadData<T>() where T : class
 		{
 			var type = typeof(T);
-			var key = GetSaveKey(type);
-			var json = PlayerPrefs.GetString(key, "");
+			var key = GetStorageKey(type);
+			var json = _storage.Read(key);
 			var isNewerVersion = false;
 			T instance;
 
@@ -207,11 +224,20 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// <paramref name="type"/> 데이터를 저장하는 PlayerPrefs 키
+		/// <paramref name="type"/> 데이터의 접두사 없는 저장 키(<see cref="Type.FullName"/>)
 		/// </summary>
 		public static string GetSaveKey(Type type)
 		{
 			return type.FullName;
+		}
+
+		/// <summary>
+		/// 이 서비스가 <paramref name="type"/> 데이터를 저장소에 저장하는 키.
+		/// 키 접두사가 있으면 <c>{접두사}.{FullName}</c>, 없으면 <see cref="GetSaveKey"/> 와 같습니다
+		/// </summary>
+		public string GetStorageKey(Type type)
+		{
+			return string.IsNullOrEmpty(_keyPrefix) ? GetSaveKey(type) : $"{_keyPrefix}.{GetSaveKey(type)}";
 		}
 
 		/// <summary>
@@ -253,13 +279,20 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// 읽지 못한 세이브의 원문을 보관합니다. 기본은 PlayerPrefs 의 <paramref name="key"/> + <see cref="CorruptKeySuffix"/> 입니다.
+		/// 읽지 못한 세이브의 원문을 보관합니다. 기본은 같은 저장소의 <paramref name="key"/> + <see cref="CorruptKeySuffix"/> 입니다.
 		/// 여기서 던진 예외는 로그로만 남고 로드는 계속됩니다.
 		/// </summary>
 		protected virtual void SaveCorruptBackup(string key, string rawData)
 		{
-			PlayerPrefs.SetString(key + CorruptKeySuffix, rawData);
-			PlayerPrefs.Save();
+			_storage.Write(key + CorruptKeySuffix, rawData);
+		}
+
+		private void Save(Type type, object data)
+		{
+			var key = GetStorageKey(type);
+
+			_storage.Write(key, Serialize(type, data));
+			OnDataSaved(key, data, type);
 		}
 
 		private bool SkipNewerVersion(Type type)
@@ -269,7 +302,7 @@ namespace Geuneda.Services
 				return false;
 			}
 
-			Logger.Warning($"Save data '{GetSaveKey(type)}' was loaded from a newer version and is not saved, to keep the original. " +
+			Logger.Warning($"Save data '{GetStorageKey(type)}' was loaded from a newer version and is not saved, to keep the original. " +
 			               "Replace it with AddOrReplaceData to overwrite.");
 
 			return true;
@@ -329,7 +362,7 @@ namespace Geuneda.Services
 					if (savedVersion > currentVersion)
 					{
 						isNewerVersion = true;
-						Logger.Warning($"Save data '{GetSaveKey(type)}' has version {savedVersion}, newer than {currentVersion}. " +
+						Logger.Warning($"Save data '{GetStorageKey(type)}' has version {savedVersion}, newer than {currentVersion}. " +
 						               "Unknown fields are ignored and this type is not saved until replaced.");
 					}
 

@@ -9,7 +9,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 {
 	/// <summary>
 	/// <see cref="IDataService"/> 가 가진 모든 데이터 항목을 표시합니다.
-	/// Save, Load, AddOrReplace, PlayerPrefs 키 삭제를 지원합니다.
+	/// Save, Load, 저장소에 저장된 값 삭제를 지원합니다.
 	/// </summary>
 	public class DataTab : ServiceTab
 	{
@@ -77,14 +77,14 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 				var dataType = kvp.Key;
 				var data = kvp.Value;
 				var json = TrySerializeJson(data);
-				var prefsKey = DataService.GetSaveKey(dataType);
-				var hasPrefs = PlayerPrefs.HasKey(prefsKey);
+				var storageKey = dataService.GetStorageKey(dataType);
+				var isSaved = dataService.Storage.HasKey(storageKey);
 
 				var container = new VisualElement();
 				container.style.marginBottom = 6;
 
-				// 이름이 같은 타입을 구별할 수 있도록 저장 키(FullName)를 표시한다
-				var row = MakeRow(prefsKey, hasPrefs ? "[saved]" : "[in-memory only]");
+				// 이름이 같은 타입을 구별할 수 있도록 저장 키(접두사 + FullName)를 표시한다
+				var row = MakeRow(storageKey, isSaved ? "[saved]" : "[in-memory only]");
 
 				var saveBtn = MakeRowButton("Save", () => OnSave(dataService, dataType));
 				row.Add(saveBtn);
@@ -92,7 +92,7 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 				var loadBtn = MakeRowButton("Load", () => { OnLoad(dataService, dataType); Refresh(); });
 				row.Add(loadBtn);
 
-				var deleteBtn = MakeRowButton("Del PlayerPrefs", () => OnDeletePrefs(prefsKey), danger: true);
+				var deleteBtn = MakeRowButton("Del Saved", () => OnDeleteSaved(dataService, storageKey), danger: true);
 				row.Add(deleteBtn);
 
 				container.Add(row);
@@ -169,16 +169,15 @@ namespace Geuneda.Services.Editor.Explorer.Tabs
 			}
 		}
 
-		private void OnDeletePrefs(string key)
+		private void OnDeleteSaved(DataService dataService, string key)
 		{
-			if (!EditorUtility.DisplayDialog("Delete PlayerPrefs Key",
-				$"Delete PlayerPrefs key \"{key}\"? This cannot be undone.", "Delete", "Cancel"))
+			if (!EditorUtility.DisplayDialog("Delete Saved Data",
+				$"Delete the saved value \"{key}\" from the service's storage? This cannot be undone.", "Delete", "Cancel"))
 			{
 				return;
 			}
 
-			PlayerPrefs.DeleteKey(key);
-			PlayerPrefs.Save();
+			dataService.Storage.Delete(key);
 			Refresh();
 		}
 	}

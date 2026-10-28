@@ -64,6 +64,17 @@ namespace GeunedaEditor.Services.Tests
 			public string Text;
 		}
 
+		// 저장소 교체 테스트용 메모리 저장소
+		private class MemoryDataStorage : IDataStorage
+		{
+			public readonly Dictionary<string, string> Values = new Dictionary<string, string>();
+
+			public bool HasKey(string key) => Values.ContainsKey(key);
+			public string Read(string key) => Values.TryGetValue(key, out var value) ? value : null;
+			public void Write(string key, string value) => Values[key] = value;
+			public void Delete(string key) => Values.Remove(key);
+		}
+
 		private class ThrowingRecoveryDataService : DataService
 		{
 			public bool ThrowOnBackup;
@@ -93,6 +104,14 @@ namespace GeunedaEditor.Services.Tests
 
 		private class TestableDataService : DataService
 		{
+			public TestableDataService()
+			{
+			}
+
+			public TestableDataService(IDataStorage storage, string keyPrefix) : base(storage, keyPrefix)
+			{
+			}
+
 			public int SaveCount;
 			public string LastKey;
 			public object LastInstance;
@@ -582,5 +601,96 @@ namespace GeunedaEditor.Services.Tests
 
 			Assert.Throws<ArgumentException>(() => _dataService.AddMigration<VersionedData>(0, data => data));
 		}
+
+		[Test]
+		public void Constructor_NullStorage_ThrowsArgumentNullException()
+		{
+			Assert.Throws<ArgumentNullException>(() => new DataService(null));
+		}
+
+		[Test]
+		public void SaveData_CustomStorage_WritesThroughInjectedStorage()
+		{
+			var storage = new MemoryDataStorage();
+			var service = new DataService(storage);
+			var key = DataService.GetSaveKey(typeof(PersistentData));
+			service.AddOrReplaceData(new PersistentData { Name = "Stored", Value = 7 });
+
+			service.SaveData<PersistentData>();
+
+			CollectionAssert.AreEquivalent(new[] { key }, storage.Values.Keys);
+			Assert.IsFalse(PlayerPrefs.HasKey(key), "주입한 저장소만 쓰고 PlayerPrefs 에는 쓰지 않는다");
+			Assert.AreEqual("Stored", new DataService(storage).LoadData<PersistentData>().Name);
+		}
+
+		[Test]
+		public void SaveAllData_CustomStorage_WritesEveryTypeThroughInjectedStorage()
+		{
+			var storage = new MemoryDataStorage();
+			var service = new DataService(storage);
+			service.AddOrReplaceData(new PersistentData { Name = "A" });
+			service.AddOrReplaceData(new VersionedData { DisplayName = "B" });
+
+			service.SaveAllData();
+
+			CollectionAssert.AreEquivalent(
+				new[] { DataService.GetSaveKey(typeof(PersistentData)), DataService.GetSaveKey(typeof(VersionedData)) },
+				storage.Values.Keys);
+		}
+
+		[Test]
+		public void KeyPrefix_SharedStorage_IsolatesSaves()
+		{
+			var storage = new MemoryDataStorage();
+			var key = DataService.GetSaveKey(typeof(PersistentData));
+			var profileA = new DataService(storage, "ProfileA");
+			profileA.AddOrReplaceData(new PersistentData { Name = "A", Value = 1 });
+
+			profileA.SaveAllData();
+
+			CollectionAssert.AreEquivalent(new[] { "ProfileA." + key }, storage.Values.Keys);
+			Assert.AreEqual("ProfileA." + key, profileA.GetStorageKey(typeof(PersistentData)));
+			Assert.IsNull(new DataService(storage, "ProfileB").LoadData<PersistentData>().Name);
+			Assert.IsNull(new DataService(storage).LoadData<PersistentData>().Name);
+			Assert.AreEqual("A", new DataService(storage, "ProfileA").LoadData<PersistentData>().Name);
+		}
+
+		[TestCase(null)]
+		[TestCase("")]
+		public void KeyPrefix_NullOrEmpty_UsesSaveKey(string prefix)
+		{
+			var service = new DataService(new MemoryDataStorage(), prefix);
+
+			Assert.AreEqual(DataService.GetSaveKey(typeof(PersistentData)), service.GetStorageKey(typeof(PersistentData)));
+		}
+
+		[Test]
+		public void OnDataSaved_WithKeyPrefix_ReceivesStorageKey()
+		{
+			var subclass = new TestableDataService(new MemoryDataStorage(), "Slot1");
+			subclass.AddOrReplaceData(new PersistentData());
+
+			subclass.SaveData<PersistentData>();
+
+			Assert.AreEqual("Slot1." + DataService.GetSaveKey(typeof(PersistentData)), subclass.LastKey);
+		}
+
+		[Test]
+		public void LoadData_UnreadableSave_CustomStorage_KeepsRawDataInSameStorage()
+		{
+			var storage = new MemoryDataStorage();
+			var service = new DataService(storage, "Slot1");
+			var key = service.GetStorageKey(typeof(PersistentData));
+			storage.Values[key] = "{ not json";
+
+			LogAssert.Expect(LogType.Error, new Regex("Failed to load save data"));
+			var loaded = service.LoadData<PersistentData>();
+
+			Assert.AreEqual(0, loaded.Value);
+			Assert.AreEqual("{ not json", storage.Values[key + DataService.CorruptKeySuffix]);
+			Assert.AreEqual("{ not json", storage.Values[key]);
+			Assert.IsFalse(PlayerPrefs.HasKey(key + DataService.CorruptKeySuffix));
+		}
+
 	}
 }

@@ -92,7 +92,7 @@ public class HealthView : MonoBehaviour
 | 틱 (Update/FixedUpdate/LateUpdate 분배) | `ITickService` | [tick-service.md](docs/tick-service.md) |
 | 코루틴 (MonoBehaviour 없이 실행) | `ICoroutineService`, `IAsyncCoroutine` | [coroutine-service.md](docs/coroutine-service.md) |
 | 오브젝트 풀 | `IPoolService`, `ObjectPool<T>`, `GameObjectPool<T>` | [pool-service.md](docs/pool-service.md) |
-| 데이터 저장 (PlayerPrefs + JSON) | `IDataService`, `IDataProvider` | [data-service.md](docs/data-service.md) |
+| 데이터 저장 (JSON, 저장소 교체 가능: PlayerPrefs·파일·브라우저 localStorage) | `IDataService`, `IDataProvider`, `IDataStorage` | [data-service.md](docs/data-service.md) |
 | 결정론적 RNG | `IRngService`, `RngData` | [rng-service.md](docs/rng-service.md) |
 | 게임 시계 | `ITimeService`, `ITimeManipulator` | [time-service.md](docs/time-service.md) |
 | 커맨드 | `ICommandService<TGameLogic>`, `IGameCommand<TGameLogic>` | [command-service.md](docs/command-service.md) |

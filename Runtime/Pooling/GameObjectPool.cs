@@ -78,25 +78,29 @@ namespace Geuneda.Services.Pooling
 		/// <inheritdoc />
 		protected override void CallOnSpawned(GameObject entity)
 		{
-			var poolEntity = entity.GetComponent<IPoolEntitySpawn>();
-
-			poolEntity?.OnSpawn();
+			// 없는 컴포넌트를 GetComponent 로 찾으면 에디터가 오류 문자열을 할당한다. Spawn(data) 는 비제네릭 훅도 함께 부르므로 매번 실패할 수 있다.
+			if (entity.TryGetComponent<IPoolEntitySpawn>(out var poolEntity))
+			{
+				poolEntity.OnSpawn();
+			}
 		}
 
 		/// <inheritdoc />
 		protected override void CallOnSpawned<TData>(GameObject entity, TData data)
 		{
-			var poolEntity = entity.GetComponent<IPoolEntitySpawn<TData>>();
-
-			poolEntity?.OnSpawn(data);
+			if (entity.TryGetComponent<IPoolEntitySpawn<TData>>(out var poolEntity))
+			{
+				poolEntity.OnSpawn(data);
+			}
 		}
 
 		/// <inheritdoc />
 		protected override void CallOnDespawned(GameObject entity)
 		{
-			var poolEntity = entity.GetComponent<IPoolEntityDespawn>();
-
-			poolEntity?.OnDespawn();
+			if (entity.TryGetComponent<IPoolEntityDespawn>(out var poolEntity))
+			{
+				poolEntity.OnDespawn();
+			}
 		}
 
 		protected override void PostDespawnEntity(GameObject entity)
@@ -197,25 +201,29 @@ namespace Geuneda.Services.Pooling
 		/// <inheritdoc />
 		protected override void CallOnSpawned(T entity)
 		{
-			var poolEntity = entity.GetComponent<IPoolEntitySpawn>();
-
-			poolEntity?.OnSpawn();
+			// 없는 컴포넌트를 GetComponent 로 찾으면 에디터가 오류 문자열을 할당한다. Spawn(data) 는 비제네릭 훅도 함께 부르므로 매번 실패할 수 있다.
+			if (entity.TryGetComponent<IPoolEntitySpawn>(out var poolEntity))
+			{
+				poolEntity.OnSpawn();
+			}
 		}
 
 		/// <inheritdoc />
 		protected override void CallOnSpawned<TData>(T entity, TData data)
 		{
-			var poolEntity = entity.GetComponent<IPoolEntitySpawn<TData>>();
-
-			poolEntity?.OnSpawn(data);
+			if (entity.TryGetComponent<IPoolEntitySpawn<TData>>(out var poolEntity))
+			{
+				poolEntity.OnSpawn(data);
+			}
 		}
 
 		/// <inheritdoc />
 		protected override void CallOnDespawned(T entity)
 		{
-			var poolEntity = entity.GetComponent<IPoolEntityDespawn>();
-
-			poolEntity?.OnDespawn();
+			if (entity.TryGetComponent<IPoolEntityDespawn>(out var poolEntity))
+			{
+				poolEntity.OnDespawn();
+			}
 		}
 
 		protected override void PostDespawnEntity(T entity)

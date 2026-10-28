@@ -4,6 +4,11 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [유의적 버전](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
+## [5.3.1] - 2026-10-28
+
+**수정**:
+- `GameObjectPool` / `GameObjectPool<T>` 의 스폰·디스폰 훅이 `GetComponent` 대신 `TryGetComponent` 로 `IPoolEntitySpawn` / `IPoolEntitySpawn<TData>` / `IPoolEntityDespawn` 을 찾습니다. `Spawn(data)` 는 비제네릭 `IPoolEntitySpawn` 도 찾으므로 제네릭 인터페이스만 구현한 객체는 스폰마다 조회가 실패했고, 에디터에서는 실패할 때마다 오류 메시지 문자열이 할당됐습니다(전투 중 데미지 텍스트·VFX 스폰에서 프레임당 수 KB). 훅 호출 여부와 순서는 같습니다.
+
 ## [5.3.0] - 2026-10-28
 
 **추가**:

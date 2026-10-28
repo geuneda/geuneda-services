@@ -16,8 +16,8 @@
 | 타입 | 대상 | 생명주기 훅 호출 방식 |
 |------|------|------------------------|
 | `ObjectPool<T>` | 순수 C# 객체 (`T : class`) | 엔티티를 직접 캐스팅 (`entity as IPoolEntitySpawn`) |
-| `GameObjectPool` | `GameObject` | `GetComponent<IPoolEntitySpawn>()` 등 |
-| `GameObjectPool<T>` | 컴포넌트 (`T : Behaviour`) | `GetComponent<IPoolEntitySpawn>()` 등 |
+| `GameObjectPool` | `GameObject` | `TryGetComponent<IPoolEntitySpawn>()` 등 |
+| `GameObjectPool<T>` | 컴포넌트 (`T : Behaviour`) | `TryGetComponent<IPoolEntitySpawn>()` 등 |
 
 - `GameObjectPool` / `GameObjectPool<T>` 는 스폰 시 `SetActive(true)`, 디스폰 시 `SetActive(false)` 를 호출합니다. `DespawnToSampleParent`(기본 `true`)면 디스폰할 때 샘플 엔티티의 부모 아래로 되돌립니다.
 - 기본 인스턴시에이터는 샘플을 샘플의 부모 아래에 `Object.Instantiate` 하고 비활성화합니다. 생성자에 `Func<T, T>` 인스턴시에이터를 넘겨 바꿀 수 있습니다.

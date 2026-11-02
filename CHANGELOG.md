@@ -4,6 +4,12 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [유의적 버전](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
+## [5.4.0] - 2026-11-03
+
+**추가**:
+- `DataJournal`, `IJournalSection`, `JournalWriter`, `JournalReader`: 자주 바뀌는 값을 GC 할당 없이 저장하는 저널. 슬롯 파일 두 개에 번갈아 쓰고 CRC 로 검증하며, 디스크 쓰기는 워커 스레드가 합니다.
+- `DataService.OnDataSaving`: 저장소에 쓰기 직전 훅. 저널을 JSON 보다 먼저 쓰는 데 씁니다.
+
 ## [5.3.1] - 2026-10-28
 
 **수정**:

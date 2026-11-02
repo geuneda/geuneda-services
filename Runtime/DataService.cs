@@ -266,6 +266,16 @@ namespace Geuneda.Services
 			}
 		}
 
+		/// <summary>
+		/// 데이터를 저장소에 쓰기 직전에 호출됩니다. 저널을 JSON 보다 먼저 쓰는 데 씁니다. 기본 동작은 없습니다.
+		/// </summary>
+		protected virtual void OnDataSaving(string key, object data, Type type)
+		{
+		}
+
+		/// <summary>
+		/// 데이터를 저장소에 쓴 뒤 호출됩니다. 기본 동작은 없습니다.
+		/// </summary>
 		protected virtual void OnDataSaved(string key, object data, Type type)
 		{
 		}
@@ -291,6 +301,7 @@ namespace Geuneda.Services
 		{
 			var key = GetStorageKey(type);
 
+			OnDataSaving(key, data, type);
 			_storage.Write(key, Serialize(type, data));
 			OnDataSaved(key, data, type);
 		}

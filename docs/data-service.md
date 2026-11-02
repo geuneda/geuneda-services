@@ -20,6 +20,16 @@
 - 저장할 때마다 `protected virtual void OnDataSaved(string key, object data, Type type)` 가 호출됩니다(`key` 는 접두사가 붙은 저장소 키). 파생 클래스에서 클라우드 동기화 등을 붙일 수 있습니다.
 - 저장값을 읽지 못하면 원문을 `protected virtual void SaveCorruptBackup(string key, string rawData)`(기본: 같은 저장소의 `{키}.corrupt`)로 보관하고 `protected virtual void OnDataLoadFailed(string key, string rawData, Exception exception)` 를 호출합니다. 사용자 안내나 원문 업로드를 붙일 수 있습니다. 둘 중 하나가 예외를 던져도 로그만 남기고 새 인스턴스로 시작합니다.
 
+## 저널 (자주 바뀌는 값)
+
+JSON 저장은 타입마다 문자열을 만들므로 GC 를 할당합니다. 방치형 게임의 재화처럼 몇 초마다 바뀌는 값은 `DataJournal` 로 저장합니다. `IJournalSection` 을 구현해 값을 쓰고 읽게 하면 `Write()` 가 할당 없이 프레임을 만들어 워커 스레드로 넘깁니다.
+
+- 슬롯 파일 두 개에 번갈아 쓰고 CRC 로 검증합니다. 쓰는 도중 죽어도 다른 슬롯이 남습니다.
+- 부팅 때 `LoadData` 전에 `TryRestore()` 로 복원하고, 복원한 값을 `SaveData` 로 저장소에 적은 뒤 서비스를 만듭니다.
+- 저널은 JSON 보다 같거나 새로워야 합니다. `DataService` 를 상속해 `OnDataSaving` 에서 저널에 든 타입이면 `WriteNow()` 를 부르세요.
+- 세이브를 통째로 바꾸거나 지울 때는 `Reset()` 을 부릅니다. 안 그러면 옛 값이 되살아납니다.
+- 섹션 구성을 바꾸면 `formatVersion` 을 올립니다. 다른 버전의 저널은 복원하지 않습니다.
+
 ## 저장소
 
 `DataService` 는 타입마다 JSON 문자열 하나를 만들어 `IDataStorage` 에 넘깁니다. 생성자에 저장소와(선택) 키 접두사를 넘깁니다.

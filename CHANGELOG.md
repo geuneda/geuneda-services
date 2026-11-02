@@ -4,6 +4,19 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [유의적 버전](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
+## [5.5.0] - 2026-11-03
+
+**변경**:
+- `IJournalSection` 을 `Read`(임시로 읽기)·`Apply`(모두 성공한 뒤 적용)로 나눴습니다. 복원 도중 실패해도 데이터가 반쯤 바뀌지 않습니다.
+- `DataJournal` 은 마지막으로 성공한 슬롯의 반대쪽에 씁니다. 프레임 번호가 건너뛰어도 최신 정상 슬롯을 덮지 않습니다.
+
+**추가**:
+- `IBatchDataStorage`: 여러 쓰기를 한 커밋으로 묶습니다. `DataService.SaveAllData` 가 씁니다.
+- `DataService.IsNewerVersionData`.
+
+**수정**:
+- 5.3.0 부터 `SaveAllData` 가 타입마다 `PlayerPrefs.Save()` 를 부르던 문제를 수정했습니다. 다시 한 번만 커밋합니다.
+
 ## [5.4.0] - 2026-11-03
 
 **추가**:

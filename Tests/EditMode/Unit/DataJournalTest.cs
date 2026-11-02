@@ -29,13 +29,36 @@ namespace GeunedaEditor.Services.Tests
 				writer.Write(Text);
 			}
 
-			public void Read(JournalReader reader)
+			public long ReadSequence;
+			public bool Fail;
+			private long _number;
+			private double _real;
+			private float _single;
+			private bool _flag;
+			private string _text;
+
+			public void Read(JournalReader reader, long frameSequence)
 			{
-				Number = reader.ReadInt64();
-				Real = reader.ReadDouble();
-				Single = reader.ReadSingle();
-				Flag = reader.ReadBool();
-				Text = reader.ReadString();
+				if (Fail)
+				{
+					throw new IOException("test");
+				}
+
+				ReadSequence = frameSequence;
+				_number = reader.ReadInt64();
+				_real = reader.ReadDouble();
+				_single = reader.ReadSingle();
+				_flag = reader.ReadBool();
+				_text = reader.ReadString();
+			}
+
+			public void Apply()
+			{
+				Number = _number;
+				Real = _real;
+				Single = _single;
+				Flag = _flag;
+				Text = _text;
 			}
 		}
 
@@ -114,8 +137,8 @@ namespace GeunedaEditor.Services.Tests
 				journal.WriteNow();
 			}
 
-			// 번호 1 은 b 슬롯, 번호 2 는 a 슬롯이다(시작 번호 -1 다음 0, 1 은 슬롯 0, 1)
-			var newest = Path.Combine(_directory, "t.b.jnl");
+			// 파일이 없으면 시작 슬롯은 b 이다. 첫 프레임은 b, 둘째 프레임은 a 에 간다
+			var newest = Path.Combine(_directory, "t.a.jnl");
 			var bytes = File.ReadAllBytes(newest);
 			bytes[bytes.Length / 2] ^= 0xFF;
 			File.WriteAllBytes(newest, bytes);
@@ -127,6 +150,73 @@ namespace GeunedaEditor.Services.Tests
 			}
 
 			Assert.That(restored.Number, Is.EqualTo(1));
+		}
+
+		[Test]
+		public void Write_AfterRestart_DoesNotOverwriteNewestSlot()
+		{
+			var section = new Section { Number = 1 };
+			using (var journal = Open(section))
+			{
+				journal.WriteNow();
+				section.Number = 2;
+				journal.WriteNow();
+			}
+
+			section.Number = 3;
+			using (var journal = Open(section))
+			{
+				journal.WriteNow();
+			}
+
+			// 3 을 쓴 슬롯이 깨져도 2 가 남아야 한다
+			var a = new FileInfo(Path.Combine(_directory, "t.a.jnl"));
+			var b = new FileInfo(Path.Combine(_directory, "t.b.jnl"));
+			var newest = Path.Combine(_directory, "t.b.jnl");
+			var bytes = File.ReadAllBytes(newest);
+			bytes[bytes.Length / 2] ^= 0xFF;
+			File.WriteAllBytes(newest, bytes);
+
+			var restored = new Section();
+			using (var journal = Open(restored))
+			{
+				Assert.That(journal.TryRestore(), Is.True);
+			}
+
+			Assert.That(restored.Number, Is.EqualTo(2));
+			Assert.That(a.Exists && b.Exists, Is.True);
+		}
+
+		[Test]
+		public void TryRestore_SectionReadFails_AppliesNothing()
+		{
+			using (var journal = new DataJournal(_directory, "t", 1, new List<IJournalSection> { new Section { Number = 7 }, new Section { Number = 8 } }))
+			{
+				journal.WriteNow();
+			}
+
+			var first = new Section();
+			var second = new Section { Fail = true };
+			UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Error, new System.Text.RegularExpressions.Regex("Journal frame could not be restored"));
+			UnityEngine.TestTools.LogAssert.Expect(UnityEngine.LogType.Exception, new System.Text.RegularExpressions.Regex("IOException"));
+			using (var journal = new DataJournal(_directory, "t", 1, new List<IJournalSection> { first, second }))
+			{
+				Assert.That(journal.TryRestore(), Is.False);
+			}
+
+			Assert.That(first.Number, Is.EqualTo(0));
+		}
+
+		[Test]
+		public void AdvanceSequence_NextFrameIsGreater()
+		{
+			using (var journal = Open(new Section()))
+			{
+				journal.AdvanceSequence(100);
+				journal.WriteNow();
+
+				Assert.That(journal.Sequence, Is.EqualTo(101));
+			}
 		}
 
 		[Test]
@@ -201,12 +291,16 @@ namespace GeunedaEditor.Services.Tests
 			var section = new Section { Number = 1, Text = "keep" };
 			using (var journal = Open(section))
 			{
-				// 첫 호출의 JIT·버퍼 할당을 지나 보낸다
+				// 첫 호출의 JIT·버퍼 할당과 워커 시작을 지나 보낸다
 				for (var i = 0; i < 4; i++)
 				{
 					journal.WriteNow();
+					journal.Write();
 				}
 
+				System.Threading.Thread.Sleep(100);
+
+				Assert.That(() => journal.Write(), Is.Not.AllocatingGCMemory());
 				Assert.That(() => journal.WriteNow(), Is.Not.AllocatingGCMemory());
 			}
 		}

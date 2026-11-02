@@ -12,7 +12,8 @@ namespace Geuneda.Services
 	/// 자주 바뀌는 값을 GC 할당 없이 자주 저장하는 저널입니다. <see cref="DataService"/> 의 JSON 저장을 대신하지 않고 그 사이를 메웁니다.
 	/// 파일 두 개(슬롯)에 번갈아 쓰므로 쓰는 도중 앱이 죽거나 전원이 꺼져도 다른 슬롯의 값이 남습니다.
 	/// 값 만들기는 부른 스레드에서, 디스크 쓰기는 워커 스레드에서 합니다. <see cref="Write"/> 는 디스크를 기다리지 않습니다.
-	/// JSON 저장 직전에 <see cref="WriteNow"/> 를 불러 저널이 항상 JSON 보다 같거나 새롭게 유지하세요.
+	/// JSON 이 저널보다 새로울 수 있으므로, JSON 저장 때 <see cref="Sequence"/> 를 같은 커밋에 남기고 섹션의 <see cref="IJournalSection.Apply"/> 에서
+	/// 프레임 번호가 그 값보다 클 때만 적용하세요. 그러면 타입마다 더 새로운 쪽이 이깁니다.
 	/// 세이브를 통째로 바꾸거나 지울 때는 <see cref="Reset"/> 을 불러야 옛 값이 되살아나지 않습니다.
 	/// </summary>
 	public sealed class DataJournal : IDisposable
@@ -40,6 +41,7 @@ namespace Geuneda.Services
 		private int _pendingLength;
 		private long _pendingSequence;
 		private long _lastWrittenSequence;
+		private int _nextSlot;
 		private long _sequence;
 		private volatile bool _stopping;
 		private bool _disposed;
@@ -54,8 +56,12 @@ namespace Geuneda.Services
 			_formatVersion = formatVersion;
 			Directory.CreateDirectory(directory);
 			_paths = new[] { Path.Combine(directory, name + ".a.jnl"), Path.Combine(directory, name + ".b.jnl") };
-			_sequence = Math.Max(ReadSequence(_paths[0]), ReadSequence(_paths[1]));
+			var firstSequence = ReadSequence(_paths[0]);
+			var secondSequence = ReadSequence(_paths[1]);
+			_sequence = Math.Max(firstSequence, secondSequence);
 			_lastWrittenSequence = _sequence;
+			// 가장 새 프레임이 든 슬롯은 덮지 않는다
+			_nextSlot = firstSequence >= secondSequence ? 1 : 0;
 
 			for (var i = 0; i < _slots.Length; i++)
 			{
@@ -73,11 +79,24 @@ namespace Geuneda.Services
 		public long Sequence => _sequence;
 
 		/// <summary>
+		/// 다음 프레임 번호가 <paramref name="sequence"/> 보다 커지게 합니다. 파일이 사라져 번호가 JSON 쪽 기록보다 뒤처졌을 때 부팅에서 부릅니다.
+		/// </summary>
+		public void AdvanceSequence(long sequence)
+		{
+			_sequence = Math.Max(_sequence, sequence);
+		}
+
+		/// <summary>
 		/// 지금 값으로 프레임을 만들어 워커에 넘깁니다. 디스크를 기다리지 않고, 버퍼가 충분하면 할당하지 않습니다.
 		/// 호출 사이에 쓰이지 못한 프레임은 새 프레임이 대신합니다
 		/// </summary>
 		public void Write()
 		{
+			if (_disposed)
+			{
+				return;
+			}
+
 			var length = BuildFrame();
 			lock (_pendingGate)
 			{
@@ -118,17 +137,21 @@ namespace Geuneda.Services
 				var reader = new JournalReader(frame, HeaderSize, frame.Length - CrcSize);
 				for (var i = 0; i < _sections.Count; i++)
 				{
-					_sections[i].Read(reader);
+					_sections[i].Read(reader, sequence);
 				}
-
-				_sequence = Math.Max(_sequence, sequence);
-				return true;
 			}
 			catch (Exception exception)
 			{
 				Logger.Error(exception, "Journal frame could not be restored");
 				return false;
 			}
+
+			for (var i = 0; i < _sections.Count; i++)
+			{
+				_sections[i].Apply();
+			}
+
+			return true;
 		}
 
 		/// <summary>
@@ -261,12 +284,14 @@ namespace Geuneda.Services
 				return;
 			}
 
-			var slot = _slots[sequence & 1];
+			// 마지막으로 성공한 슬롯의 반대쪽에 쓴다. 실패하면 다음에도 같은 슬롯을 다시 써서 성공한 슬롯을 지킨다
+			var slot = _slots[_nextSlot];
 			slot.Seek(0, SeekOrigin.Begin);
 			slot.Write(buffer, 0, length);
 			slot.SetLength(length);
 			slot.Flush(true);
 			_lastWrittenSequence = sequence;
+			_nextSlot = 1 - _nextSlot;
 		}
 
 		private long ReadSequence(string path)

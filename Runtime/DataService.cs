@@ -153,14 +153,23 @@ namespace Geuneda.Services
 		/// <inheritdoc />
 		public void SaveAllData()
 		{
-			foreach (var data in _data)
+			var batch = _storage as IBatchDataStorage;
+			batch?.BeginBatch();
+			try
 			{
-				if (SkipNewerVersion(data.Key))
+				foreach (var data in _data)
 				{
-					continue;
-				}
+					if (SkipNewerVersion(data.Key))
+					{
+						continue;
+					}
 
-				Save(data.Key, data.Value);
+					Save(data.Key, data.Value);
+				}
+			}
+			finally
+			{
+				batch?.EndBatch();
 			}
 		}
 
@@ -267,7 +276,7 @@ namespace Geuneda.Services
 		}
 
 		/// <summary>
-		/// 데이터를 저장소에 쓰기 직전에 호출됩니다. 저널을 JSON 보다 먼저 쓰는 데 씁니다. 기본 동작은 없습니다.
+		/// 데이터를 저장소에 쓰기 직전에 호출됩니다. 저널 번호를 JSON 과 같은 커밋에 남기는 데 씁니다. 기본 동작은 없습니다.
 		/// </summary>
 		protected virtual void OnDataSaving(string key, object data, Type type)
 		{
@@ -304,6 +313,14 @@ namespace Geuneda.Services
 			OnDataSaving(key, data, type);
 			_storage.Write(key, Serialize(type, data));
 			OnDataSaved(key, data, type);
+		}
+
+		/// <summary>
+		/// <paramref name="type"/> 의 세이브가 이 빌드보다 새 버전이라 저장하지 않는 중이면 <c>true</c> 입니다
+		/// </summary>
+		protected bool IsNewerVersionData(Type type)
+		{
+			return _newerVersionTypes.Contains(type);
 		}
 
 		private bool SkipNewerVersion(Type type)

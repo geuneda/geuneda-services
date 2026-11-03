@@ -97,6 +97,12 @@ namespace Geuneda.Services
 		// 더 새 버전 세이브를 읽어 저장하지 않는 타입
 		private readonly HashSet<Type> _newerVersionTypes = new HashSet<Type>();
 		private readonly IDataStorage _storage;
+		// 묶음 저장에서 쓴 항목. 커밋이 성공한 뒤 OnDataSaved 를 부른다
+		private readonly List<(string Key, object Data, Type Type)> _savedInBatch = new List<(string, object, Type)>();
+		// 묶음 SaveAllData 가 쓰기부터 훅 전달까지 진행 중이다
+		private bool _savingAll;
+		// 묶음에 쓰는 중이다. 이때 Save 는 OnDataSaved 를 커밋 뒤로 미룬다(훅 안의 SaveData 포함)
+		private bool _batchWriting;
 		private readonly string _keyPrefix;
 
 		internal IReadOnlyDictionary<Type, object> DataEntries => (IReadOnlyDictionary<Type, object>)_data;
@@ -153,23 +159,70 @@ namespace Geuneda.Services
 		/// <inheritdoc />
 		public void SaveAllData()
 		{
-			var batch = _storage as IBatchDataStorage;
-			batch?.BeginBatch();
-			try
+			if (!(_storage is IBatchDataStorage batch))
 			{
 				foreach (var data in _data)
 				{
-					if (SkipNewerVersion(data.Key))
+					if (!SkipNewerVersion(data.Key))
 					{
-						continue;
+						Save(data.Key, data.Value);
 					}
+				}
 
-					Save(data.Key, data.Value);
+				return;
+			}
+
+			// 묶음은 EndBatch 에서 커밋한다. OnDataSaved 는 커밋이 성공한 뒤에 부른다(커밋 전에 부르면 실패했을 때 저장된 줄 안다)
+			if (_savingAll)
+			{
+				throw new InvalidOperationException("SaveAllData cannot be called from a save hook while SaveAllData is running");
+			}
+
+			_savingAll = true;
+			try
+			{
+				batch.BeginBatch();
+				_batchWriting = true;
+				try
+				{
+					foreach (var data in _data)
+					{
+						if (!SkipNewerVersion(data.Key))
+						{
+							Save(data.Key, data.Value);
+						}
+					}
+				}
+				catch
+				{
+					_batchWriting = false;
+					_savedInBatch.Clear();
+					batch.EndBatch();
+					throw;
+				}
+
+				_batchWriting = false;
+				try
+				{
+					batch.EndBatch();
+				}
+				catch
+				{
+					_savedInBatch.Clear();
+					throw;
+				}
+
+				for (var i = 0; i < _savedInBatch.Count; i++)
+				{
+					var saved = _savedInBatch[i];
+					OnDataSaved(saved.Key, saved.Data, saved.Type);
 				}
 			}
 			finally
 			{
-				batch?.EndBatch();
+				_savingAll = false;
+				_batchWriting = false;
+				_savedInBatch.Clear();
 			}
 		}
 
@@ -284,6 +337,10 @@ namespace Geuneda.Services
 
 		/// <summary>
 		/// 데이터를 저장소에 쓴 뒤 호출됩니다. 기본 동작은 없습니다.
+		/// <see cref="SaveAllData"/> 가 묶음 저장소(<see cref="IBatchDataStorage"/>)에 쓸 때는 커밋(<c>EndBatch</c>)이 성공한 뒤에 모아서 부르고,
+		/// 쓰기나 커밋이 실패하면 부르지 않습니다(그 사이 훅에서 부른 <c>SaveData</c> 도 같음). 이 훅을 받았으면 그 키는 커밋된 것입니다.
+		/// <paramref name="data"/> 는 지금 메모리의 객체이며 커밋한 값의 사본이 아닙니다. 앞선 훅이 그 객체를 바꿨으면 저장된 값과 다를 수 있습니다.
+		/// 묶음 <c>SaveAllData</c> 가 진행 중(쓰기부터 이 훅 전달까지)에 <c>SaveAllData</c> 를 다시 부르면 <see cref="InvalidOperationException"/> 입니다.
 		/// </summary>
 		protected virtual void OnDataSaved(string key, object data, Type type)
 		{
@@ -312,6 +369,13 @@ namespace Geuneda.Services
 
 			OnDataSaving(key, data, type);
 			_storage.Write(key, Serialize(type, data));
+
+			if (_batchWriting)
+			{
+				_savedInBatch.Add((key, data, type));
+				return;
+			}
+
 			OnDataSaved(key, data, type);
 		}
 

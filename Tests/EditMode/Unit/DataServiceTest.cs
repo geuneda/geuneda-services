@@ -75,6 +75,30 @@ namespace GeunedaEditor.Services.Tests
 			public void Delete(string key) => Values.Remove(key);
 		}
 
+		// 커밋 시점과 실패를 보는 묶음 저장소
+		private class BatchMemoryDataStorage : MemoryDataStorage, IBatchDataStorage
+		{
+			public bool FailCommit;
+			public bool Committed;
+			public Func<int> SaveCountAtCommit;
+			public int SaveCountSeenAtCommit = -1;
+
+			public void BeginBatch()
+			{
+			}
+
+			public void EndBatch()
+			{
+				SaveCountSeenAtCommit = SaveCountAtCommit?.Invoke() ?? -1;
+				if (FailCommit)
+				{
+					throw new InvalidOperationException("commit failed");
+				}
+
+				Committed = true;
+			}
+		}
+
 		private class ThrowingRecoveryDataService : DataService
 		{
 			public bool ThrowOnBackup;
@@ -119,9 +143,17 @@ namespace GeunedaEditor.Services.Tests
 			public int LoadFailedCount;
 			public string LoadFailedKey;
 			public string LoadFailedRaw;
+			public Action<System.Type> Saving;
+			public Action<System.Type> Saved;
+
+			protected override void OnDataSaving(string key, object data, System.Type type)
+			{
+				Saving?.Invoke(type);
+			}
 
 			protected override void OnDataSaved(string key, object data, System.Type type)
 			{
+				Saved?.Invoke(type);
 				SaveCount++;
 				LastKey = key;
 				LastInstance = data;
@@ -636,6 +668,84 @@ namespace GeunedaEditor.Services.Tests
 			CollectionAssert.AreEquivalent(
 				new[] { DataService.GetSaveKey(typeof(PersistentData)), DataService.GetSaveKey(typeof(VersionedData)) },
 				storage.Values.Keys);
+		}
+
+		[Test]
+		public void SaveAllData_BatchStorage_CallsSavedHookAfterCommit()
+		{
+			var storage = new BatchMemoryDataStorage();
+			var service = new TestableDataService(storage, null);
+			storage.SaveCountAtCommit = () => service.SaveCount;
+			service.AddOrReplaceData(new PersistentData { Name = "A" });
+			service.AddOrReplaceData(new VersionedData { DisplayName = "B" });
+
+			service.SaveAllData();
+
+			Assert.IsTrue(storage.Committed);
+			Assert.AreEqual(0, storage.SaveCountSeenAtCommit, "커밋 전에는 저장 훅을 부르지 않는다");
+			Assert.AreEqual(2, service.SaveCount);
+		}
+
+		[Test]
+		public void SaveAllData_BatchCommitFails_DoesNotCallSavedHook()
+		{
+			var storage = new BatchMemoryDataStorage { FailCommit = true };
+			var service = new TestableDataService(storage, null);
+			service.AddOrReplaceData(new PersistentData { Name = "A" });
+
+			Assert.Throws<InvalidOperationException>(() => service.SaveAllData());
+			Assert.AreEqual(0, service.SaveCount);
+
+			storage.FailCommit = false;
+			service.SaveAllData();
+			Assert.AreEqual(1, service.SaveCount, "실패한 묶음의 항목이 다음 저장에 섞이지 않는다");
+		}
+
+		[Test]
+		public void SaveAllData_SaveDataInsideSavingHook_IsNotifiedOnlyAfterCommit()
+		{
+			var storage = new BatchMemoryDataStorage { FailCommit = true };
+			var service = new TestableDataService(storage, null);
+			storage.SaveCountAtCommit = () => service.SaveCount;
+			service.AddOrReplaceData(new PersistentData { Name = "A" });
+			service.AddOrReplaceData(new VersionedData { DisplayName = "B" });
+			service.Saving = type =>
+			{
+				if (type == typeof(PersistentData))
+				{
+					service.SaveData<VersionedData>();
+				}
+			};
+
+			Assert.Throws<InvalidOperationException>(() => service.SaveAllData());
+			Assert.AreEqual(0, service.SaveCount, "훅 안의 SaveData 도 커밋이 실패하면 알리지 않는다");
+
+			storage.FailCommit = false;
+			service.SaveAllData();
+			Assert.AreEqual(0, storage.SaveCountSeenAtCommit);
+			Assert.AreEqual(3, service.SaveCount);
+		}
+
+		[Test]
+		public void SaveAllData_CalledFromSavedHook_ThrowsAndNextSaveWorks()
+		{
+			var storage = new BatchMemoryDataStorage();
+			var service = new TestableDataService(storage, null);
+			service.AddOrReplaceData(new PersistentData { Name = "A" });
+			var nested = true;
+			service.Saved = _ =>
+			{
+				if (nested)
+				{
+					nested = false;
+					service.SaveAllData();
+				}
+			};
+
+			Assert.Throws<InvalidOperationException>(() => service.SaveAllData());
+
+			service.SaveAllData();
+			Assert.AreEqual(1, service.SaveCount, "가드는 예외 뒤 풀린다");
 		}
 
 		[Test]

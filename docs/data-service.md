@@ -17,7 +17,7 @@
 - 마이그레이션이 필요 없는 로드는 타입으로 바로 읽으므로 `decimal` 정밀도와 날짜 형태 문자열이 그대로 보존됩니다. 마이그레이션 단계가 받는 토큰도 날짜 형태 문자열은 문자열이고, 실수는 원문 리터럴이 `decimal` 범위와 정밀도 안이면 `decimal`, 아니면 `double` 입니다(토큰마다 따로 정함). 마이그레이션 결과는 문자열로 다시 써서 타입으로 읽으므로 `decimal` / `double` 필드 모두 원문 값 그대로 읽힙니다.
 - 봉투 뒤에 다른 내용(쓰레기 문자, 이어 붙인 봉투)이 있으면 읽지 못한 세이브로 처리합니다. 공백은 허용합니다.
 - `AddOrReplaceData` 는 메모리만 바꿉니다. 저장소에 쓰려면 `SaveData<T>()` / `SaveAllData()` 를 호출하세요.
-- 저장할 때마다 `protected virtual void OnDataSaved(string key, object data, Type type)` 가 호출됩니다(`key` 는 접두사가 붙은 저장소 키). 파생 클래스에서 클라우드 동기화 등을 붙일 수 있습니다.
+- 저장할 때마다 `protected virtual void OnDataSaved(string key, object data, Type type)` 가 호출됩니다(`key` 는 접두사가 붙은 저장소 키). 파생 클래스에서 클라우드 동기화 등을 붙일 수 있습니다. 묶음 저장소(`IBatchDataStorage`)에 `SaveAllData` 로 쓸 때는 커밋(`EndBatch`)이 성공한 뒤에 모아서 부르고, 쓰기나 커밋이 실패하면 부르지 않습니다(그 사이 훅에서 부른 `SaveData` 도 같음). `data` 는 지금 메모리 객체이며 커밋한 값의 사본이 아닙니다. 묶음 `SaveAllData` 진행 중 훅에서 `SaveAllData` 를 다시 부르면 `InvalidOperationException` 입니다.
 - 저장값을 읽지 못하면 원문을 `protected virtual void SaveCorruptBackup(string key, string rawData)`(기본: 같은 저장소의 `{키}.corrupt`)로 보관하고 `protected virtual void OnDataLoadFailed(string key, string rawData, Exception exception)` 를 호출합니다. 사용자 안내나 원문 업로드를 붙일 수 있습니다. 둘 중 하나가 예외를 던져도 로그만 남기고 새 인스턴스로 시작합니다.
 
 ## 저널 (자주 바뀌는 값)

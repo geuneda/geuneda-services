@@ -4,6 +4,12 @@
 이 형식은 [Keep a Changelog](http://keepachangelog.com/en/1.0.0/)를 기반으로 하며,
 이 프로젝트는 [유의적 버전](http://semver.org/spec/v2.0.0.html)을 따릅니다.
 
+## [5.5.1] - 2026-11-03
+
+**수정**:
+- `SaveAllData` 가 묶음 저장소(`IBatchDataStorage`)에 쓸 때 `OnDataSaved` 를 커밋(`EndBatch`) 전에 부르던 문제를 수정했습니다. 이제 커밋이 성공한 뒤에 모아서 부르고, 쓰기나 커밋이 실패하면 부르지 않습니다. 훅을 받았으면 그 키가 커밋된 것입니다(`data` 는 지금 메모리 객체이며 커밋한 값의 사본이 아님).
+- `SaveAllData` 진행 중 저장 훅(`OnDataSaving`)에서 부른 `SaveData` 도 커밋 뒤에 알립니다. 진행 중 훅에서 `SaveAllData` 를 다시 부르면 `InvalidOperationException` 입니다(같은 목록을 지워 알림이 빠지던 문제).
+
 ## [5.5.0] - 2026-11-03
 
 **변경**:
